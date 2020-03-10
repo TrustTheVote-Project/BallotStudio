@@ -17,7 +17,17 @@ import fontTools.ttLib
 ftt = fontTools.ttLib.TTFont('/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf')
 pointsize = 26
 Xheight = (ftt['glyf']['X'].yMax - ftt['glyf']['X'].yMin) * pointsize / 2048
+candsize = pointsize * 1.4
+bubbleHeight = min(3*mm, Xheight)
+bubbleYShim = (Xheight - bubbleHeight) / 2.0
 
+candidateNames = [
+    'Alice Argyle',
+    'Bob Brocade',
+    'Çandidate Ñame',
+    'Dorian Duck',
+    'Elaine Entwhistle',
+]
 
 lfont = TTFont('Liberation-Serif', '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf')
 pdfmetrics.registerFont(lfont)
@@ -31,31 +41,37 @@ widthpt, heightpt = letter
 #bpath = bubble(c)
 #c.drawPath(bpath)
 # bubble:
-c.setStrokeColorRGB(0,0,0)
-c.setFillColorRGB(1,1,1)
-topliney = heightpt - 0.5*inch - pointsize*1.2
-bubbleHeight = min(3*mm, Xheight)
-bubbleYShim = (Xheight - bubbleHeight) / 2.0
-c.roundRect(0.5*inch, topliney + bubbleYShim, 12*mm, bubbleHeight, radius=bubbleHeight/2)
+def drawChoice(topliney, nameText):
+    c.setStrokeColorRGB(0,0,0)
+    c.setFillColorRGB(1,1,1)
+    #topliney = heightpt - 0.5*inch - candsize
+    c.roundRect(0.5*inch, topliney + bubbleYShim, 12*mm, bubbleHeight, radius=bubbleHeight/2)
 
-if False:
-    c.setStrokeColorRGB(1,1,1)
-    c.setFillColorRGB(0,0.3,0)
-    c.rect(0.5*inch + 13*mm, topliney, 1*mm, pointsize, stroke=0, fill=1)
-    c.rect(0.5*inch + 14.1*mm, topliney, 1*mm, Xheight, stroke=0, fill=1)
+    if False:
+        # debugging marks
+        c.setStrokeColorRGB(1,1,1)
+        c.setFillColorRGB(0,0.3,0)
+        c.rect(0.5*inch + 13*mm, topliney, 1*mm, pointsize, stroke=0, fill=1)
+        c.rect(0.5*inch + 14.1*mm, topliney, 1*mm, Xheight, stroke=0, fill=1)
 
-c.setFont(mainfontname, pointsize)
-c.setFillColorRGB(0,0,0)
-line = "ÇÅÌy º Ċ úü  Ã °  yo sup"
-text = line + "\nÇandidate Ñame"
-#c.drawString(0.5*inch + 15*mm,0.5*inch,line)
-txto = c.beginText(0.5*inch + 15*mm,topliney + pointsize*1.2)
-txto.textLines(text)
-c.drawText(txto)
+    c.setFont(mainfontname, pointsize)
+    c.setFillColorRGB(0,0,0)
+    #line = "ÇÅÌy º Ċ úü  Ã °  yo sup"
+    #text = line + "\nÇandidate Ñame"
+    #c.drawString(0.5*inch + 15*mm,0.5*inch,line)
+    txto = c.beginText(0.5*inch + 15*mm,topliney)
+    txto.textLines(nameText)
+    c.drawText(txto)
+    return
+
+pos = heightpt - 0.5*inch - candsize
+for nameText in candidateNames:
+    drawChoice(pos, nameText)
+    pos -= candsize
 
 c.showPage()
 c.save()
 
-print(lfont.face.extractInfo(charInfo=0))
+#print(lfont.face.extractInfo(charInfo=0))
 #trfont = pdfmetrics.getFont(mainfontname)
 #trfont.stringWidth("ÇÅÌy º Ċ úü  Ã °  yo sup")
