@@ -19,7 +19,13 @@ def bubble(c, width=12*mm, height=4*mm, r=1*mm):
     pth.roundRect(0, 0, width, height, r)
     return pth
 
-ftt = fontTools.ttLib.TTFont('/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf')
+#mainfontname = 'Times-Roman'
+#mainfontname = 'Liberation-Serif'
+#fontpath = '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf'
+mainfontname = 'Liberation-Sans'
+fontpath = '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf'
+
+ftt = fontTools.ttLib.TTFont(fontpath)
 # do some font metrics about the size of the capital letters
 caps = [chr(x) for x in range(ord('A'), ord('Z')+1)]
 caps.remove('Q') # outlier descender
@@ -45,11 +51,9 @@ candidateNames = [
     #'ÇÅÌy º Ċ úü  Ã ° ~', # TODO: more i18n testing
 ]
 
-lfont = TTFont('Liberation-Serif', '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf')
+lfont = TTFont(mainfontname, fontpath)
 pdfmetrics.registerFont(lfont)
 
-#mainfontname = 'Times-Roman'
-mainfontname = 'Liberation-Serif'
 
 c = canvas.Canvas('/tmp/a.pdf', pagesize=letter) # pageCompression=1
 widthpt, heightpt = letter
@@ -60,8 +64,10 @@ c.setFont(mainfontname, nowstrFontSize)
 c.drawString(widthpt - 0.5*inch - dtw, heightpt - 0.5*inch - nowstrFontSize*1.2, nowstr)
 
 def drawChoice(topliney, nameText):
-    # TODO: candidate subtext (occupation, etc)
+    # TODO: candidate subtext (occupation, etc), multi-line capable
     # TODO: boxes, chartjunk, etc
+    # TODO: multi-line nameText
+    # TODO: RCV bubbles
     # bubble
     c.setStrokeColorRGB(0,0,0)
     c.setFillColorRGB(1,1,1)

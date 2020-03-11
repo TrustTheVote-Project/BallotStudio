@@ -2,3 +2,164 @@ hg clone https://hg.reportlab.com/hg-public/reportlab
 (cd reportlab && pip install -e .)
 pip install fonttools
 python3 a.py
+
+
+# Cost Notes
+
+## San Francisco
+
+https://sfelections.sfgov.org/march-3-2020-election-results-summary
+281,975 ballots cast in 2020 Primary
+
+https://sfelections.sfgov.org/november-6-2018-election-results-summary
+372,848 ballots cast
+
+https://sfelections.sfgov.org/june-5-2018-election-results-summary
+253,583 ballots cast
+
+https://sfelections.sfgov.org/november-8-2016-election-results-summary
+414,528 ballots cast
+
+_Optimistically_ this might average 800,000 ballots cast per year, costing about $2,000,000 per year [URL needed, from report on switching to open source election technology], for cost-per-vote of $2.5 (but probably higher)
+
+I want to do it for under $1 per vote.
+
+
+
+# Design Notes
+
+https://civicdesign.org/a-best-practice-ballot-design-checklist/
+
+each contest/issue should fit in one column
+
+in a multi-column layout, dedicate first column to instructions only and no voting
+
+Note "continue ->" and "page 1/2" at the bottom of first page
+
+https://civicdesign.org/fieldguides/designing-usable-ballots/
+
+no all-caps
+
+left justified
+
+12pt min, more is more readable if you can fit it
+
+one good sans-serif font
+
+"[Continue ->]" footer at the bottom of the last issue on the first side, not at the bottom of the page, but directly tailing the issue wherever that lands in the column.
+
+simple, clear language
+graphical explanation
+
+no party logos
+
+
+https://www.rankedchoicevoting.org/ballot_layout
+
+page of links to more design things, and sample ballots
+
+Minneapolis RCV ballot
+https://drive.google.com/file/d/0B3K2g6lIQMWsYkNRYXFxZElLeEk/view -> Minneapolis-MN_Ballot-BestPrac-2011_S-M-RCV_REF.pdf
+
+FairVote/Center for Civic Design report, RCV Principles and Guidelines-FINAL-2017-0307.pdf
+"grid" layout; or possibly hand-written-number with a mechanical-turk-style station number recognition.
+
+https://drive.google.com/file/d/0B3K2g6lIQMWsSmxwdGh3eFRobDA/view -> Burlington-VT_Ballot-2006_S-RCV_REF.pdf
+
+https://drive.google.com/file/d/0B3K2g6lIQMWsNS1mVUVzQUE1cmM/view -> Portland-ME_Ballot-2015-Mayor_S-RCV_REF.pdf
+
+https://drive.google.com/file/d/0B3K2g6lIQMWsTDNrbFFqQzU2am8/view -> RCVRC_Maine-RCV-Sample-Ballot_S-RCV_REF.pdf
+
+
+https://www.brennancenter.org/our-work/research-reports/common-ballot-design-flaws-and-how-fix-them
+
+an instructions column with a vote at the bottom leaves the vote ignored too often.
+They recommend a page-wide instruction header rather than an instruction column.
+
+no column-splitting one issue
+
+e-voting: one issue per screen-page
+
+sample ballot should really be identical to the real ballot!
+
+
+https://www.aiga.org/design-for-democracy-eac-reports
+eac_effective_election_design.pdf
+264 page report!
+p74-130 "Optical Scan Ballots"
+
+one language per ballot (at most two)
+12pt min font size
+sans serif, no all-caps
+careful with color and shading, emphasis not chartjunk
+'universal icons' like arrows
+
+
+Header:
+* Event, Place, Date
+ * e.g. "Official Ballot for General Election" "Some County, Great State" "Tuesday, November Bleem, 2718"
+ * 10-18pt, bold
+* Page 1 of N (probably also in footer)
+
+Instructions:
+* Graphical illustration of filled bubble
+ * "Fill in the oval to the left of the name of your choice. You must blacken the oval completely, and do not make any marks outside of the oval. You do not have to vote in every race."
+ * (!) "Do not cross out or erase, or your vote may not count. If you make a mistake or a stray mark, ask for a new ballot from the poll workers."
+* Graphical illustration of write-in
+ * me: "You do not need to write-in the name of a candidate already printed"
+ * "To add a candidate, fill in the oval to the left of “or write-in” and print the name clearly on the dotted line."
+* (!) "Do not fold the ballot"
+
+They recommend cyan-black printing, but I'm going to try to design for common office laser printing to cut costs. "cents per ballot". p103-104. advice for single color ballots. Substitute light cyan for 0.10 black; some headings white text on black background.
+
+"Continue voting next side ->"
+"Continue voting next page ->"
+"Thank you for voting! Please turn in your finished ballot"
+
+Issue:
+* Title
+* Border: top 3pt, left 1pt, bottom 1pt
+ * 0.1" padding between last candidate and bottom border
+* Contest title: background 0.15 black, 12pt bold
+* short instruction (e.g. "Vote for 1"); 12pt bold; background: 0.10 cyan
+ * if instruction is different than previous section, precede with (!)
+ * 0.1" margin before candidates
+ * (me: if not cyan, then hairline bottom border?)
+* Candidate:
+ * Bubble to left
+ * Name (bold and/or larger font), 12pt bold
+ * Description (occupation, party, etc), 12pt plain
+ * All entries should be the same height (measure highest, replicate that)
+ * 0.25pt divider between candidates
+ * write-in space 0.3" high, line below 0.5pt, dashed 4pt/4pt
+* Yes/No questions:
+ * They show dividing lines below each option, but I'd omit it.
+
+special advice for 'retention' issues and props/questions
+
+https://www.aiga.org/aiga/content/why-design/design-for-democracy/design-for-democracy/
+https://www.aiga.org/aiga/content/why-design/design-for-democracy/election-design-tools-and-resources/
+
+https://www.aiga.org/globalassets/migrated-pdfs/dfd_opticalscan_sampleballot_proposed -> dfd_opticalscan_sampleballot_proposed.pdf
+
+
+
+http://aceproject.org/main/english/po/poc02a.htm
+meandering list of issues to consider.
+lots of examples of international ballot papers.
+
+
+NIST publications on voting
+https://www.nist.gov/itl/voting/publications
+
+TODO: lots at NIST to read
+
+Learning and building software evaluators for "is that bubble filled?"
+https://nvlpubs.nist.gov/nistpubs/ir/2015/NIST.IR.8069.pdf -> NIST.IR.8069.pdf
+
+
+
+https://www.fairvote.org/rcv_ballot_design
+links to Center for Civic Design paper
+example ballots:
+https://d3n8a8pro7vhmx.cloudfront.net/fairvote/pages/341/attachments/original/1449093739/Cambridge_School_Committee_Sample_Ballot_2001.pdf?1449093739
