@@ -2,6 +2,7 @@
 # -*- mode: Python; coding: utf-8 -*-
 #
 
+import glob
 import time
 import statistics
 
@@ -22,22 +23,59 @@ def bubble(c, width=12*mm, height=4*mm, r=1*mm):
 #mainfontname = 'Times-Roman'
 #mainfontname = 'Liberation-Serif'
 #fontpath = '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf'
-mainfontname = 'Liberation-Sans'
-fontpath = '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf'
+mainfontname = 'Liberation Sans'
+#fontpath = '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf'
+#fontpathbold = '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf'
+boldfontname = 'Liberation Sans Bold'
 
-ftt = fontTools.ttLib.TTFont(fontpath)
-# do some font metrics about the size of the capital letters
-caps = [chr(x) for x in range(ord('A'), ord('Z')+1)]
-caps.remove('Q') # outlier descender
-glyfminmax = [(ftt['glyf'][glyc].yMax, ftt['glyf'][glyc].yMin, glyc) for glyc in caps]
-gmaxes = [x[0] for x in glyfminmax]
-gmins = [x[1] for x in glyfminmax]
-capmin = statistics.median(gmins)
-capmax = statistics.median(gmaxes)
-capHeightPerPt = (capmax - capmin) / 2048
+
+class Bfont:
+    def __init__(self, path, name=None):
+        self.name = name
+        self.path = path
+        self.capHeightPerPt = None
+        self._measureCapheight()
+        lfont = TTFont(self.name, self.path)
+        pdfmetrics.registerFont(lfont)
+
+    def _measureCapheight(self):
+        ftt = fontTools.ttLib.TTFont(self.path)
+        caps = [chr(x) for x in range(ord('A'), ord('Z')+1)]
+        caps.remove('Q') # outlier descender
+        glyfminmax = [(ftt['glyf'][glyc].yMax, ftt['glyf'][glyc].yMin, glyc) for glyc in caps]
+        gmaxes = [x[0] for x in glyfminmax]
+        gmins = [x[1] for x in glyfminmax]
+        capmin = statistics.median(gmins)
+        capmax = statistics.median(gmaxes)
+        self.capHeightPerPt = (capmax - capmin) / 2048
+        if self.name is None:
+            for xn in ftt['name'].names:
+                if xn.nameID == 4:
+                    self.name = xn.toUnicode()
+                    break
+
+# ftt = fontTools.ttLib.TTFont(fontpath)
+# # do some font metrics about the size of the capital letters
+# caps = [chr(x) for x in range(ord('A'), ord('Z')+1)]
+# caps.remove('Q') # outlier descender
+# glyfminmax = [(ftt['glyf'][glyc].yMax, ftt['glyf'][glyc].yMin, glyc) for glyc in caps]
+# gmaxes = [x[0] for x in glyfminmax]
+# gmins = [x[1] for x in glyfminmax]
+# capmin = statistics.median(gmins)
+# capmax = statistics.median(gmaxes)
+# capHeightPerPt = (capmax - capmin) / 2048
+
+fonts = {}
+
+for fpath in glob.glob('/usr/share/fonts/truetype/liberation/*.ttf'):
+    xf = Bfont(fpath)
+    fonts[xf.name] = xf
+
+print('fonts: ' + ', '.join([repr(n) for n in fonts.keys()]))
 
 pointsize = 26
-capHeight = capHeightPerPt * pointsize
+bf = fonts[mainfontname]
+capHeight = bf.capHeightPerPt * pointsize
 candsize = pointsize * 1.4
 bubbleHeight = min(3*mm, capHeight)
 bubbleYShim = (capHeight - bubbleHeight) / 2.0
@@ -51,8 +89,34 @@ candidateNames = [
     #'ÇÅÌy º Ċ úü  Ã ° ~', # TODO: more i18n testing
 ]
 
-lfont = TTFont(mainfontname, fontpath)
-pdfmetrics.registerFont(lfont)
+def Settings:
+    def __init__(self):
+        self.candidateFontName = 'Liberation Sans Bolt'
+        self.candidateFontSize = 12
+        self.candidateLeading = 13
+        self.candsubFontName = 'Liberation Sans'
+        self.candsubFontSize = 12
+        self.candsubLeading = 13
+
+class Choice:
+    def __init__(self, name, subtext=None):
+        self.name = name
+        self.subtext = subtext
+    def draw(self, c, x, y):
+        pass
+    def sepLineBelow(self, c, x, y):
+        c.setStrokeColorRGB(0,0,0)
+        choiceBoxHeight = 30 # TODO: calculate
+        choiceBoxWidth = 200 # TODO: calculate/specify
+        c.setLineWidth(0.25)
+        c.line(x, y-choiceBoxHeight, choiceBoxWidth, 0)
+    def _writeInLine(self, c):
+        c.setDash([4,4])
+        c.setLineWidth(0.5)
+        c.setDash(None)
+
+#lfont = TTFont(mainfontname, fontpath)
+#pdfmetrics.registerFont(lfont)
 
 
 c = canvas.Canvas('/tmp/a.pdf', pagesize=letter) # pageCompression=1
@@ -62,6 +126,7 @@ nowstrFontSize = 12
 dtw = pdfmetrics.stringWidth(nowstr, mainfontname, nowstrFontSize)
 c.setFont(mainfontname, nowstrFontSize)
 c.drawString(widthpt - 0.5*inch - dtw, heightpt - 0.5*inch - nowstrFontSize*1.2, nowstr)
+c.setTitle('ballot test ' + nowstr)
 
 def drawChoice(topliney, nameText):
     # TODO: candidate subtext (occupation, etc), multi-line capable
@@ -81,7 +146,7 @@ def drawChoice(topliney, nameText):
         c.rect(0.5*inch + 14.1*mm, topliney, 1*mm, capHeight, stroke=0, fill=1)
 
     # candidate name
-    c.setFont(mainfontname, pointsize)
+    c.setFont(boldfontname, pointsize)
     c.setFillColorRGB(0,0,0)
     txto = c.beginText(0.5*inch + 15*mm,topliney)
     txto.textLines(nameText)

@@ -125,6 +125,7 @@ Issue:
  * if instruction is different than previous section, precede with (!)
  * 0.1" margin before candidates
  * (me: if not cyan, then hairline bottom border?)
+
 * Candidate:
  * Bubble to left
  * Name (bold and/or larger font), 12pt bold
@@ -156,6 +157,93 @@ TODO: lots at NIST to read
 
 Learning and building software evaluators for "is that bubble filled?"
 https://nvlpubs.nist.gov/nistpubs/ir/2015/NIST.IR.8069.pdf -> NIST.IR.8069.pdf
+
+Election Data Formats
+https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.1500-100.pdf
+
+Contest
+* Abbreviation str?
+* BallotSelection *
+* BallotSubTitle str?
+* BallotTitle str?
+* CountStatus *
+* ElectoralDistrictId id
+* ExternalIdentifiers ?
+* HasRotation bool default=False
+* Name str
+* SequenceOrder int?
+* SubUnitsReported int?
+* SummaryCounts *
+* TotalSubUnits int?
+* VoteVariation ?
+* OtherVoteVariation str?
+
+BallotSelection
+* SequenceOrder int?
+* VoteCountsCollection *
+* VoteCounts +
+
+xsi:type=BallotMeasureSelection
+* Selection text
+
+xsi:type=CandidateSelection
+* CandidateIds
+* EndorsementPartyIds ?
+* IsWriteIn bool
+
+# party-line vote
+xsi:type=PartySelection
+* PartyIds
+
+Candidate objectId=N
+* BallotName text
+* ExternalIdentifiers ?
+* FileDate ?
+* IsIncumbent bool
+* IsTopTicket bool
+* PartyId ?
+* PersonId ?
+* PostElectioStatus ?
+* PreElectionStatus ?
+
+Person objectId=N
+* ContactInformation *
+* DateOfBirth ?
+* FirstName text?
+* FullName text?
+* Gender text?
+* LastName text?
+* MiddleName text?
+* Nickname text?
+* PartyId ?
+* Prefix text?
+* Profession text?
+* Suffix text?
+* Title text?
+
+Party objectId=N
+* Abbreviation text?
+* Color htmlcolor?
+* ExternalIdentifiers ?
+* LogoUri ?
+* Name text?
+
+GpUnit objectId=N
+* ComposingGpUnitIds ?
+* ExternalIdentifiers ?
+* Name text?
+* SummaryCounts *
+
+BallotStyle objectId=N
+* ExternalIdentifiers ?
+* GpUnitIds ?
+* ImageUri *
+* OrderedContest *
+* PartyIds ?
+
+OrderedContest
+* ContestId id
+* OrderedBallotSelectionIds ?
 
 
 
