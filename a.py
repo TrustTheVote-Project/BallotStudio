@@ -73,37 +73,74 @@ for fpath in glob.glob('/usr/share/fonts/truetype/liberation/*.ttf'):
 
 print('fonts: ' + ', '.join([repr(n) for n in fonts.keys()]))
 
-pointsize = 26
-bf = fonts[mainfontname]
-capHeight = bf.capHeightPerPt * pointsize
-candsize = pointsize * 1.4
-bubbleHeight = min(3*mm, capHeight)
-bubbleYShim = (capHeight - bubbleHeight) / 2.0
+# pointsize = 26
+# bf = fonts[mainfontname]
+# capHeight = bf.capHeightPerPt * pointsize
+# candsize = pointsize * 1.4
+# bubbleHeight = min(3*mm, capHeight)
+# bubbleYShim = (capHeight - bubbleHeight) / 2.0
 
-candidateNames = [
-    'Alice Argyle',
-    'Bob Brocade',
-    'Çandidate Ñame',
-    'Dorian Duck',
-    'Elaine Entwhistle',
-    #'ÇÅÌy º Ċ úü  Ã ° ~', # TODO: more i18n testing
-]
 
-def Settings:
+class Settings:
     def __init__(self):
-        self.candidateFontName = 'Liberation Sans Bolt'
+        self.candidateFontName = 'Liberation Sans Bold'
         self.candidateFontSize = 12
         self.candidateLeading = 13
         self.candsubFontName = 'Liberation Sans'
         self.candsubFontSize = 12
         self.candsubLeading = 13
+        self.bubbleLeftPad = 0.1 * inch
+        self.bubbleRightPad = 0.1 * inch
+        self.bubbleWidth = 8 * mm
+        self.bubbleMaxHeight = 3 * mm
+
+
+gs = Settings()
+
 
 class Choice:
     def __init__(self, name, subtext=None):
         self.name = name
         self.subtext = subtext
-    def draw(self, c, x, y):
-        pass
+        # TODO: measure text for box width & wrap
+        # TODO: wrap with optional max-5% squish instead of wrap
+    def height(self):
+        # TODO: multiline for name and subtext
+        y = 0
+        ypos = y - gs.candidateLeading
+        if self.subtext:
+            ypos -= gs.candsubLeading
+        return -1*(ypos - (0.1 * inch))
+    def draw(self, c, x, y, width=(7.5/2)*inch - 1):
+        # x,y is a top,left of a box to draw bubble and text into
+        capHeight = fonts[gs.candidateFontName].capHeightPerPt * gs.candidateFontSize
+        bubbleHeight = min(3*mm, capHeight)
+        bubbleYShim = (capHeight - bubbleHeight) / 2.0
+        bubbleBottom = y - gs.candidateFontSize + bubbleYShim
+        c.setStrokeColorRGB(0,0,0)
+        c.setLineWidth(1)
+        c.setFillColorRGB(1,1,1)
+        c.roundRect(x + gs.bubbleLeftPad, bubbleBottom, gs.bubbleWidth, bubbleHeight, radius=bubbleHeight/2)
+        textx = x + gs.bubbleLeftPad + gs.bubbleWidth + gs.bubbleRightPad
+        # TODO: assumes one line
+        c.setFillColorRGB(0,0,0)
+        txto = c.beginText(textx, y - gs.candidateFontSize)
+        txto.setFont(gs.candidateFontName, gs.candidateFontSize, gs.candidateLeading)
+        txto.textLines(self.name)
+        c.drawText(txto)
+        ypos = y - gs.candidateLeading
+        if self.subtext:
+            txto = c.beginText(textx, ypos - gs.candsubFontSize)
+            txto.setFont(gs.candsubFontName, gs.candsubFontSize, leading=gs.candsubLeading)
+            txto.textLines(self.subtext)
+            c.drawText(txto)
+            ypos -= gs.candsubLeading
+        # separator line
+        c.setStrokeColorRGB(0,0,0)
+        c.setLineWidth(0.25)
+        sepy = ypos - (0.1 * inch)
+        c.line(textx, sepy, width - (gs.bubbleLeftPad + gs.bubbleWidth + gs.bubbleRightPad), sepy)
+        return
     def sepLineBelow(self, c, x, y):
         c.setStrokeColorRGB(0,0,0)
         choiceBoxHeight = 30 # TODO: calculate
@@ -128,35 +165,59 @@ c.setFont(mainfontname, nowstrFontSize)
 c.drawString(widthpt - 0.5*inch - dtw, heightpt - 0.5*inch - nowstrFontSize*1.2, nowstr)
 c.setTitle('ballot test ' + nowstr)
 
-def drawChoice(topliney, nameText):
-    # TODO: candidate subtext (occupation, etc), multi-line capable
-    # TODO: boxes, chartjunk, etc
-    # TODO: multi-line nameText
-    # TODO: RCV bubbles
-    # bubble
-    c.setStrokeColorRGB(0,0,0)
-    c.setFillColorRGB(1,1,1)
-    c.roundRect(0.5*inch, topliney + bubbleYShim, 12*mm, bubbleHeight, radius=bubbleHeight/2)
+# def drawChoice(topliney, nameText):
+#     # TODO: candidate subtext (occupation, etc), multi-line capable
+#     # TODO: boxes, chartjunk, etc
+#     # TODO: multi-line nameText
+#     # TODO: RCV bubbles
+#     # bubble
+#     c.setStrokeColorRGB(0,0,0)
+#     c.setFillColorRGB(1,1,1)
+#     c.roundRect(0.5*inch, topliney + bubbleYShim, 12*mm, bubbleHeight, radius=bubbleHeight/2)
 
-    if False:
-        # debugging marks
-        c.setStrokeColorRGB(1,1,1)
-        c.setFillColorRGB(0,0.3,0)
-        c.rect(0.5*inch + 13*mm, topliney, 1*mm, pointsize, stroke=0, fill=1)
-        c.rect(0.5*inch + 14.1*mm, topliney, 1*mm, capHeight, stroke=0, fill=1)
+#     if False:
+#         # debugging marks
+#         c.setStrokeColorRGB(1,1,1)
+#         c.setFillColorRGB(0,0.3,0)
+#         c.rect(0.5*inch + 13*mm, topliney, 1*mm, pointsize, stroke=0, fill=1)
+#         c.rect(0.5*inch + 14.1*mm, topliney, 1*mm, capHeight, stroke=0, fill=1)
 
-    # candidate name
-    c.setFont(boldfontname, pointsize)
-    c.setFillColorRGB(0,0,0)
-    txto = c.beginText(0.5*inch + 15*mm,topliney)
-    txto.textLines(nameText)
-    c.drawText(txto)
-    return
+#     # candidate name
+#     c.setFont(boldfontname, pointsize)
+#     c.setFillColorRGB(0,0,0)
+#     txto = c.beginText(0.5*inch + 15*mm,topliney)
+#     txto.textLines(nameText)
+#     c.drawText(txto)
+#     return
 
-pos = heightpt - 0.5*inch - pointsize * 1.2
-for nameText in candidateNames:
-    drawChoice(pos, nameText)
-    pos -= candsize
+candidateNames = [
+    'Alice Argyle',
+    'Bob Brocade',
+    'Çandidate Ñame',
+    'Dorian Duck',
+    'Elaine Entwhistle',
+    #'ÇÅÌy º Ċ úü  Ã ° ~', # TODO: more i18n testing
+]
+
+#choices = [Choice(nameText) for nameText in candidateNames]
+choices = [
+    Choice('Alice Argyle', 'Anklebiter Assembly'),
+    Choice('Bob Brocade', 'Boring Board'),
+    Choice('Çandidate Ñame', 'Cowardly Coalition'),
+    Choice('Dorian Duck', 'Dumb Department'),
+    Choice('Elaine Entwhistle', 'Electable Entertainers'),
+]
+
+maxChoiceHeight = max([x.height() for x in choices])
+
+pos = heightpt - 0.5*inch # - pointsize * 1.2
+for ch in choices:
+    ch.draw(c, 0.5*inch, pos)
+    pos -= maxChoiceHeight
+# for nameText in candidateNames:
+#     drawChoice(pos, nameText)
+#     pos -= candsize
+
 
 c.showPage()
 c.save()
