@@ -164,12 +164,14 @@ class Contest:
         # top border
         c.setStrokeColorRGB(0,0,0)
         c.setLineWidth(3)
-        c.line(x, y, x + width, y)
-        # left border
+        c.line(x-0.5, y, x + width, y) # -0.5 caps left border 1.0pt line
+        # left border and bottom border
         c.setLineWidth(1)
-        c.line(x, y, x, y-self.height())
-        # bottom border
-        c.line(x, y-self.height(), x+width, y-self.height())
+        path = c.beginPath()
+        path.moveTo(x, y)
+        path.lineTo(x, y-self.height())
+        path.lineTo(x+width, y-self.height())
+        c.drawPath(path, stroke=1)
 
         pos = y - 1.5
         # title
