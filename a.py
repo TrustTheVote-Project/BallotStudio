@@ -3,6 +3,7 @@
 #
 
 import glob
+import json
 import time
 import statistics
 
@@ -53,7 +54,7 @@ for fpath in glob.glob('/usr/share/fonts/truetype/liberation/*.ttf'):
     xf = Bfont(fpath)
     fonts[xf.name] = xf
 
-print('fonts: ' + ', '.join([repr(n) for n in fonts.keys()]))
+#print('fonts: ' + ', '.join([repr(n) for n in fonts.keys()]))
 
 
 class Settings:
@@ -87,6 +88,7 @@ class Choice:
         self.subtext = subtext
         # TODO: measure text for box width & wrap
         # TODO: wrap with optional max-5% squish instead of wrap
+        self._bubbleCoords = None
     def height(self):
         # TODO: multiline for name and subtext
         y = 0
@@ -103,7 +105,8 @@ class Choice:
         c.setStrokeColorRGB(0,0,0)
         c.setLineWidth(1)
         c.setFillColorRGB(1,1,1)
-        c.roundRect(x + gs.bubbleLeftPad, bubbleBottom, gs.bubbleWidth, bubbleHeight, radius=bubbleHeight/2)
+        self._bubbleCoords = (x + gs.bubbleLeftPad, bubbleBottom, gs.bubbleWidth, bubbleHeight)
+        c.roundRect(*self._bubbleCoords, radius=bubbleHeight/2)
         textx = x + gs.bubbleLeftPad + gs.bubbleWidth + gs.bubbleRightPad
         # TODO: assumes one line
         c.setFillColorRGB(0,0,0)
@@ -199,6 +202,9 @@ class Contest:
             ch.draw(c, x + 1, pos, width=width - 1)
             pos -= self._maxChoiceHeight
         return
+    def getBubbles(self):
+        choices = self.choices or []
+        return {ch.name:ch._bubbleCoords for ch in choices}
 
 
 c = canvas.Canvas('/tmp/a.pdf', pagesize=letter) # pageCompression=1
@@ -242,3 +248,6 @@ therace.draw(c, 0.5 * inch, heightpt - 0.5*inch)
 
 c.showPage()
 c.save()
+
+bd = {'bubbles': therace.getBubbles()}
+print(json.dumps(bd))
