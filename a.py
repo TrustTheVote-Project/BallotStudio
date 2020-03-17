@@ -13,6 +13,8 @@ from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.units import inch, mm, cm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import Paragraph
+from reportlab.lib.units import ParagraphStyle
 
 nowstr = 'generated ' + time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())
 
@@ -161,23 +163,13 @@ class Contest:
         return self._height
     def draw(self, c, x, y, width=(7.5/2)*inch - 1):
         # x,y is a top,left
-        # top border
-        c.setStrokeColorRGB(0,0,0)
-        c.setLineWidth(3)
-        c.line(x-0.5, y, x + width, y) # -0.5 caps left border 1.0pt line
-        # left border and bottom border
-        c.setLineWidth(1)
-        path = c.beginPath()
-        path.moveTo(x, y)
-        path.lineTo(x, y-self.height())
-        path.lineTo(x+width, y-self.height())
-        c.drawPath(path, stroke=1)
+        height = self.height()
 
         pos = y - 1.5
         # title
         c.setStrokeColorRGB(*gs.titleBGColor)
         c.setFillColorRGB(*gs.titleBGColor)
-        c.rect(x + 1, pos - gs.titleLeading, width - 1, gs.titleLeading, fill=1)
+        c.rect(x, pos - gs.titleLeading, width, gs.titleLeading, fill=1, stroke=0)
         c.setFillColorRGB(0,0,0)
         c.setStrokeColorRGB(0,0,0)
         txto = c.beginText(x + 1 + (0.1 * inch), pos - gs.titleFontSize)
@@ -188,7 +180,7 @@ class Contest:
         # subtitle
         c.setStrokeColorCMYK(.1,0,0,0)
         c.setFillColorCMYK(.1,0,0,0)
-        c.rect(x + 1, pos - gs.subtitleLeading, width - 1, gs.subtitleLeading, fill=1)
+        c.rect(x, pos - gs.subtitleLeading, width, gs.subtitleLeading, fill=1, stroke=0)
         c.setFillColorRGB(0,0,0)
         c.setStrokeColorRGB(0,0,0)
         txto = c.beginText(x + 1 + (0.1 * inch), pos - gs.subtitleFontSize)
@@ -203,6 +195,18 @@ class Contest:
         for ch in choices:
             ch.draw(c, x + 1, pos, width=width - 1)
             pos -= self._maxChoiceHeight
+
+        # top border
+        c.setStrokeColorRGB(0,0,0)
+        c.setLineWidth(3)
+        c.line(x-0.5, y, x + width, y) # -0.5 caps left border 1.0pt line
+        # left border and bottom border
+        c.setLineWidth(1)
+        path = c.beginPath()
+        path.moveTo(x, y)
+        path.lineTo(x, y-height)
+        path.lineTo(x+width, y-height)
+        c.drawPath(path, stroke=1)
         return
     def getBubbles(self):
         choices = self.choices or []
