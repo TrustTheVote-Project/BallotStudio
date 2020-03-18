@@ -13,8 +13,8 @@ from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.units import inch, mm, cm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import Paragraph
-from reportlab.lib.units import ParagraphStyle
+#from reportlab.platypus import Paragraph
+#from reportlab.lib.units import ParagraphStyle
 
 nowstr = 'generated ' + time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())
 
@@ -79,6 +79,7 @@ class Settings:
         self.bubbleRightPad = 0.1 * inch
         self.bubbleWidth = 8 * mm
         self.bubbleMaxHeight = 3 * mm
+        self.columnMargin = 0.1 * inch
 
 
 gs = Settings()
@@ -244,13 +245,56 @@ choices = [
 
 therace = Contest('Everything', 'The Race for Everything', 'Choose as many as you like', choices)
 
+raceZ = Contest(
+    'Nothing', 'The Race To The Bottom', 'Vote for one',
+    [
+        Choice('Zaphod', "He's just this guy, you know?"),
+        Choice('Zardoz', 'There can be only one'),
+        Choice('Zod', 'Kneel'),
+    ],
+)
+
+headDwarfRace = Contest(
+    'Head Dwarf',
+    'Head Dwarf',
+    'Vote for one',
+    [
+        Choice('Sleepy'),
+        Choice('Happy'),
+        Choice('Dopey'),
+        Choice('Grumpy'),
+        Choice('Sneezy'),
+        Choice('Bashful'),
+        Choice('Doc'),
+    ],
+)
+
 # maxChoiceHeight = max([x.height() for x in choices])
 # pos = heightpt - 0.5*inch # - pointsize * 1.2
 # for ch in choices:
 #     ch.draw(c, 0.5*inch, pos)
 #     pos -= maxChoiceHeight
 
-therace.draw(c, 0.5 * inch, heightpt - 0.5*inch)
+
+c.rect(0.5 * inch, heightpt - 3.4 * inch, widthpt - 1.0 * inch, 2.9 * inch, stroke=1, fill=0)
+
+races = [therace, headDwarfRace, raceZ]
+x = 0.5 * inch
+top = heightpt - 0.5*inch - 3*inch
+y = top
+bottom = 0.5 * inch
+colwidth = (7.5/2)*inch - gs.columnMargin
+for xr in races:
+    height = xr.height()
+    if y - height < bottom:
+        y = top
+        x += colwidth + gs.columnMargin
+        # TODO: check for next-page
+    xr.draw(c, x, y, colwidth)
+    y -= xr.height()
+#therace.draw(c,x, y)
+#y -= therace.height()
+#race2.draw(c, 0.5 * inch, y)
 
 c.showPage()
 c.save()

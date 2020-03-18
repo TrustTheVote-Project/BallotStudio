@@ -155,6 +155,17 @@ https://www.nist.gov/itl/voting/publications
 
 TODO: lots at NIST to read
 
+https://pages.nist.gov/ElectionResultsReporting/
+nicer version of 1500-100 v2 election xml format (now with JSON option!)
+
+https://github.com/usnistgov/ElectionResultsReporting
+content hidden under branches version1 and version2
+https://github.com/usnistgov/ElectionResultsReporting/tree/version2
+
+https://developers.google.com/elections-data/reference/
+google presentation, apparently the same content as the 1500-100 spec
+
+
 Learning and building software evaluators for "is that bubble filled?"
 https://nvlpubs.nist.gov/nistpubs/ir/2015/NIST.IR.8069.pdf -> NIST.IR.8069.pdf
 
@@ -177,6 +188,12 @@ Contest
 * TotalSubUnits int?
 * VoteVariation ?
 * OtherVoteVariation str?
+* CandidateContest subclass
+ * VotesAllowed int # see VoteVariation enum for ballot/counting style {VoteVariation:"other", OtherVoteVariation: "condorcet"}
+ * NumberElected int?
+ * NumberRunoff int?
+ * Office *
+ * PrimaryParty *
 
 BallotSelection
 * SequenceOrder int?
