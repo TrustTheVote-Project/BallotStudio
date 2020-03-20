@@ -6,6 +6,7 @@ import glob
 import json
 import time
 import statistics
+import sys
 
 import fontTools.ttLib
 from reportlab.pdfgen import canvas
@@ -89,7 +90,7 @@ class Choice:
     def __init__(self, name, subtext=None):
         self.name = name
         self.subtext = subtext
-        # TODO: measure text for box width & wrap
+        # TODO: measure text for box width & wrap. see reportlab.platypus.Paragraph
         # TODO: wrap with optional max-5% squish instead of wrap
         self._bubbleCoords = None
     def height(self):
@@ -130,12 +131,6 @@ class Choice:
         sepy = ypos - (0.1 * inch)
         c.line(textx, sepy, x+width, sepy)
         return
-    def sepLineBelow(self, c, x, y):
-        c.setStrokeColorRGB(0,0,0)
-        choiceBoxHeight = 30 # TODO: calculate
-        choiceBoxWidth = 200 # TODO: calculate/specify
-        c.setLineWidth(0.25)
-        c.line(x, y-choiceBoxHeight, choiceBoxWidth, 0)
     def _writeInLine(self, c):
         c.setDash([4,4])
         c.setLineWidth(0.5)
@@ -275,8 +270,231 @@ headDwarfRace = Contest(
 #     ch.draw(c, 0.5*inch, pos)
 #     pos -= maxChoiceHeight
 
+# case-insensitive dict.pop()
+def cp(key, d, exc=True):
+    if key in d:
+        return d.pop(key)
+    kl = key.lower()
+    for dk in d.keys():
+        dkl = dk.lower()
+        if dkl == kl:
+            return d.pop(dk)
+    if exc:
+        raise KeyError(key)
+    return None
+
+# multi-option case-insensitive dict.pop()
+def ocp(d, *keys, default=None, exc=True):
+    for k in keys:
+        try:
+            return cp(k, d)
+        except:
+            pass
+    if default is not None:
+        return default
+    if exc:
+        raise KeyError(key)
+    return default
+
+def maybeToDict(o):
+    if isinstance(o, list):
+        return [maybeToDict(ox) for ox in o]
+    elif isinstance(o, dict):
+        return {k:maybeToDict(v) for k,v in o.items()}
+    elif hasattr(o, 'toDict'):
+        return o.toDict()
+    return o
+
+class Builder:
+    def toDict(self):
+        d = {}
+        if hasattr(self, '_type'):
+            d['@type'] = self._type
+        if hasattr(self, '_id'):
+            d['@id'] = self._id
+        for k,v in self.__dict__.items():
+            if k[0] != '_' and not hasattr(v, '__call__'):
+                d[k] = maybeToDict(v)
+
+class Person(Builder):
+    _fields = ()
+    _type = "ElectionResults.Person"
+    def __init__(self):
+        pass
+class ElectionReportBuilder:
+    _type = "ElectionResults.ElectionReport"
+    def __init__(self, **kwargs):
+        # required
+        self.Format = ocp(kwargs, "Format", default="summary-contest")
+        self.GeneratedDate = ocp(kwargs, "GeneratedDate", "date", default=time.strftime("%Y-%m-%d %H:%M:%S %z", time.localtime()))
+        self.Issuer = ocp(kwargs, "Issuer", default="bolson")
+        self.IssuerAbbreviation = ocp(kwargs, "IssuerAbbreviation", default=self.Issuer)
+        self.SequenceStart = int(ocp(kwargs, "SequenceStart", default=1))
+        self.SequenceEnd = int(ocp(kwargs, "SequenceEnd", default=1))
+        self.Status = ocp(kwargs, "Status", default="pre-election")
+        self.VendorApplicationId = ocp(kwargs, "VendorApplicationId", default="BallotGen 0.0.1")
+        # etc
+        self.Election = []
+        self.ExternalIdentifier = []
+        self.Header = []
+        self.IsTest = True
+        self.Notes = ""
+        self.Office = []
+        self.OfficeGroup = []
+        self.Party = []
+        self.Person = []
+        self.TestType = ""
+    def Person(self, **kwargs):
+        pass
+
+
+ElectionReport = {
+    # required fields
+    "@type": "ElectionReport",
+    "Format": "summary-contest",
+    "GeneratedDate": time.strftime("%Y-%m-%d %H:%M:%S %z", time.localtime()),
+    "Issuer": "bolson",
+    "IssuerAbbreviation": "bolson",
+    "SequenceStart": 1,
+    "SequenceEnd": 1,
+    "Status": "pre-election",
+    "VendorApplicationId": "BallotGen 0.0.1",
+
+    # data
+    "Election": [
+        {
+            # required
+            "@type": "ElectionResults.Election",
+            "Name":"Hypothetical Election",
+            "Type": "special",
+            "ElectionScopeId": "gp1",
+            "StartDate": "2022-11-08",
+            "EndDate": "2022-11-08",
+            # other
+            "BallotStyle": [
+                {
+                    "@type": "ElectionResults.BallotStyle",
+                    "GpUnitIds": ["gp1"],
+                    "OrderedContent": [
+                        {
+                            "@type": "ElectionResults.OrderedHeader",
+                            "HeaderId": "header1",
+                        },
+                        {
+                            "@type": "ElectionResults.OrderedContest",
+                            "ContestId": "contest1",
+                        },
+                    ],
+                },
+            ],
+            "Candidate": [
+                {
+                    #required
+                    "@id": "candidate1",
+                    "@type": "ElectionResults.Candidate",
+                    "BallotName": "",
+                    #etc
+                    "PersonId": "",
+                },
+            ],
+            "Contest": [
+                {
+                    # required
+                    "@id": "contest1",
+                    "@type": "ElectionResults.CandidateContest",
+                    "Name": "Everything",
+                    "ElectionDistrictId": "gp1",
+                    "VoteVariation": "approval",
+                    "VotesAllowed": 9, # TODO: for approval, number of choices
+                    # other
+                    "ContestSelection": [
+                        {
+                            "@id": "csel1",
+                            "@type": "ElectionResults.CandidateSelection",
+                            "CandidateIds": [],
+                        },
+                    ],
+                    "NumberElectiod": 1,
+                    "OfficeIds": ["office2"],
+                },
+            ],
+        },
+    ],
+    "GpUnit": [
+        {
+            "@id": "gp1",
+            "@type": "ElectionResults.ReportingUnit",
+            "Type": "city",
+            "Name": "Springfield",
+        },
+    ],
+    "Header": [
+        {
+            "@id": "header1",
+            "@type": "ElectionResults.Header",
+            "Name": "Header 1",
+        },
+    ],
+    "Office": [
+        {
+            "@id": "office1",
+            "@type": "ElectionResults.Office",
+            "Name": "Head Dwarf",
+        },
+        {
+            "@id": "office2",
+            "@type": "ElectionResults.Office",
+            "Name": "Everything",
+        },
+        {
+            "@id": "office3",
+            "@type": "ElectionResults.Office",
+            "Name": "Bottom",
+            "Description": "The race for the bottom",
+        },
+    ],
+    #"OfficeGroup": [],
+    "Party": [
+        {
+            "@id": "party1",
+            "@type": "ElectionResults.Party",
+            "Name": "Woot",
+            "Slogan": "Come party with the party",
+        },
+    ],
+    "Person": [
+        {
+            "@id": "person1",
+            "@type": "ElectionResults.Person",
+            "FullName": "Zaphod Beeblebrox",
+            "PartyId": "party1",
+            "Profession": "He's just this guy, you know?",
+        },
+        {
+            "@id": "person2",
+            "@type": "ElectionResults.Person",
+            "FullName": "Zod",
+            "PartyId": "party1",
+            "Title": "General",
+            "Profession": "Kneel",
+        },
+        {
+            "@id": "person3",
+            "@type": "ElectionResults.Person",
+            "FullName": "Zardoz",
+            "PartyId": "party1",
+            "Profession": "There can be only one",
+        },
+    ],
+    "IsTest": True,
+    "TestType": "pre-election,design",
+}
+json.dump(ElectionReport, sys.stdout, indent=2)
+sys.stdout.write('\n')
+sys.exit(0)
 
 c.rect(0.5 * inch, heightpt - 3.4 * inch, widthpt - 1.0 * inch, 2.9 * inch, stroke=1, fill=0)
+c.drawString(0.7*inch, heightpt - 0.8*inch, 'instruction text here, etc.')
 
 races = [therace, headDwarfRace, raceZ]
 x = 0.5 * inch

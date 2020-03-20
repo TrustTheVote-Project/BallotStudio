@@ -92,7 +92,7 @@ one language per ballot (at most two)
 12pt min font size
 sans serif, no all-caps
 careful with color and shading, emphasis not chartjunk
-'universal icons' like arrows
+'universal icons' like arrows ( TODO: icon library: https://github.com/tabler/tabler-icons )
 
 
 Header:
