@@ -196,6 +196,7 @@ def makeCandidate(fullname, persons):
         "PersonId": personIdByFullName(persons, fullname),
     }
 
+# make a Candidate wrapper for every Person
 candidates = [
     makeCandidate(x['FullName'], persons) for x in persons
 ]
@@ -271,6 +272,25 @@ contests = [
         "NumberElected": 1,
         "OfficeIds": [officeIdByName(offices, 'Everything')],
     },
+    {
+        # required
+        "@id": _contest_id(),
+        "@type": "ElectionResults.CandidateContest",
+        "Name": "Head Dwarf",
+        "ElectionDistrictId": gpunitIdByName(gpunits, 'Springfield'),
+        "VoteVariation": "plurality",
+        "VotesAllowed": 9, # TODO: for approval, number of choices
+        # other
+        "ContestSelection": [
+            {
+                "@id": _csel_id(),
+                "@type": "ElectionResults.CandidateSelection",
+                "CandidateIds": candidateIdsForNames(candidates, "Sleepy", "Happy", "Dopey", "Grumpy", "Sneezy", "Bashful", "Doc"),
+            },
+        ],
+        "NumberElected": 1,
+        "OfficeIds": [officeIdByName(offices, 'Head Dwarf')],
+    },
 ]
 
 contestIdByName = officeIdByName
@@ -285,6 +305,8 @@ headers = [
     },
 ]
 
+headerIdByName = officeIdByName
+
 
 ElectionReport = {
     # required fields
@@ -296,7 +318,7 @@ ElectionReport = {
     "SequenceStart": 1,
     "SequenceEnd": 1,
     "Status": "pre-election",
-    "VendorApplicationId": "BallotGen 0.0.1",
+    "VendorApplicationId": "bolson's ballots 0.0.1",
 
     # data
     "Election": [
@@ -305,7 +327,7 @@ ElectionReport = {
             "@type": "ElectionResults.Election",
             "Name":"Hypothetical Election",
             "Type": "special",
-            "ElectionScopeId": "gp1",
+            "ElectionScopeId": gpunitIdByName(gpunits, 'Springfield'),
             "StartDate": "2022-11-08",
             "EndDate": "2022-11-08",
             # other
@@ -316,7 +338,7 @@ ElectionReport = {
                     "OrderedContent": [
                         {
                             "@type": "ElectionResults.OrderedHeader",
-                            "HeaderId": "header1",
+                            "HeaderId": headerIdByName(headers, 'Header 1'),
                         },
                         {
                             "@type": "ElectionResults.OrderedContest",
