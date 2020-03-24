@@ -291,6 +291,25 @@ contests = [
         "NumberElected": 1,
         "OfficeIds": [officeIdByName(offices, 'Head Dwarf')],
     },
+    {
+        # required
+        "@id": _contest_id(),
+        "@type": "ElectionResults.CandidateContest",
+        "Name": "Bottom",
+        "ElectionDistrictId": gpunitIdByName(gpunits, 'Springfield'),
+        "VoteVariation": "plurality",
+        "VotesAllowed": 9, # TODO: for approval, number of choices
+        # other
+        "ContestSelection": [
+            {
+                "@id": _csel_id(),
+                "@type": "ElectionResults.CandidateSelection",
+                "CandidateIds": candidateIdsForNames(candidates, "Zaphod Beeblebrox", "Zod", "Zardoz"),
+            },
+        ],
+        "NumberElected": 1,
+        "OfficeIds": [officeIdByName(offices, 'Head Dwarf')],
+    },
 ]
 
 contestIdByName = officeIdByName
@@ -301,7 +320,7 @@ headers = [
     {
         "@id": _header_id(),
         "@type": "ElectionResults.Header",
-        "Name": "Header 1",
+        "Name": "Instructions",
     },
 ]
 
@@ -338,11 +357,19 @@ ElectionReport = {
                     "OrderedContent": [
                         {
                             "@type": "ElectionResults.OrderedHeader",
-                            "HeaderId": headerIdByName(headers, 'Header 1'),
+                            "HeaderId": headerIdByName(headers, 'Instructions'),
                         },
                         {
                             "@type": "ElectionResults.OrderedContest",
                             "ContestId": contestIdByName(contests, 'Everything'),
+                        },
+                        {
+                            "@type": "ElectionResults.OrderedContest",
+                            "ContestId": contestIdByName(contests, 'Head Dwarf'),
+                        },
+                        {
+                            "@type": "ElectionResults.OrderedContest",
+                            "ContestId": contestIdByName(contests, 'Bottom'),
                         },
                     ],
                 },
