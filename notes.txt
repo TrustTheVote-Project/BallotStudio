@@ -155,6 +155,7 @@ https://www.nist.gov/itl/voting/publications
 
 TODO: lots at NIST to read
 
+# GOOD REFERENCE
 https://pages.nist.gov/ElectionResultsReporting/
 nicer version of 1500-100 v2 election xml format (now with JSON option!)
 
@@ -164,6 +165,7 @@ https://github.com/usnistgov/ElectionResultsReporting/tree/version2
 
 https://developers.google.com/elections-data/reference/
 google presentation, apparently the same content as the 1500-100 spec
+
 
 
 Learning and building software evaluators for "is that bubble filled?"
@@ -268,3 +270,13 @@ https://www.fairvote.org/rcv_ballot_design
 links to Center for Civic Design paper
 example ballots:
 https://d3n8a8pro7vhmx.cloudfront.net/fairvote/pages/341/attachments/original/1449093739/Cambridge_School_Committee_Sample_Ballot_2001.pdf?1449093739
+
+
+2020-03-23 18:38:11 EDT (Monday, March 23 06:38:11 PM)
+
+1500-100 is not a _layout_ spec. It has nothing to say about columns and pages. It is a _data_ spec about who the candidates are and what the election results are and it will make a standardized report on what happens, and it kinda only in passing has a pre-election mode where it can talk about an election that hasn't happened yet.
+
+There could be an auxiliary document that refers to entities in a 1500-100 document by id and adds additional layout data.
+There could be extensions to 1500-100 where layout data appears inline in additional attributes on objects.
+
+It feels to me like a *closed* spec where I shouldn't add new fields and the aux-data mode would be easier.

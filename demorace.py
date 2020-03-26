@@ -122,7 +122,7 @@ persons = [
     {
         "@id": _person_id(),
         "@type": "ElectionResults.Person",
-        "FullName": "Çandidate Ñame",
+        "FullName": "Çandidate Ñame 亀",
         "PartyId": partyIdByName(parties, 'Cowardly Coalition'),
         "Profession": "Camp Councilor",
     },
@@ -252,6 +252,16 @@ gpunitIdByName = officeIdByName
 
 _contest_id = IdSource('contest')
 
+def candidateSelectionsFromNames(candidates, names):
+    out = []
+    for name in names:
+        out.append({
+            "@id": _csel_id(),
+            "@type": "ElectionResults.CandidateSelection",
+            "CandidateIds": [candidateIdByName(candidates, name)],
+        })
+    return out
+
 contests = [
     {
         # required
@@ -260,15 +270,11 @@ contests = [
         "Name": "Everything",
         "ElectionDistrictId": gpunitIdByName(gpunits, 'Springfield'),
         "VoteVariation": "approval",
-        "VotesAllowed": 9, # TODO: for approval, number of choices
+        "VotesAllowed": 5, # TODO: for approval, number of choices
         # other
-        "ContestSelection": [
-            {
-                "@id": _csel_id(),
-                "@type": "ElectionResults.CandidateSelection",
-                "CandidateIds": candidateIdsForNames(candidates, 'Alice Argyle', "Bob Brocade", "Çandidate Ñame", "Dorian Duck", "Elaine Entwhistle"),
-            },
-        ],
+        "BallotTitle": "The Race For Everything",
+        "BallotSubTitle": "Vote for as many as you like",
+        "ContestSelection": candidateSelectionsFromNames(candidates, 'Alice Argyle', "Bob Brocade", "Çandidate Ñame 亀", "Dorian Duck", "Elaine Entwhistle"),
         "NumberElected": 1,
         "OfficeIds": [officeIdByName(offices, 'Everything')],
     },
@@ -279,15 +285,11 @@ contests = [
         "Name": "Head Dwarf",
         "ElectionDistrictId": gpunitIdByName(gpunits, 'Springfield'),
         "VoteVariation": "plurality",
-        "VotesAllowed": 9, # TODO: for approval, number of choices
+        "VotesAllowed": 1,
         # other
-        "ContestSelection": [
-            {
-                "@id": _csel_id(),
-                "@type": "ElectionResults.CandidateSelection",
-                "CandidateIds": candidateIdsForNames(candidates, "Sleepy", "Happy", "Dopey", "Grumpy", "Sneezy", "Bashful", "Doc"),
-            },
-        ],
+        "BallotTitle": "Head Dwarf",
+        "BallotSubTitle": "Vote for one",
+        "ContestSelection": candidateSelectionsFromNames(candidates, "Sleepy", "Happy", "Dopey", "Grumpy", "Sneezy", "Bashful", "Doc"),
         "NumberElected": 1,
         "OfficeIds": [officeIdByName(offices, 'Head Dwarf')],
     },
@@ -298,15 +300,11 @@ contests = [
         "Name": "Bottom",
         "ElectionDistrictId": gpunitIdByName(gpunits, 'Springfield'),
         "VoteVariation": "plurality",
-        "VotesAllowed": 9, # TODO: for approval, number of choices
+        "VotesAllowed": 1,
         # other
-        "ContestSelection": [
-            {
-                "@id": _csel_id(),
-                "@type": "ElectionResults.CandidateSelection",
-                "CandidateIds": candidateIdsForNames(candidates, "Zaphod Beeblebrox", "Zod", "Zardoz"),
-            },
-        ],
+        "BallotTitle": "The Race To The Bottom",
+        "BallotSubTitle": "Vote for one",
+        "ContestSelection": candidateSelectionsFromNames(candidates, "Zaphod Beeblebrox", "Zod", "Zardoz"),
         "NumberElected": 1,
         "OfficeIds": [officeIdByName(offices, 'Head Dwarf')],
     },
@@ -355,10 +353,10 @@ ElectionReport = {
                     "@type": "ElectionResults.BallotStyle",
                     "GpUnitIds": [gpunitIdByName(gpunits, 'Springfield')],
                     "OrderedContent": [
-                        {
-                            "@type": "ElectionResults.OrderedHeader",
-                            "HeaderId": headerIdByName(headers, 'Instructions'),
-                        },
+                        # {
+                        #     "@type": "ElectionResults.OrderedHeader",
+                        #     "HeaderId": headerIdByName(headers, 'Instructions'),
+                        # },
                         {
                             "@type": "ElectionResults.OrderedContest",
                             "ContestId": contestIdByName(contests, 'Everything'),
