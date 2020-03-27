@@ -252,7 +252,7 @@ gpunitIdByName = officeIdByName
 
 _contest_id = IdSource('contest')
 
-def candidateSelectionsFromNames(candidates, names):
+def candidateSelectionsFromNames(candidates, *names):
     out = []
     for name in names:
         out.append({
@@ -304,7 +304,7 @@ contests = [
         # other
         "BallotTitle": "The Race To The Bottom",
         "BallotSubTitle": "Vote for one",
-        "ContestSelection": candidateSelectionsFromNames(candidates, "Zaphod Beeblebrox", "Zod", "Zardoz"),
+        "ContestSelection": candidateSelectionsFromNames(candidates, "Zaphod Beeblebrox", "Zod", "Zardoz"), # TODO: write-in
         "NumberElected": 1,
         "OfficeIds": [officeIdByName(offices, 'Head Dwarf')],
     },

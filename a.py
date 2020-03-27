@@ -22,10 +22,15 @@ import demorace
 
 logger = logging.getLogger(__name__)
 
+class TodoException(Exception):
+    pass
+
 def bubble(c, width=12*mm, height=4*mm, r=1*mm):
     pth = c.beginPath()
     pth.roundRect(0, 0, width, height, r)
     return pth
+
+
 
 
 class Bfont:
@@ -79,6 +84,7 @@ class Settings:
         self.candsubFontName = 'Liberation Sans'
         self.candsubFontSize = 12
         self.candsubLeading = 13
+        self.writeInHeight = 0.3 * inch # TODO: check spec
         self.bubbleLeftPad = 0.1 * inch
         self.bubbleRightPad = 0.1 * inch
         self.bubbleWidth = 8 * mm
@@ -93,6 +99,9 @@ class Settings:
 
 gs = Settings()
 
+def setOptionalFields(self, ob):
+    for field_name, default_value in self._optional_fields:
+        setattr(self, field_name, ob.get(field_name, default_value))
 
 class Choice:
     def __init__(self, name, subtext=None):
@@ -354,13 +363,64 @@ _votevariation_instruction_en = {
 }
 
 class CandidateSelection:
-    def __init__(self, cs_json_object):
+    "NIST 1500-100 v2 ElectionResults.CandidateSelection"
+    _optional_fields = (
+        ('CandidateIds', []), #id of Candidate in Election object
+        ('EndorsementPartyIds', []), #id of Party or Coalition
+        ('IsWriteIn', False), #bool
+        ('SequenceOrder', None), #int
+        ('VoteCounts', []), #VoteCounts results objects
+    )
+    def __init__(self, erctx, cs_json_object):
         self.cs = cs_json_object
-def rehydrateContestSelection(contestselection_json_object):
+        setOptionalFields(self, self.cs)
+        self.candidates = [erctx.getRawOb(cid) for cid in self.CandidateIds]
+        self.parties = [erctx.getRawOb(x) for x in self.EndorsementPartyIds]
+    def height(self, width):
+        # TODO: actually check render for width with party and subtitle and all that
+        out = gs.candidateLeading * len(self.candidates)
+        # TODO: subtexts
+        if self.IsWriteIn:
+            out += gs.writeInHeight
+        return out + (0.1 * inch)
+    def draw(self, c, x, y, width):
+        capHeight = fonts[gs.candidateFontName].capHeightPerPt * gs.candidateFontSize
+        bubbleHeight = min(3*mm, capHeight)
+        bubbleYShim = (capHeight - bubbleHeight) / 2.0
+        bubbleBottom = y - gs.candidateFontSize + bubbleYShim
+        c.setStrokeColorRGB(0,0,0)
+        c.setLineWidth(1)
+        c.setFillColorRGB(1,1,1)
+        self._bubbleCoords = (x + gs.bubbleLeftPad, bubbleBottom, gs.bubbleWidth, bubbleHeight)
+        c.roundRect(*self._bubbleCoords, radius=bubbleHeight/2)
+        textx = x + gs.bubbleLeftPad + gs.bubbleWidth + gs.bubbleRightPad
+        # TODO: assumes one line
+        c.setFillColorRGB(0,0,0)
+        txto = c.beginText(textx, y - gs.candidateFontSize)
+        txto.setFont(gs.candidateFontName, gs.candidateFontSize, gs.candidateLeading)
+        txto.textLines(self.candidates[0]['BallotName']) # TODO: fix for multiple candidate ticket
+        c.drawText(txto)
+        ypos = y - gs.candidateLeading
+        subtext = None
+        # TODO: extract subtext from Person.Profession and Party
+        if subtext:
+            txto = c.beginText(textx, ypos - gs.candsubFontSize)
+            txto.setFont(gs.candsubFontName, gs.candsubFontSize, leading=gs.candsubLeading)
+            txto.textLines(self.subtext)
+            c.drawText(txto)
+            ypos -= gs.candsubLeading
+        # separator line
+        c.setStrokeColorRGB(0,0,0)
+        c.setLineWidth(0.25)
+        sepy = ypos - (0.1 * inch)
+        c.line(textx, sepy, x+width, sepy)
+        return
+
+def rehydrateContestSelection(election, contestselection_json_object):
     cs = contestselection_json_object
     cstype = cs['@type']
     if cstype == 'ElectionResults.CandidateSelection':
-        pass
+        return CandidateSelection(election, contestselection_json_object)
     # TODO ElectionResults.BallotMeasureSelection
     # TODO ElectionResults.PartySelection
     raise Exception('unkown ContestSelection type {!r}'.format(cstype))
@@ -387,21 +447,23 @@ class CandidateContest:
         ('VoteVariation', None), #ElectionResults.VoteVariation
         ('VotesAllowed', None), #int, probably 1
     )
-    def __init__(self, election, contest_json_object):
+    def __init__(self, erctx, contest_json_object):
         co = contest_json_object
         self.co = co
         self.Name = co['Name']
         self.ElectionDistrictId = co['ElectionDistrictId'] # reference to a ReportingUnit gpunit
         self.VotesAllowed = co['VotesAllowed']
-        for field_name, default_value in self._optional_fields:
-            setattr(self, field_name, co.get(field_name, default_value))
+        setOptionalFields(self, self.co)
+        #for field_name, default_value in self._optional_fields:
+        #    setattr(self, field_name, co.get(field_name, default_value))
         if self.OfficeIds:
-            offices = election.er.get('Office', [])
-            self.offices = [byId(offices, x) for x in self.OfficeIds]
+            #offices = election.er.get('Office', [])
+            #self.offices = [byId(offices, x) for x in self.OfficeIds]
+            self.offices = [erctx.getRawOb(x) for x in self.OfficeIds]
         else:
             self.offices = []
-    def draw(self, c):
-        pass
+    def draw(self, c, x, y, width):
+        raise Exception("TODO: WRITEME")
 
 def rehydrateContest(election, contest_json_object):
     co = contest_json_object
@@ -418,12 +480,13 @@ def rehydrateContest(election, contest_json_object):
         raise Exception('unknown contest type {!r}'.format(cotype))
 
 class OrderedContest:
-    def __init__(self, election, contest_json_object):
+    def __init__(self, erctx, contest_json_object):
         "election is local ElectionPrinter()"
         co = contest_json_object
         self.co = co
-        cjo = byId(election.contests, co['ContestId'])
-        self.contest = rehydrateContest(election, cjo)
+        #cjo = byId(election.contests, co['ContestId'])
+        #self.contest = rehydrateContest(election, cjo)
+        self.contest = erctx.getDrawOb(co['ContestId'])
         # selection_ids refs by id to PartySelection, BallotMeasureSelection, CandidateSelection; TODO: dereference, where do they come from?
         raw_selections = self.contest.ContestSelection
         selection_ids = co.get('OrderedContestSelectionIds', [])
@@ -432,7 +495,66 @@ class OrderedContest:
             self.ordered_selections = [byId(raw_selections, x) for x in selection_ids]
         else:
             self.ordered_selections = raw_selections
+        self.draw_selections = [erctx.makeDrawOb(x) for x in self.ordered_selections]
+    def _maxheight(self, width):
+        heights = [ds.height(width) for ds in self.draw_selections]
+        return max(heights)
     def height(self, width):
+        out = self._maxheight(width-1) * len(self.draw_selections)
+        out += 4 # top and bottom border
+        out += gs.titleLeading + gs.subtitleLeading
+        out += 0.1 * inch # header-choice gap
+        out += 0.1 * inch # bottom padding
+        return out
+    def draw(self, c, x, y, width):
+        # TODO: delegate some/all of this to self.contest aka CandidateContest?
+        pos = y - 3 # leave room for 3pt top border
+        # title
+        c.setStrokeColorRGB(*gs.titleBGColor)
+        c.setFillColorRGB(*gs.titleBGColor)
+        c.rect(x, pos - gs.titleLeading, width, gs.titleLeading, fill=1, stroke=0)
+        c.setFillColorRGB(0,0,0)
+        c.setStrokeColorRGB(0,0,0)
+        txto = c.beginText(x + 1 + (0.1 * inch), pos - gs.titleFontSize)
+        txto.setFont(gs.titleFontName, gs.titleFontSize)
+        txto.textLines(self.contest.BallotTitle)
+        c.drawText(txto)
+        pos -= gs.titleLeading
+        # subtitle
+        c.setStrokeColorCMYK(.1,0,0,0)
+        c.setFillColorCMYK(.1,0,0,0)
+        c.rect(x, pos - gs.subtitleLeading, width, gs.subtitleLeading, fill=1, stroke=0)
+        c.setFillColorRGB(0,0,0)
+        c.setStrokeColorRGB(0,0,0)
+        txto = c.beginText(x + 1 + (0.1 * inch), pos - gs.subtitleFontSize)
+        txto.setFont(gs.subtitleFontName, gs.subtitleFontSize)
+        txto.textLines(self.contest.BallotSubTitle)
+        c.drawText(txto)
+        pos -= gs.subtitleLeading
+        pos -= 0.1 * inch # header-choice gap
+        c.setFillColorRGB(0,0,0)
+        c.setStrokeColorRGB(0,0,0)
+        maxheight = self._maxheight(width-1)
+        for ds in self.draw_selections:
+            dy = ds.height(width)
+            ds.draw(c, x+1, pos, width-1)
+            pos -= maxheight
+        pos += 0.1 * inch # bottom padding
+
+        # top border
+        c.setStrokeColorRGB(0,0,0)
+        c.setLineWidth(3)
+        c.line(x, y-1.5, x + width, y-1.5) # -0.5 caps left border 1.0pt line
+        # left border and bottom border
+        c.setLineWidth(1)
+        path = c.beginPath()
+        path.moveTo(x+0.5, y-1.5)
+        path.lineTo(x+0.5, y-pos)
+        path.lineTo(x+width, y-pos)
+        c.drawPath(path, stroke=1)
+        return
+    def getBubbles(self):
+        logger.error("TODO: getBubbles()")
         return None
 
 
@@ -445,34 +567,34 @@ class OrderedHeader:
         self.header = byId(TODO.headers, h['@id'])
         self.content = rehydrateOrderedContent(election, h.get('OrderedContent', []))
 
-def rehydrateOrderedContent(election, they):
-    "election is local ElectionPrinter()"
-    return list(rehydrateOrderedContent_inner(election, they))
-def rehydrateOrderedContent_inner(election, they):
+def rehydrateOrderedContent(erctx, they):
+    return list(rehydrateOrderedContent_inner(erctx, they))
+def rehydrateOrderedContent_inner(erctx, they):
     for co in they:
         co_type = co['@type']
         if co_type == 'ElectionResults.OrderedContest':
-            yield OrderedContest(election, co)
+            yield OrderedContest(erctx, co)
         elif co_type == '':
-            yield OrderedHeader(election, co)
+            yield OrderedHeader(erctx, co)
         else:
             raise Exception('unknown ordered content element type={!r}'.format(co_type))
 
 class BallotStyle:
-    def __init__(self, election_report, election, ballotstyle_json_object):
+    def __init__(self, erctx, ballotstyle_json_object):
         # election_report ElectionResults.ElectionReport
         # election ElectionPrinter()
         # ballotstyle_json_object ElectionResults.BallotStyle
-        er = election_report
-        gpunits = er.get('GpUnit', [])
-        parties = er.get('Party', [])
+        #er = election_report
+        #gpunits = er.get('GpUnit', [])
+        #parties = er.get('Party', [])
         bs = ballotstyle_json_object
         self.bs = bs
-        self.gpunits = [byId(gpunits, x) for x in bs['GpUnitIds']]
+        self.gpunits = [erctx.getRawOb(x) for x in bs['GpUnitIds']]
         self.ext = bs.get('ExternalIdentifier', [])
         # image_uri is to image of example ballot?
         self.image_uri = bs.get('ImageUri', [])
-        self.content = rehydrateOrderedContent(election, bs.get('OrderedContent', []))
+        #self.content = rehydrateOrderedContent(election, bs.get('OrderedContent', []))
+        self.content = [erctx.makeDrawOb(ob) for ob in bs.get('OrderedContent', [])]
         # e.g. for a party-specific primary ballot (may associate with multiple parties)
         self.parties = [byId(parties, x) for x in bs.get('PartyIds', [])]
         # _numPages gets filled in on a first rendering pass and used on second pass
@@ -558,6 +680,77 @@ class BallotStyle:
         self._bubbles = bubbles
 
 
+
+def gatherIds(ob):
+    out = dict()
+    _gatherIds(out, ob)
+    return out
+def _gatherIds(out, ob):
+    if isinstance(ob, dict):
+        dtype = ob.get('@type')
+        did = ob.get('@id')
+        if dtype is not None and did is not None:
+            if did in out:
+                raise Exception('@id collision {!r} for {!r} and {!r}'.format(did, out[did], ob))
+            out[did] = ob
+        for k, v in ob.items():
+            _gatherIds(out, v)
+    elif isinstance(ob, (list,tuple)):
+        for x in ob:
+            _gatherIds(out, x)
+
+CandidateType = 'ElectionResults.Candidate'
+CandidateContestType = 'ElectionResults.CandidateContest'
+CandidateSelectionType  = 'ElectionResults.CandidateSelection'
+ReportingUnitType = 'ElectionResults.ReportingUnit'
+HeaderType = 'ElectionResults.Header'
+OfficeType = 'ElectionResults.Office'
+PartyType = 'ElectionResults.Party'
+PersonType = 'ElectionResults.Person'
+
+
+class ElectionResultsContext:
+    "Manage lookup of objects by id, whether raw json/dict or class"
+    # map 'Er.Type': func(ctx, json ob)
+    _constructors_for_typestrings = {
+        'ElectionResults.CandidateSelection': CandidateSelection,
+        'ElectionResults.CandidateContest': CandidateContest,
+        'ElectionResults.OrderedContest': OrderedContest,
+        #'ElectionResults.Office': Office,
+    }
+    def __init__(self, election_results_json_object):
+        self.er = election_results_json_object
+        # obids = {@id: json ob, ...}
+        self.obids = gatherIds(self.er)
+        # draw objects by id, same key as obids
+        self.dobs = {}
+    def getRawOb(self, id_string):
+        return self.obids[id_string]
+    def getDrawOb(self, id_string):
+        dob = self.dobs.get(id_string)
+        if dob is None:
+            rob = self.obids[id_string]
+            cf = self._constructors_for_typestrings[rob['@type']]
+            dob = cf(self, rob)
+            self.dobs[id_string] = dob
+        return dob
+    def makeDrawOb(self, rob):
+        atid = rob.get('@id')
+        if atid:
+            dob = self.dobs.get(atid)
+            if dob:
+                return dob
+        cf = self._constructors_for_typestrings[rob['@type']]
+        dob = cf(self, rob)
+        if atid:
+            self.dobs[atid] = dob
+        return dob
+
+
+
+
+
+
 # TODO: i18n
 _election_types_en = {
     'general': "General Election",
@@ -574,6 +767,8 @@ class ElectionPrinter:
         # election ElectionResults.Election from json
         er = election_report
         el = election
+        erctx = ElectionResultsContext(er)
+        self.erctx = erctx
         self.er = er
         self.el = el
         # resources referred to:
@@ -596,7 +791,7 @@ class ElectionPrinter:
         # ballot_styles is local BallotStyle objects
         self.ballot_styles = []
         for bstyle in el.get('BallotStyle', []):
-            self.ballot_styles.append(BallotStyle(er, self,bstyle))
+            self.ballot_styles.append(BallotStyle(erctx,bstyle))
         return
     def electionTypeTitle(self):
         # TODO: i18n
@@ -678,6 +873,9 @@ def old():
 def main():
     logging.basicConfig(level=logging.INFO)
     er = demorace.ElectionReport
+    #obids = gatherIds(er)
+    #for k,v in obids.items():
+    #    print('{!r}\t{!r}'.format(k, v))
     for el in er.get('Election', []):
         ep = ElectionPrinter(er, el)
         ep.draw()
