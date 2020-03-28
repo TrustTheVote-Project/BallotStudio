@@ -61,27 +61,32 @@ class Bfont:
 
 fonts = {}
 
-for fpath in glob.glob('/usr/share/fonts/truetype/liberation/*.ttf'):
+for fpath in glob.glob('/usr/share/fonts/truetype/liberation/*.ttf') + glob.glob('resources/*.ttf'):
     xf = Bfont(fpath)
     fonts[xf.name] = xf
 
-#print('fonts: ' + ', '.join([repr(n) for n in fonts.keys()]))
+print('fonts: ' + ', '.join([repr(n) for n in fonts.keys()]))
 
+fontsans = 'Liberation Sans'
+fontsansbold = 'Liberation Sans Bold'
+#fontsans = 'Noto Sans Regular'
+#fontsansbold = 'Noto Sans Bold'
+# TODO: figure out how to use 亀 etc that aren't in the core font file
 
 class Settings:
     def __init__(self):
-        self.titleFontName = 'Liberation Sans Bold'
+        self.titleFontName = fontsansbold
         self.titleFontSize = 12
         self.titleBGColor = (.85, .85, .85)
         self.titleLeading = self.titleFontSize * 1.4
-        self.subtitleFontName = 'Liberation Sans Bold'
+        self.subtitleFontName = fontsansbold
         self.subtitleFontSize = 12
         self.subtitleBGColor = ()
         self.subtitleLeading = self.subtitleFontSize * 1.4
-        self.candidateFontName = 'Liberation Sans Bold'
+        self.candidateFontName = fontsansbold
         self.candidateFontSize = 12
         self.candidateLeading = 13
-        self.candsubFontName = 'Liberation Sans'
+        self.candsubFontName = fontsans
         self.candsubFontSize = 12
         self.candsubLeading = 13
         self.writeInHeight = 0.3 * inch # TODO: check spec
@@ -93,7 +98,7 @@ class Settings:
         self.debugPageOutline = True
         self.nowstrEnabled = True
         self.nowstrFontSize = 10
-        self.nowstrFontName = 'Liberation Sans'
+        self.nowstrFontName = fontsans
         self.pageMargin = 0.5 * inch # inset from paper edge
 
 
@@ -290,6 +295,7 @@ class CandidateSelection:
     )
     def __init__(self, erctx, cs_json_object):
         self.cs = cs_json_object
+        self.atid = self.cs['@id']
         setOptionalFields(self, self.cs)
         self.candidates = [erctx.getRawOb(cid) for cid in self.CandidateIds]
         self.people = []
@@ -313,6 +319,7 @@ class CandidateSelection:
             self.subtext = ', '.join(peopleparties)
         else:
             self.subtext = None
+        self._bubbleCoords = None
     def height(self, width):
         # TODO: actually check render for width with party and subtitle and all that
         out = gs.candidateLeading * len(self.candidates)
@@ -418,6 +425,7 @@ class OrderedContest:
         co = contest_json_object
         self.co = co
         self.contest = erctx.getDrawOb(co['ContestId'])
+        self.atid = co['ContestId']
         # selection_ids refs by id to PartySelection, BallotMeasureSelection, CandidateSelection; TODO: dereference, where do they come from?
         raw_selections = self.contest.ContestSelection
         selection_ids = co.get('OrderedContestSelectionIds', [])
@@ -468,11 +476,9 @@ class OrderedContest:
         maxheight = self._maxheight(width-1)
         for ds in self.draw_selections:
             dy = ds.height(width)
-            logger.info('sel pos %f', pos)
             ds.draw(c, x+1, pos, width-1)
             pos -= maxheight
         pos -= 0.1 * inch # bottom padding
-        logger.info('y %f, bottom pos %f', y, pos)
 
         # top border
         c.setStrokeColorRGB(0,0,0)
@@ -487,8 +493,7 @@ class OrderedContest:
         c.drawPath(path, stroke=1)
         return
     def getBubbles(self):
-        logger.error("TODO: getBubbles()")
-        return None
+        return {ch.atid:ch._bubbleCoords for ch in self.draw_selections}
 
 class BallotStyle:
     def __init__(self, erctx, ballotstyle_json_object):
@@ -550,7 +555,7 @@ class BallotStyle:
         height = 2.9 * inch
         c.setStrokeColorRGB(0,0,0)
         c.rect(contentleft, y - height, contentright - contentleft, height, stroke=1, fill=0)
-        c.setFont('Liberation Sans', 12)
+        c.setFont(fontsans, 12)
         c.drawString(contentleft + 0.1*inch, y - 0.3*inch, 'instruction text here, etc.')
         contenttop -= height
         y = contenttop
@@ -559,7 +564,7 @@ class BallotStyle:
         columns = 2
         columnwidth = (contentright - contentleft - (gs.columnMargin * (columns - 1))) / columns
         x = contentleft
-        bubbles = []
+        bubbles = {}
         # content, 2 columns
         colnum = 1
         for xc in self.content:
@@ -583,12 +588,16 @@ class BallotStyle:
             y -= height
             y += 1 # bottom border and top border may overlap
             xb = xc.getBubbles()
-            if xb is not None:
-                bubbles.append(xb)
+            if xb:
+                #logger.info('xc %r %s bubbles %r', xc, xc.atid, xb)
+                #bubbles.append(xb)
+                bubbles[xc.atid] = xb
         c.showPage()
         c.save()
         self._numPages = page
         self._bubbles = bubbles
+    def getBubbles(self):
+        return self._bubbles
 
 
 
@@ -712,7 +721,8 @@ class ElectionPrinter:
                 bs_fname = '{}{}.pdf'.format(outname_prefix, names)
             c = canvas.Canvas('/tmp/a.pdf', pagesize=letter) # pageCompression=1
             bs.draw(c, letter)
-        pass
+    def getBubbles(self):
+        return [bs.getBubbles() for bs in self.ballot_styles]
 
 #demorace.ElectionReport
 # TODO: print ballot from ElectionReport.Election[0].BallotStyle[0]...
@@ -735,6 +745,8 @@ def main():
     for el in er.get('Election', []):
         ep = ElectionPrinter(er, el)
         ep.draw()
+        json.dump(ep.getBubbles(), sys.stdout)
+        sys.stdout.write('\n')
     return
 
 if __name__ == '__main__':

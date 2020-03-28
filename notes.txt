@@ -280,3 +280,16 @@ There could be an auxiliary document that refers to entities in a 1500-100 docum
 There could be extensions to 1500-100 where layout data appears inline in additional attributes on objects.
 
 It feels to me like a *closed* spec where I shouldn't add new fields and the aux-data mode would be easier.
+
+
+
+https://en.wikipedia.org/wiki/Open-source_Unicode_typefaces
+
+https://en.wikipedia.org/wiki/Liberation_fonts
+https://github.com/liberationfonts
+
+https://en.wikipedia.org/wiki/Noto_fonts
+https://www.google.com/get/noto/
+
+pip install fonttools
+https://github.com/fonttools/fonttools
