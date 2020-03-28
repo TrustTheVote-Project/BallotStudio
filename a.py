@@ -382,7 +382,8 @@ class CandidateSelection:
         # TODO: subtexts
         if self.IsWriteIn:
             out += gs.writeInHeight
-        return out + (0.1 * inch)
+        out += 0.1 * inch
+        return out
     def draw(self, c, x, y, width):
         capHeight = fonts[gs.candidateFontName].capHeightPerPt * gs.candidateFontSize
         bubbleHeight = min(3*mm, capHeight)
@@ -537,9 +538,11 @@ class OrderedContest:
         maxheight = self._maxheight(width-1)
         for ds in self.draw_selections:
             dy = ds.height(width)
+            logger.info('sel pos %f', pos)
             ds.draw(c, x+1, pos, width-1)
             pos -= maxheight
-        pos += 0.1 * inch # bottom padding
+        pos -= 0.1 * inch # bottom padding
+        logger.info('y %f, bottom pos %f', y, pos)
 
         # top border
         c.setStrokeColorRGB(0,0,0)
@@ -549,8 +552,8 @@ class OrderedContest:
         c.setLineWidth(1)
         path = c.beginPath()
         path.moveTo(x+0.5, y-1.5)
-        path.lineTo(x+0.5, y-pos)
-        path.lineTo(x+width, y-pos)
+        path.lineTo(x+0.5, pos-0.5)
+        path.lineTo(x+width, pos-0.5)
         c.drawPath(path, stroke=1)
         return
     def getBubbles(self):
@@ -671,6 +674,7 @@ class BallotStyle:
             # TODO: wrap super long issues
             xc.draw(c, x, y, columnwidth)
             y -= height
+            y += 1 # bottom border and top border may overlap
             xb = xc.getBubbles()
             if xb is not None:
                 bubbles.append(xb)
