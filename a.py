@@ -375,11 +375,32 @@ class CandidateSelection:
         self.cs = cs_json_object
         setOptionalFields(self, self.cs)
         self.candidates = [erctx.getRawOb(cid) for cid in self.CandidateIds]
+        self.people = []
+        self.peopleparties = []
+        for c in self.candidates:
+            pid = c.get('PersonId')
+            if pid:
+                p = erctx.getRawOb(pid)
+                self.people.append(p)
+                pparty = p.get('PartyId')
+                party = pparty and erctx.getRawOb(pparty)
+                self.peopleparties.append(party)
+            else:
+                self.people.append(None)
+                self.peopleparties.append(None)
         self.parties = [erctx.getRawOb(x) for x in self.EndorsementPartyIds]
+        if self.parties:
+            self.subtext = ', '.join([p['Name'] for p in self.parties])
+        elif self.people:
+            peopleparties = [p['Name'] for p in filter(None, self.peopleparties)]
+            self.subtext = ', '.join(peopleparties)
+        else:
+            self.subtext = None
     def height(self, width):
         # TODO: actually check render for width with party and subtitle and all that
         out = gs.candidateLeading * len(self.candidates)
-        # TODO: subtexts
+        if self.subtext:
+            out += gs.candsubLeading
         if self.IsWriteIn:
             out += gs.writeInHeight
         out += 0.1 * inch
@@ -402,9 +423,7 @@ class CandidateSelection:
         txto.textLines(self.candidates[0]['BallotName']) # TODO: fix for multiple candidate ticket
         c.drawText(txto)
         ypos = y - gs.candidateLeading
-        subtext = None
-        # TODO: extract subtext from Person.Profession and Party
-        if subtext:
+        if self.subtext:
             txto = c.beginText(textx, ypos - gs.candsubFontSize)
             txto.setFont(gs.candsubFontName, gs.candsubFontSize, leading=gs.candsubLeading)
             txto.textLines(self.subtext)
@@ -638,6 +657,8 @@ class BallotStyle:
         nowstr = 'generated ' + time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())
         c.setTitle('ballot test ' + nowstr)
         if gs.nowstrEnabled:
+            c.setFillColorRGB(0,0,0)
+            c.setStrokeColorRGB(0,0,0)
             dtw = pdfmetrics.stringWidth(nowstr, gs.nowstrFontName, gs.nowstrFontSize)
             c.setFont(gs.nowstrFontName, gs.nowstrFontSize)
             c.drawString(contentright - dtw, contentbottom + (gs.nowstrFontSize * 0.2), nowstr)
@@ -647,8 +668,10 @@ class BallotStyle:
         height = 2.9 * inch
         c.setStrokeColorRGB(0,0,0)
         c.rect(contentleft, y - height, contentright - contentleft, height, stroke=1, fill=0)
-        c.drawString(contentleft, y - 0.3*inch, 'instruction text here, etc.')
-        y -= height
+        c.setFont('Liberation Sans', 12)
+        c.drawString(contentleft + 0.1*inch, y - 0.3*inch, 'instruction text here, etc.')
+        contenttop -= height
+        y = contenttop
 
         # (columnwidth * columns) + (gs.columnMargin * (columns - 1)) == width
         columns = 2
@@ -667,6 +690,8 @@ class BallotStyle:
                     page += 1
                     # TODO: page headers
                     colnum = 1
+                    contenttop = heightpt - gs.pageMargin
+                    contentbottom = gs.pageMargin
                     x = contentleft
                     y = contenttop
                 else:
