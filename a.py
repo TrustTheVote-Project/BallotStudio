@@ -262,89 +262,6 @@ headDwarfRace = Contest(
     ],
 )
 
-# maxChoiceHeight = max([x.height() for x in choices])
-# pos = heightpt - 0.5*inch # - pointsize * 1.2
-# for ch in choices:
-#     ch.draw(c, 0.5*inch, pos)
-#     pos -= maxChoiceHeight
-
-# # case-insensitive dict.pop()
-# def cp(key, d, exc=True):
-#     if key in d:
-#         return d.pop(key)
-#     kl = key.lower()
-#     for dk in d.keys():
-#         dkl = dk.lower()
-#         if dkl == kl:
-#             return d.pop(dk)
-#     if exc:
-#         raise KeyError(key)
-#     return None
-
-# # multi-option case-insensitive dict.pop()
-# def ocp(d, *keys, default=None, exc=True):
-#     for k in keys:
-#         try:
-#             return cp(k, d)
-#         except:
-#             pass
-#     if default is not None:
-#         return default
-#     if exc:
-#         raise KeyError(key)
-#     return default
-
-# def maybeToDict(o):
-#     if isinstance(o, list):
-#         return [maybeToDict(ox) for ox in o]
-#     elif isinstance(o, dict):
-#         return {k:maybeToDict(v) for k,v in o.items()}
-#     elif hasattr(o, 'toDict'):
-#         return o.toDict()
-#     return o
-
-# class Builder:
-#     def toDict(self):
-#         d = {}
-#         if hasattr(self, '_type'):
-#             d['@type'] = self._type
-#         if hasattr(self, '_id'):
-#             d['@id'] = self._id
-#         for k,v in self.__dict__.items():
-#             if k[0] != '_' and not hasattr(v, '__call__'):
-#                 d[k] = maybeToDict(v)
-
-# class Person(Builder):
-#     _fields = ()
-#     _type = "ElectionResults.Person"
-#     def __init__(self):
-#         pass
-# class ElectionReportBuilder:
-#     _type = "ElectionResults.ElectionReport"
-#     def __init__(self, **kwargs):
-#         # required
-#         self.Format = ocp(kwargs, "Format", default="summary-contest")
-#         self.GeneratedDate = ocp(kwargs, "GeneratedDate", "date", default=time.strftime("%Y-%m-%d %H:%M:%S %z", time.localtime()))
-#         self.Issuer = ocp(kwargs, "Issuer", default="bolson")
-#         self.IssuerAbbreviation = ocp(kwargs, "IssuerAbbreviation", default=self.Issuer)
-#         self.SequenceStart = int(ocp(kwargs, "SequenceStart", default=1))
-#         self.SequenceEnd = int(ocp(kwargs, "SequenceEnd", default=1))
-#         self.Status = ocp(kwargs, "Status", default="pre-election")
-#         self.VendorApplicationId = ocp(kwargs, "VendorApplicationId", default="BallotGen 0.0.1")
-#         # etc
-#         self.Election = []
-#         self.ExternalIdentifier = []
-#         self.Header = []
-#         self.IsTest = True
-#         self.Notes = ""
-#         self.Office = []
-#         self.OfficeGroup = []
-#         self.Party = []
-#         self.Person = []
-#         self.TestType = ""
-#     def Person(self, **kwargs):
-#         pass
-
 def gpunitName(gpunit):
     if gpunit['@type'] == 'ElectionResults.ReportingUnit':
         name = gpunit.get('Name')
@@ -474,11 +391,7 @@ class CandidateContest:
         self.ElectionDistrictId = co['ElectionDistrictId'] # reference to a ReportingUnit gpunit
         self.VotesAllowed = co['VotesAllowed']
         setOptionalFields(self, self.co)
-        #for field_name, default_value in self._optional_fields:
-        #    setattr(self, field_name, co.get(field_name, default_value))
         if self.OfficeIds:
-            #offices = election.er.get('Office', [])
-            #self.offices = [byId(offices, x) for x in self.OfficeIds]
             self.offices = [erctx.getRawOb(x) for x in self.OfficeIds]
         else:
             self.offices = []
@@ -504,8 +417,6 @@ class OrderedContest:
         "election is local ElectionPrinter()"
         co = contest_json_object
         self.co = co
-        #cjo = byId(election.contests, co['ContestId'])
-        #self.contest = rehydrateContest(election, cjo)
         self.contest = erctx.getDrawOb(co['ContestId'])
         # selection_ids refs by id to PartySelection, BallotMeasureSelection, CandidateSelection; TODO: dereference, where do they come from?
         raw_selections = self.contest.ContestSelection
@@ -579,46 +490,17 @@ class OrderedContest:
         logger.error("TODO: getBubbles()")
         return None
 
-
-class OrderedHeader:
-    "Header with nested content"
-    def __init__(self, election, header_json_object):
-        "election is local ElectionPrinter()"
-        h = header_json_object
-        self.h = h
-        self.header = byId(TODO.headers, h['@id'])
-        self.content = rehydrateOrderedContent(election, h.get('OrderedContent', []))
-
-def rehydrateOrderedContent(erctx, they):
-    return list(rehydrateOrderedContent_inner(erctx, they))
-def rehydrateOrderedContent_inner(erctx, they):
-    for co in they:
-        co_type = co['@type']
-        if co_type == 'ElectionResults.OrderedContest':
-            yield OrderedContest(erctx, co)
-        elif co_type == '':
-            yield OrderedHeader(erctx, co)
-        else:
-            raise Exception('unknown ordered content element type={!r}'.format(co_type))
-
 class BallotStyle:
     def __init__(self, erctx, ballotstyle_json_object):
-        # election_report ElectionResults.ElectionReport
-        # election ElectionPrinter()
-        # ballotstyle_json_object ElectionResults.BallotStyle
-        #er = election_report
-        #gpunits = er.get('GpUnit', [])
-        #parties = er.get('Party', [])
         bs = ballotstyle_json_object
         self.bs = bs
         self.gpunits = [erctx.getRawOb(x) for x in bs['GpUnitIds']]
         self.ext = bs.get('ExternalIdentifier', [])
         # image_uri is to image of example ballot?
         self.image_uri = bs.get('ImageUri', [])
-        #self.content = rehydrateOrderedContent(election, bs.get('OrderedContent', []))
         self.content = [erctx.makeDrawOb(ob) for ob in bs.get('OrderedContent', [])]
         # e.g. for a party-specific primary ballot (may associate with multiple parties)
-        self.parties = [byId(parties, x) for x in bs.get('PartyIds', [])]
+        self.parties = [erctx.getRawOb(x) for x in bs.get('PartyIds', [])]
         # _numPages gets filled in on a first rendering pass and used on second pass
         self._numPages = None
         self._pageHeader = None
@@ -800,14 +682,6 @@ class ElectionPrinter:
         self.erctx = erctx
         self.er = er
         self.el = el
-        # resources referred to:
-        gpunits = er.get('GpUnit', [])
-        headers = er.get('Header', [])
-        offices = er.get('Office', [])
-        parties = er.get('Party', [])
-        people = er.get('Person', [])
-        # load data
-        self.scope_gpunit = byId(gpunits, el['ElectionScopeId'])
         self.startdate = el['StartDate']
         self.enddate = el['EndDate']
         self.name = el['Name']
@@ -851,53 +725,6 @@ def byId(they, x):
         if y['@id'] == x:
             return y
     raise KeyError(x)
-
-def old():
-    c = canvas.Canvas('/tmp/a.pdf', pagesize=letter) # pageCompression=1
-    widthpt, heightpt = letter
-
-    nowstr = 'generated ' + time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())
-    nowstrFontSize = 12
-    mainfontname = 'Liberation Sans'
-    dtw = pdfmetrics.stringWidth(nowstr, mainfontname, nowstrFontSize)
-    c.setFont(mainfontname, nowstrFontSize)
-    c.drawString(widthpt - 0.5*inch - dtw, heightpt - 0.5*inch - nowstrFontSize*1.2, nowstr)
-    c.setTitle('ballot test ' + nowstr)
-
-    if False:
-        # draw page outline debug
-        c.setFillColorRGB(1,1,1)
-        c.setStrokeColorRGB(1,.6,.6)
-        c.rect(0.5 * inch, 0.5 * inch, widthpt - (1.0 * inch), heightpt - (1.0 * inch), stroke=1, fill=0)
-
-    c.setStrokeColorRGB(0,0,0)
-    c.rect(0.5 * inch, heightpt - 3.4 * inch, widthpt - 1.0 * inch, 2.9 * inch, stroke=1, fill=0)
-    c.drawString(0.7*inch, heightpt - 0.8*inch, 'instruction text here, etc.')
-
-    races = [therace, headDwarfRace, raceZ]
-    x = 0.5 * inch
-    top = heightpt - 0.5*inch - 3*inch
-    y = top
-    bottom = 0.5 * inch
-    colwidth = (7.5/2)*inch - gs.columnMargin
-    for xr in races:
-        height = xr.height()
-        if y - height < bottom:
-            y = top
-            x += colwidth + gs.columnMargin
-            # TODO: check for next-page
-        xr.draw(c, x, y, colwidth)
-        y -= xr.height()
-    #therace.draw(c,x, y)
-    #y -= therace.height()
-    #race2.draw(c, 0.5 * inch, y)
-
-    c.showPage()
-    c.save()
-
-    bd = {'bubbles': therace.getBubbles()}
-    print(json.dumps(bd))
-    return
 
 def main():
     logging.basicConfig(level=logging.INFO)
