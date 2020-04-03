@@ -287,9 +287,33 @@ https://en.wikipedia.org/wiki/Open-source_Unicode_typefaces
 
 https://en.wikipedia.org/wiki/Liberation_fonts
 https://github.com/liberationfonts
+# 'sfd' font format files not currently useful, use 'ttf' below
+#https://github.com/liberationfonts/liberation-fonts/files/4178448/liberation-fonts-2.1.0.tar.gz
+https://github.com/liberationfonts/liberation-fonts/files/4178407/liberation-fonts-ttf-2.1.0.tar.gz
+# TODO: how to support CJK and other i18n fonts?
 
 https://en.wikipedia.org/wiki/Noto_fonts
 https://www.google.com/get/noto/
 
 pip install fonttools
 https://github.com/fonttools/fonttools
+
+
+
+TODAY=$(date +%Y%m%d)
+TD="resources/testdata/${TODAY}"
+mkdir -p "${TD}"
+python3 demorace.py > "${TD}/demorace.json"
+python3 draw.py --bubbles "${TD}/bubbles.json" --outdir "${TD}" "${TD}/demorace.json"
+(cd "${TD}" && for i in *.pdf; do pdftoppm "${i}"|convert -format ppm - "${i}".png; done)
+identify "${TD}"/*png
+1275x1651
+"pagesize": [612.0, 792.0]
+"csel1": [44.2, 491.4000000000001, 22.67716535433071, 8.255859375]
+
+convert resources/testdata/20200403/Springfield.pdf.png -crop 47x17+92+610 /tmp/b.png
+
+
+
+image transform library
+https://github.com/anthonynsimon/bild
