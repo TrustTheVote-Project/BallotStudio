@@ -5,6 +5,7 @@
 import glob
 import json
 import logging
+import os
 import time
 import statistics
 import sys
@@ -18,19 +19,11 @@ from reportlab.pdfbase.ttfonts import TTFont
 #from reportlab.platypus import Paragraph
 #from reportlab.lib.units import ParagraphStyle
 
-import demorace
 
 logger = logging.getLogger(__name__)
 
 class TodoException(Exception):
     pass
-
-def bubble(c, width=12*mm, height=4*mm, r=1*mm):
-    pth = c.beginPath()
-    pth.roundRect(0, 0, width, height, r)
-    return pth
-
-
 
 
 class Bfont:
@@ -100,6 +93,7 @@ class Settings:
         self.nowstrFontSize = 10
         self.nowstrFontName = fontsans
         self.pageMargin = 0.5 * inch # inset from paper edge
+        self.pagesize = letter
 
 
 gs = Settings()
@@ -114,6 +108,7 @@ class Choice:
         self.subtext = subtext
         # TODO: measure text for box width & wrap. see reportlab.platypus.Paragraph
         # TODO: wrap with optional max-5% squish instead of wrap
+        # _bubbleCoords = (left, bottom, width, height)
         self._bubbleCoords = None
     def height(self):
         # TODO: multiline for name and subtext
@@ -593,7 +588,6 @@ class BallotStyle:
                 #bubbles.append(xb)
                 bubbles[xc.atid] = xb
         c.showPage()
-        c.save()
         self._numPages = page
         self._bubbles = bubbles
     def getBubbles(self):
@@ -711,7 +705,7 @@ class ElectionPrinter:
             return self.election_type_other
         return _election_types_en[self.election_type]
 
-    def draw(self, outdir='.', outname_prefix=''):
+    def draw(self, outdir=None, outname_prefix=''):
         # TODO: one specific ballot style or all of them to separate PDFs
         for i, bs in enumerate(self.ballot_styles):
             names = ','.join([gpunitName(x) for x in bs.gpunits])
@@ -719,15 +713,29 @@ class ElectionPrinter:
                 bs_fname = '{}{}_{}.pdf'.format(outname_prefix, i, names)
             else:
                 bs_fname = '{}{}.pdf'.format(outname_prefix, names)
-            c = canvas.Canvas('/tmp/a.pdf', pagesize=letter) # pageCompression=1
+            if outdir:
+                bs_fname = os.path.join(outdir, bs_fname)
+            c = canvas.Canvas(bs_fname, pagesize=gs.pagesize) # pageCompression=1
             bs.draw(c, letter)
+            c.save()
+            sys.stdout.write(bs_fname + '\n')
     def getBubbles(self):
-        return [bs.getBubbles() for bs in self.ballot_styles]
-
-#demorace.ElectionReport
-# TODO: print ballot from ElectionReport.Election[0].BallotStyle[0]...
-#json.dump(demorace.ElectionReport, sys.stdout, indent=2)
-#sys.stdout.write('\n')
+        """{
+"pagesize": (width pt, height pt),
+"bubbles": [
+  // entry per ballot style
+  {
+    "contestN": {
+      "cselN": [left, bottom, width, height], // ...
+    }, // ...
+  },
+],
+}
+"""
+        return {
+            'draw_settings': gs.__dict__,
+            'bubbles': [bs.getBubbles() for bs in self.ballot_styles],
+        }
 
 # for a list of NIST-1500-100 v2 json/dict objects with "@id" keys, return one
 def byId(they, x):
@@ -737,16 +745,31 @@ def byId(they, x):
     raise KeyError(x)
 
 def main():
-    logging.basicConfig(level=logging.INFO)
-    er = demorace.ElectionReport
-    #obids = gatherIds(er)
-    #for k,v in obids.items():
-    #    print('{!r}\t{!r}'.format(k, v))
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument('election_json')
+    ap.add_argument('--bubbles', help='path to write bubble json to')
+    ap.add_argument('--verbose', default=False, action='store_true')
+    ap.add_argument('--outdir', default=None)
+    ap.add_argument('--prefix', default='')
+    args = ap.parse_args()
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
+    with open(args.election_json) as fin:
+        er = json.load(fin)
     for el in er.get('Election', []):
         ep = ElectionPrinter(er, el)
-        ep.draw()
-        json.dump(ep.getBubbles(), sys.stdout)
-        sys.stdout.write('\n')
+        ep.draw(args.outdir, args.prefix)
+        if args.bubbles:
+            if args.bubbles == '-':
+                bout = sys.stdout
+            else:
+                bout = open(args.bubbles, 'w')
+            json.dump(ep.getBubbles(), bout)
+            bout.write('\n')
+            bout.close()
     return
 
 if __name__ == '__main__':
