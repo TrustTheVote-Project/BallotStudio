@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<head>
+  <title>Ballot Studio</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+<!--
+  <link rel="stylesheet" type="text/css" href="style.css" media="screen, handheld" />
+  <link rel="stylesheet" type="text/css" href="enhanced.css" media="screen  and (min-width: 40.5em)" />
+-->
+<style>
+  .topsec{border:1px solid #555;padding:0.6em;background-color:#fffbf8;}
+  .optional{font-size:80%;color:#555;}
+  .fieldnote{font-size:80%;color:#555;}
+  div.recform{border:1px solid #555;padding-left:1em;margin:0.5em;background-color:#fafafa;}
+.foo{}
+@media screen and (min-width: 40.5em) {
+.foo{}
+}
+</style>
+</head>
+<body>
+  <h1>Ballot Studio</h1>
+  <template id="partytmpl">
+    <div class="recform">
+      <table border="0">
+	<tr><td colspan="2">
+      <span class="datid">@id <span class="atid" data-atid=""></span></span></td></tr>
+	<input type="hidden" class="attype" value="ElectionResults.Party" />
+	<tr><td>Name</td><td><input type="text" class="Name" /></td></tr>
+	<tr><td colspan="2" class="optional">optional:</td></tr>
+	<tr><td>Abbreviation</td><td><input type="text" class="Abbreviation" /></td></tr>
+	<tr><td>Color</td><td><input type="text" class="Color" /></td><td class="fieldnote">HTML color, e.g. #ff0000 for red</td></tr>
+	<!-- TODO: ContactInformation sub-form, template with data to be included in-line in things that include the sub form -->
+	<tr><td>Contact Information</td><td>TODO: sub-form template, "ContactInformation"</td></tr>
+	<tr><td>External Identifiers</td><td>TODO: list of strings, "ExternalIdentifier"</td></tr>
+	<tr><td>Recognized Party</td><td><input type="checkbox" class="IsRecognizedParty"></td></tr>
+	<tr><td>Leaders</td><td>TODO: look up and make references to People, "LeaderPersonIds"</td></tr>
+	<tr><td>Logo URI</td><td><input type="text" class="LogoUri" /></td><td>TODO: allow multiple</td></tr>
+	<tr><td>Slogan</td><td><input type="text" class="Slogan" /></td></tr>
+	<tr><td>Scope</td><td>TODO: look up and make references to Geo-Political Units, "PartyScopeGpUnitIds"</td></tr>
+      </table>
+      <button class="deleterec">Delete Party (TODO)</button>
+    </div>
+  </template>
+  <div class="topsec"><h2>Parties</h2>
+    <div id="parties"></div>
+    <div><button id="newparty">New Party</button></div>
+  </div>
+
+  <template id="persontmpl">
+    <div class="recform">
+      <table border="0">
+	<tr><td colspan="2">
+      <span class="datid">@id <span class="atid" data-atid=""></span></span></td></tr>
+	<input type="hidden" class="attype" value="ElectionResults.Person" />
+	<tr><td>Full Name</td><td><input type="text" class="FullName" /></td></tr>
+	<tr><td>Prefix</td><td><input type="text" class="Prefix" /></td></tr>
+	<tr><td>First Name</td><td><input type="text" class="FirstName" /></td></tr>
+	<tr><td>Middle Name</td><td><input type="text" class="MiddleName" /></td><td>TODO: accept list</td></tr>
+	<tr><td>Last Name</td><td><input type="text" class="LastName" /></td></tr>
+	<tr><td>Suffix</td><td><input type="text" class="Suffix" /></td></tr>
+	<tr><td>Nickname</td><td><input type="text" class="Nickname" /></td></tr>
+	<tr><td>Title</td><td><input type="text" class="Title" /></td></tr>
+	<tr><td>Profession</td><td><input type="text" class="Profession" /></td></tr>
+	<tr><td>Contact Information</td><td>TODO: sub-form template, "ContactInformation"</td></tr>
+	<tr><td>Date of Birth</td><td><input type="text" class="DateOfBirth" /></td></tr>
+	<tr><td>External Identifiers</td><td>TODO: list of strings, "ExternalIdentifier"</td></tr>
+	<tr><td>Party</td><td>TODO: look up and make reference to Party, "PartyId"</td></tr>
+      </table>
+      <button class="deleterec">Delete Person (TODO)</button>
+    </div>
+  </template>
+  <div class="topsec"><h2>People</h2>
+    <div id="people"></div>
+    <div><button id="newperson">New Person</button></div>
+  </div>
+  <div class="topsec"><h2>Offices</h2><p>Mayor, City Council, Dog Catcher, etc...</p></div>
+  <div class="topsec"><h2>Geo-Political Units</h2><p>City, County, District, etc...</p></div>
+  <script src="/static/index.js"></script>
+</body>
+</html>

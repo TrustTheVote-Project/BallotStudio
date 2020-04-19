@@ -1,6 +1,6 @@
 hg clone https://hg.reportlab.com/hg-public/reportlab
 (cd reportlab && pip install -e .)
-pip install fonttools
+pip install fonttools Flask
 python3 a.py
 
 
@@ -298,6 +298,8 @@ https://www.google.com/get/noto/
 pip install fonttools
 https://github.com/fonttools/fonttools
 
+pip install Flask
+https://github.com/pallets/flask
 
 
 TODAY=$(date +%Y%m%d)
@@ -317,3 +319,6 @@ convert resources/testdata/20200403/Springfield.pdf.png -crop 47x17+92+610 /tmp/
 
 image transform library
 https://github.com/anthonynsimon/bild
+
+
+FLASK_ENV=development FLASK_APP=app.py flask run
