@@ -12,6 +12,7 @@
   .topsec{border:1px solid #555;padding:0.6em;background-color:#fffbf8;}
   .optional{font-size:80%;color:#555;}
   .fieldnote{font-size:80%;color:#555;}
+  .datid{font-size:90%;font-family:monospace;color:#444;}
   div.recform{border:1px solid #555;padding-left:1em;margin:0.5em;background-color:#fafafa;}
 .foo{}
 @media screen and (min-width: 40.5em) {
@@ -44,7 +45,7 @@
     </div>
   </template>
   <div class="topsec"><h2>Parties</h2>
-    <div id="parties"></div>
+    <div id="parties" class="arraygroup" data-name="Party"></div>
     <div><button id="newparty">New Party</button></div>
   </div>
 
@@ -63,7 +64,7 @@
 	<tr><td>Nickname</td><td><input type="text" class="Nickname" /></td></tr>
 	<tr><td>Title</td><td><input type="text" class="Title" /></td></tr>
 	<tr><td>Profession</td><td><input type="text" class="Profession" /></td></tr>
-	<tr><td>Contact Information</td><td>TODO: sub-form template, "ContactInformation"</td></tr>
+	<tr><td>Contact Information</td><td>TODO: sub-form template, "ContactInformation", a repeatable list of contact-informations</td></tr>
 	<tr><td>Date of Birth</td><td><input type="text" class="DateOfBirth" /></td></tr>
 	<tr><td>External Identifiers</td><td>TODO: list of strings, "ExternalIdentifier"</td></tr>
 	<tr><td>Party</td><td>TODO: look up and make reference to Party, "PartyId"</td></tr>
@@ -72,10 +73,27 @@
     </div>
   </template>
   <div class="topsec"><h2>People</h2>
-    <div id="people"></div>
+    <div id="people" class="arraygroup" data-name="Person"></div>
     <div><button id="newperson">New Person</button></div>
   </div>
-  <div class="topsec"><h2>Offices</h2><p>Mayor, City Council, Dog Catcher, etc...</p></div>
+
+
+  <template id="officetmpl">
+    <div class="recform">
+      <table border="0">
+	<tr><td colspan="2">
+      <span class="datid">@id <span class="atid" data-atid=""></span></span></td></tr>
+	<input type="hidden" class="attype" value="ElectionResults.Office" />
+	<tr><td>Name</td><td><input type="text" class="Name" /></td></tr>
+      </table>
+      <button class="deleterec">Delete Office (TODO)</button>
+    </div>
+  </template>
+  <div class="topsec"><h2>Offices</h2><p>Mayor, City Council, Dog Catcher, etc...</p>
+    <div id="offices" class="arraygroup" data-name="Office">
+    </div>
+    <div><button id="newoffice">New Office</button></div>
+  </div>
   <div class="topsec"><h2>Geo-Political Units</h2><p>City, County, District, etc...</p></div>
   <script src="/static/index.js"></script>
 </body>

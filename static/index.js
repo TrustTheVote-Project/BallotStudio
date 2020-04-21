@@ -1,12 +1,18 @@
 (function(){
-    var firstChildOfClass = function(elem, classname) {
+    var hasClass = function(elem, classname) {
 	var cl = elem.classList;
 	if (cl) {
 	for (var i = 0; cl[i]; i++) {
 	    if (classname == cl[i]) {
-		return elem;
+		return true;
 	    }
 	}
+	}
+	return false;
+    };
+    var firstChildOfClass = function(elem, classname) {
+	if (hasClass(elem, classname)){
+	    return elem;
 	}
 	for (var i = 0; elem.children[i]; i++) {
 	    var out = firstChildOfClass(elem.children[i], classname);
@@ -46,4 +52,31 @@
     };
     document.getElementById("newparty").onclick = newParty;
     document.getElementById("newperson").onclick = function(){instantiate("persontmpl", "people", "pers");};
+
+    var gatherJson = function(elem) {
+	if (hasClass(elem.children[i], "arraygroup")) {
+	    var ob = [];
+	    for (var i = 0; elem.children[i]; i++) {
+		var to = gatherJson(elem.children[i]);
+		if (to === undefined || to == null) {
+		    continue;
+		}
+		ob.push(to)
+	    }
+	    return ob;
+	}
+	var ob = {};
+	var oblist = [];
+	for (var i = 0, te; te = elem.children[i]; i++) {
+	    if (te.tagName == "INPUT") {
+		var fieldname = te.className;
+		if (fieldname == "attype") {
+		    fieldname = "@type";
+		} else if (fieldname == "atid") {
+		    fieldname = "@id";
+		}
+		ob[fieldname] = te.valueOf();
+	    }
+	}
+    };
 })();
