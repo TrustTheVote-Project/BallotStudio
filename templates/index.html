@@ -25,8 +25,7 @@
   <template id="partytmpl">
     <div class="recform">
       <table border="0">
-	<tr><td colspan="2">
-      <span class="datid">@id <span class="atid" data-atid=""></span></span></td></tr>
+	<tr><td>@id</td><td><input type="text" class="atid" value="watid" disabled="true" /></td></tr>
 	<input type="hidden" class="attype" value="ElectionResults.Party" />
 	<tr><td>Name</td><td><input type="text" class="Name" /></td></tr>
 	<tr><td colspan="2" class="optional">optional:</td></tr>
@@ -53,7 +52,7 @@
     <div class="recform">
       <table border="0">
 	<tr><td colspan="2">
-      <span class="datid">@id <span class="atid" data-atid=""></span></span></td></tr>
+	<tr><td>@id</td><td><input type="text" class="atid" value="watid" disabled="true" /></td></tr>
 	<input type="hidden" class="attype" value="ElectionResults.Person" />
 	<tr><td>Full Name</td><td><input type="text" class="FullName" /></td></tr>
 	<tr><td>Prefix</td><td><input type="text" class="Prefix" /></td></tr>
@@ -95,6 +94,7 @@
     <div><button id="newoffice">New Office</button></div>
   </div>
   <div class="topsec"><h2>Geo-Political Units</h2><p>City, County, District, etc...</p></div>
+  <div><h2>debug</h2><div id="debugdiv"></div><button id="debugbutton">Do the thing!</button></div>
   <script src="/static/index.js"></script>
 </body>
 </html>
