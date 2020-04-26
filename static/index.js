@@ -67,9 +67,6 @@
 	}
 	var tmpl = document.getElementById(ti.tmpl);
 	var pti = document.importNode(tmpl.content, true);
-	// var atidelem = firstChildOfClass(pti, "atid");
-	// var atid = seq(ti.seq);
-	// atidelem.value = atid;
 	return pti;
     };
     // Used when a [new thing] button is pressed by a user
@@ -78,8 +75,7 @@
 	var pti = document.importNode(tmpl.content, true);
 	var atidelem = firstChildOfClass(pti, "atid");
 	var atid = seq(seqName);
-	atidelem.setAttribute("data-atid", atid);
-	atidelem.innerHTML = atid;
+	atidelem.value = atid;
 	var section = document.getElementById(sectionId);
 	section.appendChild(pti);
     };
@@ -161,6 +157,11 @@
 			    je = newForAtType(attype);
 			    te.appendChild(je);
 			    je = te.children[j];
+			    var atid = jv["@id"];
+			    if (atid) {
+				var ti = tmplForAttype[attype];
+				claimSeq(ti.seq, atid);
+			    }
 			} else {
 			    console.log("don't know how to add value ", jv)
 			    continue;
@@ -203,6 +204,6 @@
 	document.getElementById("debugdiv").innerHTML = JSON.stringify(js);
     };
 
-    var savedObj = {"Party":[{"@id":"party1","@type":"ElectionResults.Party","Name":"Stupid","Abbreviation":"","Color":"","IsRecognizedParty":"on","LogoUri":"","Slogan":""},{"@id":"party2","@type":"ElectionResults.Party","Name":"Evil","Abbreviation":"","Color":"","IsRecognizedParty":"on","LogoUri":"","Slogan":""}],"Person":[{"@id":"person1","@type":"ElectionResults.Person","FullName":"SOMEGUY","Prefix":"","FirstName":"","MiddleName":"","LastName":"","Suffix":"","Nickname":"","Title":"","Profession":"","DateOfBirth":""}],"Office":[]};
+    var savedObj = {"Party":[{"@id":"party1","@type":"ElectionResults.Party","Name":"Stupid","Abbreviation":"","Color":"","IsRecognizedParty":"on","LogoUri":"","Slogan":""},{"@id":"party2","@type":"ElectionResults.Party","Name":"Evil","Abbreviation":"","Color":"","IsRecognizedParty":"on","LogoUri":"","Slogan":""}],"Person":[{"@id":"pers1","@type":"ElectionResults.Person","FullName":"SOMEGUY","Prefix":"","FirstName":"","MiddleName":"","LastName":"","Suffix":"","Nickname":"","Title":"","Profession":"","DateOfBirth":""}],"Office":[]};
     pushOb(document.body, savedObj);
 })();
