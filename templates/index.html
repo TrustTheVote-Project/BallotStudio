@@ -87,8 +87,12 @@
 	<tr><td colspan="2" class="optional">optional:</td></tr>
 	<tr><td>Contact Information</td><td>TODO: sub-form template, "ContactInformation"</td></tr>
 	<tr><td>Description</td><td><input type="text" class="Description" /></td></tr>
-	<tr><td>ElectionDistrictId</td><td>TODO: look up and make references to Geo-Political Reporting Units, "ElectionDistrictId"</td></tr>
+	<tr><td>Election District</td><td>TODO: look up and make references to Geo-Political Reporting Units, "ElectionDistrictId"</td></tr>
 	<tr><td>External Identifiers</td><td>TODO: list of strings, "ExternalIdentifier"</td></tr>
+	<tr><td>Filing Deadline</td><td><input type="text" class="FilingDeadline" /></td><td>Format must be: YYYY-MM-DD<br/>TODO: proper date picker.</td></tr>
+	<tr><td>Is Partisan</td><td><input type="checkbox" class="IsPartisan"></td></tr>
+	<tr><td>Incumbents</td><td>TODO: look up and make references to People, "OfficeHolderPersonIds"</td></tr>
+	<tr><td>Term</td><td class="erobject" data-name="Term"><table border="0"><tr><td>Term Label</td><td><input type="hidden" class="attype" value="ElectionResults.Term" /><input type="text" class="Label" /></td></tr><tr><td>Term Start Date</td><td><input type="text" class="StartDate" /></td><td>YYYY-MM-DD</td></tr><tr><td>Term End Date</td><td><input type="text" class="EndDate" /></td><td>YYYY-MM-DD</td></tr><tr><td>Term Type</td><td><input type="text" class="Type" /></td><td>term type must be "full-term" or "unexpired-term"</td></tr></table></td></tr>
       </table>
       <button class="deleterec">Delete Office (TODO)</button>
     </div>

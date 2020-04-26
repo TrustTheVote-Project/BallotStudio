@@ -118,6 +118,13 @@
 		var fieldname = te.getAttribute("data-name");
 		ob[fieldname] = gatherArray(te);
 		any = true;
+	    } else if (hasClass(te, "erobject")) {
+		var fieldname = te.getAttribute("data-name");
+		var fv = gatherJson(te);
+		if (fv) {
+		    ob[fieldname] = fv;
+		    any = true;
+		}
 	    } else {
 		var to = gatherJson(te);
 		if (to != null) {
@@ -180,6 +187,17 @@
 		if (isEmpty(ob)) {
 		    return true;
 		}
+	    } else if (hasClass(te, "erobject")) {
+		var fieldname = te.getAttribute("data-name");
+		var av = ob[fieldname];
+		if (!av) {
+		    continue;
+		}
+		for (var j = 0, je; je = te.children[j]; j++) {
+		    if (pushOb(je, av)) {
+			return true;
+		    }
+		}
 	    } else if (te.tagName == "INPUT") {
 		var fieldname = te.className;
 		if (fieldname == "attype") {
@@ -232,6 +250,6 @@
 	document.getElementById("debugdiv").innerHTML = JSON.stringify(js);
     };
 
-    var savedObj = {"Party":[{"@id":"party1","@type":"ElectionResults.Party","Name":"Stupid","Abbreviation":"","Color":"","IsRecognizedParty":"on","LogoUri":"","Slogan":""},{"@id":"party2","@type":"ElectionResults.Party","Name":"Evil","Abbreviation":"","Color":"","IsRecognizedParty":"on","LogoUri":"","Slogan":""}],"Person":[{"@id":"pers1","@type":"ElectionResults.Person","FullName":"SOMEGUY","Prefix":"","FirstName":"","MiddleName":"","LastName":"","Suffix":"","Nickname":"","Title":"","Profession":"","DateOfBirth":""}],"Office":[]};
+    var savedObj = {"Party":[{"@id":"party1","@type":"ElectionResults.Party","Name":"Stupid","Abbreviation":"","Color":"","IsRecognizedParty":"on","LogoUri":"","Slogan":""},{"@id":"party2","@type":"ElectionResults.Party","Name":"Evil","Abbreviation":"","Color":"","IsRecognizedParty":"on","LogoUri":"","Slogan":""}],"Person":[{"@id":"pers1","@type":"ElectionResults.Person","FullName":"SOMEGUY","Prefix":"","FirstName":"","MiddleName":"","LastName":"","Suffix":"","Nickname":"","Title":"","Profession":"","DateOfBirth":""}],"Office":[{"@id":"office1","@type":"ElectionResults.Office","Name":"Mayor","Term":{"@type":"ElectionResults.Term","StartDate":"2021-01-20","EndDate":"2025-01-20","Type":"full-term"}}]}
     pushOb(document.body, savedObj);
 })();
