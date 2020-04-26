@@ -78,6 +78,7 @@
 	atidelem.value = atid;
 	var section = document.getElementById(sectionId);
 	section.appendChild(pti);
+	updateDeleteButtons();
     };
     document.getElementById("newparty").onclick = function(){instantiate("partytmpl", "parties", "party");};
     document.getElementById("newperson").onclick = function(){instantiate("persontmpl", "people", "pers");};
@@ -105,8 +106,14 @@
 		} else if (fieldname == "atid") {
 		    fieldname = "@id";
 		}
-		ob[fieldname] = te.value;
-		any = true;
+		var fv = te.value;
+		if (te.type == "checkbox") {
+		    fv = te.checked;
+		}
+		if (fv) {
+		    ob[fieldname] = fv;
+		    any = true;
+		}
 	    } else if (hasClass(te, "arraygroup")) {
 		var fieldname = te.getAttribute("data-name");
 		ob[fieldname] = gatherArray(te);
@@ -197,6 +204,27 @@
 	}
 	return false;
     };
+
+    var deleterec = function() {
+	var pn = this;
+	while (pn) {
+	    if (pn.className == "recform") {
+		pn.remove();
+		// TODO: un-claim @id
+		// TODO: cleanup @id sequence, {a1,a234,a1337} -> (a1,a2,a3)
+		return;
+	    }
+	    pn = pn.parentNode;
+	}
+	this.remove();
+    };
+    var updateDeleteButtons = function() {
+	var delbuttons = document.getElementsByClassName("deleterec");
+	for (var i = 0, db; db = delbuttons[i]; i++) {
+	    db.onclick = deleterec;
+	}
+    };
+    updateDeleteButtons();
 
     var debugbutton = document.getElementById("debugbutton");
     debugbutton.onclick = function() {
