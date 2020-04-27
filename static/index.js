@@ -58,6 +58,22 @@
 	"ElectionResults.Party":{"tmpl":"partytmpl", "seq":"party"},
 	"ElectionResults.Person":{"tmpl":"persontmpl", "seq":"pers"},
 	"ElectionResults.Office":{"tmpl":"officetmpl", "seq":"office"},
+	"ElectionResults.ContactInformation":{"tmpl":"contacttmpl"},
+    };
+    var expandSubTmpl = function(elem) {
+	var tmplname = elem.getAttribute("data-tmpl");
+	if (tmplname) {
+	    var tmpl = document.getElementById(tmplname);
+	    var pti = document.importNode(tmpl.content, true);
+	    elem.appendChild(pti);
+	    return;
+	}
+	if (!elem.children) {
+	    return;
+	}
+	for (var i = 0, x; x = elem.children[i]; i++) {
+	    expandSubTmpl(x);
+	}
     };
     // Used in loading from stored spec
     var newForAtType = function(attype) {
@@ -100,7 +116,7 @@
 	var any = false
 	for (var i = 0, te; te = elem.children[i]; i++) {
 	    if (te.tagName == "INPUT") {
-		var fieldname = te.className;
+		var fieldname = te.getAttribute("data-key");
 		if (fieldname == "attype") {
 		    fieldname = "@type";
 		} else if (fieldname == "atid") {
@@ -110,6 +126,13 @@
 		if (te.type == "checkbox") {
 		    fv = te.checked;
 		}
+		if (fv) {
+		    ob[fieldname] = fv;
+		    any = true;
+		}
+	    } else if (te.tagName == "TEXTAREA") {
+		var fieldname = te.getAttribute("data-key");
+		var fv = te.value;
 		if (fv) {
 		    ob[fieldname] = fv;
 		    any = true;
@@ -171,6 +194,7 @@
 			    je = newForAtType(attype);
 			    te.appendChild(je);
 			    je = te.children[j];
+			    expandSubTmpl(je);
 			    var atid = jv["@id"];
 			    if (atid) {
 				var ti = tmplForAttype[attype];
@@ -199,12 +223,22 @@
 		    }
 		}
 	    } else if (te.tagName == "INPUT") {
-		var fieldname = te.className;
+		var fieldname = te.getAttribute("data-key");
 		if (fieldname == "attype") {
 		    fieldname = "@type";
 		} else if (fieldname == "atid") {
 		    fieldname = "@id";
 		}
+		var ov = ob[fieldname];
+		if (ov) {
+		    te.value = ov;
+		    delete ob[fieldname];
+		    if (isEmpty(ob)) {
+			return true;
+		    }
+		}
+	    } else if (te.tagName == "TEXTAREA") {
+		var fieldname = te.getAttribute("data-key");
 		var ov = ob[fieldname];
 		if (ov) {
 		    te.value = ov;

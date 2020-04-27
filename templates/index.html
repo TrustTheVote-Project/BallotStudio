@@ -25,19 +25,18 @@
   <template id="partytmpl">
     <div class="recform">
       <table border="0">
-	<tr><td>@id</td><td><input type="text" class="atid" value="watid" disabled="true" /></td></tr>
-	<input type="hidden" class="attype" value="ElectionResults.Party" />
-	<tr><td>Name</td><td><input type="text" class="Name" /></td></tr>
+	<tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
+	<input type="hidden" data-key="attype" value="ElectionResults.Party" />
+	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
 	<tr><td colspan="2" class="optional">optional:</td></tr>
-	<tr><td>Abbreviation</td><td><input type="text" class="Abbreviation" /></td></tr>
-	<tr><td>Color</td><td><input type="text" class="Color" /></td><td class="fieldnote">HTML color, e.g. #ff0000 for red</td></tr>
-	<!-- TODO: ContactInformation sub-form, template with data to be included in-line in things that include the sub form -->
-	<tr><td>Contact Information</td><td>TODO: sub-form template, "ContactInformation"</td></tr>
-	<tr><td>External Identifiers</td><td>TODO: list of strings, "ExternalIdentifier"</td></tr>
-	<tr><td>Recognized Party</td><td><input type="checkbox" class="IsRecognizedParty"></td></tr>
+	<tr><td>Abbreviation</td><td><input type="text" data-key="Abbreviation" /></td></tr>
+	<tr><td>Color</td><td><input type="text" data-key="Color" /></td><td class="fieldnote">HTML color, e.g. #ff0000 for red</td></tr>
+	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
+	<tr><td>External Identifiers</td><td><textarea data-name="ExternalIdentifier"></textarea></td></tr>
+	<tr><td>Recognized Party</td><td><input type="checkbox" data-key="IsRecognizedParty"></td></tr>
 	<tr><td>Leaders</td><td>TODO: look up and make references to People, "LeaderPersonIds"</td></tr>
-	<tr><td>Logo URI</td><td><input type="text" class="LogoUri" /></td><td>TODO: allow multiple</td></tr>
-	<tr><td>Slogan</td><td><input type="text" class="Slogan" /></td></tr>
+	<tr><td>Logo URI</td><td><textarea data-key="LogoUri"></textarea></td></tr>
+	<tr><td>Slogan</td><td><input type="text" data-key="Slogan" /></td></tr>
 	<tr><td>Scope</td><td>TODO: look up and make references to Geo-Political Units, "PartyScopeGpUnitIds"</td></tr>
       </table>
       <button class="deleterec">Delete Party (TODO)</button>
@@ -52,20 +51,20 @@
     <div class="recform">
       <table border="0">
 	<tr><td colspan="2">
-	<tr><td>@id</td><td><input type="text" class="atid" value="watid" disabled="true" /></td></tr>
-	<input type="hidden" class="attype" value="ElectionResults.Person" />
-	<tr><td>Full Name</td><td><input type="text" class="FullName" /></td></tr>
-	<tr><td>Prefix</td><td><input type="text" class="Prefix" /></td></tr>
-	<tr><td>First Name</td><td><input type="text" class="FirstName" /></td></tr>
-	<tr><td>Middle Name</td><td><input type="text" class="MiddleName" /></td><td>TODO: accept list</td></tr>
-	<tr><td>Last Name</td><td><input type="text" class="LastName" /></td></tr>
-	<tr><td>Suffix</td><td><input type="text" class="Suffix" /></td></tr>
-	<tr><td>Nickname</td><td><input type="text" class="Nickname" /></td></tr>
-	<tr><td>Title</td><td><input type="text" class="Title" /></td></tr>
-	<tr><td>Profession</td><td><input type="text" class="Profession" /></td></tr>
-	<tr><td>Contact Information</td><td>TODO: sub-form template, "ContactInformation", a repeatable list of contact-informations</td></tr>
-	<tr><td>Date of Birth</td><td><input type="text" class="DateOfBirth" /></td></tr>
-	<tr><td>External Identifiers</td><td>TODO: list of strings, "ExternalIdentifier"</td></tr>
+	<tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
+	<input type="hidden" data-key="attype" value="ElectionResults.Person" />
+	<tr><td>Full Name</td><td><input type="text" data-key="FullName" /></td></tr>
+	<tr><td>Prefix</td><td><input type="text" data-key="Prefix" /></td></tr>
+	<tr><td>First Name</td><td><input type="text" data-key="FirstName" /></td></tr>
+	<tr><td>Middle Name</td><td><input type="text" data-key="MiddleName" /></td><td>TODO: accept list</td></tr>
+	<tr><td>Last Name</td><td><input type="text" data-key="LastName" /></td></tr>
+	<tr><td>Suffix</td><td><input type="text" data-key="Suffix" /></td></tr>
+	<tr><td>Nickname</td><td><input type="text" data-key="Nickname" /></td></tr>
+	<tr><td>Title</td><td><input type="text" data-key="Title" /></td></tr>
+	<tr><td>Profession</td><td><input type="text" data-key="Profession" /></td></tr>
+	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
+	<tr><td>Date of Birth</td><td><input type="text" data-key="DateOfBirth" /></td></tr>
+	<tr><td>External Identifiers</td><td><textarea data-name="ExternalIdentifier"></textarea></td></tr>
 	<tr><td>Party</td><td>TODO: look up and make reference to Party, "PartyId"</td></tr>
       </table>
       <button class="deleterec">Delete Person (TODO)</button>
@@ -81,18 +80,18 @@
     <div class="recform">
       <table border="0">
 	<tr><td colspan="2">
-	<tr><td>@id</td><td><input type="text" class="atid" value="watid" disabled="true" /></td></tr>
-	<input type="hidden" class="attype" value="ElectionResults.Office" />
-	<tr><td>Name</td><td><input type="text" class="Name" /></td></tr>
+	<tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
+	<input type="hidden" data-key="attype" value="ElectionResults.Office" />
+	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
 	<tr><td colspan="2" class="optional">optional:</td></tr>
-	<tr><td>Contact Information</td><td>TODO: sub-form template, "ContactInformation"</td></tr>
-	<tr><td>Description</td><td><input type="text" class="Description" /></td></tr>
+	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
+	<tr><td>Description</td><td><input type="text" data-key="Description" /></td></tr>
 	<tr><td>Election District</td><td>TODO: look up and make references to Geo-Political Reporting Units, "ElectionDistrictId"</td></tr>
-	<tr><td>External Identifiers</td><td>TODO: list of strings, "ExternalIdentifier"</td></tr>
-	<tr><td>Filing Deadline</td><td><input type="text" class="FilingDeadline" /></td><td>Format must be: YYYY-MM-DD<br/>TODO: proper date picker.</td></tr>
-	<tr><td>Is Partisan</td><td><input type="checkbox" class="IsPartisan"></td></tr>
+	<tr><td>External Identifiers</td><td><textarea data-name="ExternalIdentifier"></textarea></td></tr>
+	<tr><td>Filing Deadline</td><td><input type="text" data-key="FilingDeadline" /></td><td>Format must be: YYYY-MM-DD<br/>TODO: proper date picker.</td></tr>
+	<tr><td>Is Partisan</td><td><input type="checkbox" data-key="IsPartisan"></td></tr>
 	<tr><td>Incumbents</td><td>TODO: look up and make references to People, "OfficeHolderPersonIds"</td></tr>
-	<tr><td>Term</td><td class="erobject" data-name="Term"><table border="0"><tr><td>Term Label</td><td><input type="hidden" class="attype" value="ElectionResults.Term" /><input type="text" class="Label" /></td></tr><tr><td>Term Start Date</td><td><input type="text" class="StartDate" /></td><td>YYYY-MM-DD</td></tr><tr><td>Term End Date</td><td><input type="text" class="EndDate" /></td><td>YYYY-MM-DD</td></tr><tr><td>Term Type</td><td><input type="text" class="Type" /></td><td>term type must be "full-term" or "unexpired-term"</td></tr></table></td></tr>
+	<tr><td>Term</td><td class="erobject" data-name="Term"><table border="0"><tr><td>Term Label</td><td><input type="hidden" data-key="attype" value="ElectionResults.Term" /><input type="text" data-key="Label" /></td></tr><tr><td>Term Start Date</td><td><input type="text" data-key="StartDate" /></td><td>YYYY-MM-DD</td></tr><tr><td>Term End Date</td><td><input type="text" data-key="EndDate" /></td><td>YYYY-MM-DD</td></tr><tr><td>Term Type</td><td><input type="text" data-key="Type" /></td><td>term type must be "full-term" or "unexpired-term"</td></tr></table></td></tr>
       </table>
       <button class="deleterec">Delete Office (TODO)</button>
     </div>
@@ -103,6 +102,24 @@
     <div><button id="newoffice">New Office</button></div>
   </div>
   <div class="topsec"><h2>Geo-Political Units</h2><p>City, County, District, etc...</p></div>
+
+  <template id="contacttmpl">
+    <table border="0">
+      <input type="hidden" data-key="attype" value="ElectionResults.ContactInformation" />
+      <tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
+      <tr><td>Label</td><td><input type="text" data-key="Label" /></td></tr>
+      <tr><td>Address</td><td><textarea data-key="AddressLine"></textarea></td></tr>
+      <tr><td>Directions</td><td><input type="text" data-key="Directions" /></td></tr>
+      <tr><td>Email</td><td><textarea data-key="Email"></textarea></td></tr>
+      <tr><td>Fax</td><td><textarea data-key="Fax"></textarea></td></tr>
+      <tr><td>Label</td><td><input type="text" data-key="Label" /></td></tr>
+      <tr><td>LatLng</td><td><input type="text" data-key="LatLng" /></td></tr>
+      <tr><td>Phone</td><td><textarea data-key="Phone"></textarea></td></tr>
+      <tr><td>Schedule</td><td><input type="text" data-key="Schedule" /></td><td>TODO: sub-form for ElectionResults.Schedule</td></tr>
+      <tr><td>Uri</td><td><textarea data-key="Uri"></textarea></td></tr>
+    </table>
+  </template>
+
   <div><h2>debug</h2><div id="debugdiv"></div><button id="debugbutton">Do the thing!</button></div>
   <script src="/static/index.js"></script>
 </body>
