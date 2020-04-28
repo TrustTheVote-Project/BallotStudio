@@ -705,17 +705,21 @@ class ElectionPrinter:
             return self.election_type_other
         return _election_types_en[self.election_type]
 
-    def draw(self, outdir=None, outname_prefix=''):
+    def draw(self, outdir=None, outname_prefix='', outfile=None):
         # TODO: one specific ballot style or all of them to separate PDFs
         for i, bs in enumerate(self.ballot_styles):
             names = ','.join([gpunitName(x) for x in bs.gpunits])
-            if len(self.ballot_styles) > 1:
+            if outfile is not None:
+                outarg = outfile
+                bs_fname = "data"
+            elif len(self.ballot_styles) > 1:
                 bs_fname = '{}{}_{}.pdf'.format(outname_prefix, i, names)
             else:
                 bs_fname = '{}{}.pdf'.format(outname_prefix, names)
-            if outdir:
+            if outdir and not outfile:
                 bs_fname = os.path.join(outdir, bs_fname)
-            c = canvas.Canvas(bs_fname, pagesize=gs.pagesize) # pageCompression=1
+                outarg = bs_fname
+            c = canvas.Canvas(outarg, pagesize=gs.pagesize) # pageCompression=1
             bs.draw(c, letter)
             c.save()
             sys.stdout.write(bs_fname + '\n')
