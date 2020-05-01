@@ -66,12 +66,6 @@ parties = [
         "Name": "Kryptonian",
         "Slogan": "Nice yellow sun you got there",
     },
-    {
-        "@id": _party_id(),
-        "@type": "ElectionResults.Party",
-        "Name": "",
-        "Slogan": "",
-    },
 ]
 
 def partyIdByName(they, name):

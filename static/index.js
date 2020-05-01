@@ -54,12 +54,22 @@
 	    }
 	}
     };
-    var tmplForAttype = {
-	"ElectionResults.Party":{"tmpl":"partytmpl", "seq":"party"},
-	"ElectionResults.Person":{"tmpl":"persontmpl", "seq":"pers"},
-	"ElectionResults.Office":{"tmpl":"officetmpl", "seq":"office"},
-	"ElectionResults.ContactInformation":{"tmpl":"contacttmpl"},
-    };
+    var tmplForAttype = {};
+    (function(){
+	// gather templates and their metadata from the html
+	var templates = document.getElementsByTagName("template");
+	for (var i = 0, te; te = templates[i]; i++) {
+	    var attype = te.getAttribute("data-attype");
+	    if (attype) {
+		var ob = {"tmpl":te}
+		var seqname = te.getAttribute("data-seq");
+		if (seqname) {
+		    ob.seq = seqname;
+		}
+		tmplForAttype[attype] = ob;
+	    }
+	}
+    })();
     var expandSubTmpl = function(elem) {
 	var tmplname = elem.getAttribute("data-tmpl");
 	if (tmplname) {
@@ -81,24 +91,32 @@
 	if (!ti) {
 	    return null;
 	}
-	var tmpl = document.getElementById(ti.tmpl);
-	var pti = document.importNode(tmpl.content, true);
+	//var tmpl = document.getElementById(ti.tmpl);
+	var pti = document.importNode(ti.tmpl.content, true);
 	return pti;
     };
-    // Used when a [new thing] button is pressed by a user
-    var instantiate = function(tmplId, sectionId, seqName) {
-	var tmpl = document.getElementById(tmplId);
-	var pti = document.importNode(tmpl.content, true);
-	var atidelem = firstChildOfClass(pti, "atid");
-	var atid = seq(seqName);
-	atidelem.value = atid;
-	var section = document.getElementById(sectionId);
-	section.appendChild(pti);
-	updateDeleteButtons();
+
+    // onclick handler for <button class="newrec">
+    var newrecDo = function() {
+	var tmplId = this.getAttribute("data-btmpl");
+	var seqName = this.getAttribute("data-seq");
+	var pn = this.parentNode;
+	while (pn) {
+	    var targetelem = firstChildOfClass(pn, "arraygroup");
+	    if (targetelem) {
+		var tmpl = document.getElementById(tmplId);
+		var pti = document.importNode(tmpl.content, true);
+		if (seqName) {
+		    pushOb(pti, {"@id":seq(seqName)});
+		}
+		targetelem.appendChild(pti);
+		expandSubTmpl(targetelem.lastElementChild);
+		updateDeleteButtons();
+		return;
+	    }
+	    pn = pn.parentNode;
+	}
     };
-    document.getElementById("newparty").onclick = function(){instantiate("partytmpl", "parties", "party");};
-    document.getElementById("newperson").onclick = function(){instantiate("persontmpl", "people", "pers");};
-    document.getElementById("newoffice").onclick = function(){instantiate("officetmpl", "offices", "office");};
 
     var gatherArray = function(elem) {
 	var ob = [];
@@ -275,6 +293,10 @@
 	for (var i = 0, db; db = delbuttons[i]; i++) {
 	    db.onclick = deleterec;
 	}
+	var newbuttons = document.getElementsByClassName("newrec");
+	for (var i = 0, db; db = newbuttons[i]; i++) {
+	    db.onclick = newrecDo;
+	}
     };
     updateDeleteButtons();
 
@@ -285,5 +307,17 @@
     };
 
     var savedObj = {"Party":[{"@id":"party1","@type":"ElectionResults.Party","Name":"Stupid","Abbreviation":"","Color":"","IsRecognizedParty":"on","LogoUri":"","Slogan":""},{"@id":"party2","@type":"ElectionResults.Party","Name":"Evil","Abbreviation":"","Color":"","IsRecognizedParty":"on","LogoUri":"","Slogan":""}],"Person":[{"@id":"pers1","@type":"ElectionResults.Person","FullName":"SOMEGUY","Prefix":"","FirstName":"","MiddleName":"","LastName":"","Suffix":"","Nickname":"","Title":"","Profession":"","DateOfBirth":""}],"Office":[{"@id":"office1","@type":"ElectionResults.Office","Name":"Mayor","Term":{"@type":"ElectionResults.Term","StartDate":"2021-01-20","EndDate":"2025-01-20","Type":"full-term"}}]}
+    var loadElectionHandler = function() {
+	if (this.readyState == 4 && this.status == 200) {
+	    pushOb(document.body, JSON.parse(this.responseText));
+	}
+    };
+    var get = function(url, handler) {
+	var http = new XMLHttpRequest();
+	http.onreadystatechange = handler;
+	http.open("GET",url,true);
+	http.send();
+    };
+    get("/static/demo.json", loadElectionHandler);
     pushOb(document.body, savedObj);
 })();

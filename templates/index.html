@@ -22,7 +22,7 @@
 </head>
 <body>
   <h1>Ballot Studio</h1>
-  <template id="partytmpl">
+  <template id="partytmpl" data-attype="ElectionResults.Party" data-seq="party">
     <div class="recform">
       <table border="0">
 	<tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
@@ -44,13 +44,12 @@
   </template>
   <div class="topsec"><h2>Parties</h2>
     <div id="parties" class="arraygroup" data-name="Party"></div>
-    <div><button id="newparty">New Party</button></div>
+    <div><button class="newrec" id="newparty" data-btmpl="partytmpl" data-seq="party">New Party</button></div>
   </div>
 
-  <template id="persontmpl">
+  <template id="persontmpl" data-attype="ElectionResults.Person" data-seq="person">
     <div class="recform">
       <table border="0">
-	<tr><td colspan="2">
 	<tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
 	<input type="hidden" data-key="attype" value="ElectionResults.Person" />
 	<tr><td>Full Name</td><td><input type="text" data-key="FullName" /></td></tr>
@@ -72,14 +71,13 @@
   </template>
   <div class="topsec"><h2>People</h2>
     <div id="people" class="arraygroup" data-name="Person"></div>
-    <div><button id="newperson">New Person</button></div>
+    <div><button class="newrec" data-btmpl="persontmpl" data-seq="person" id="newperson">New Person</button></div>
   </div>
 
 
-  <template id="officetmpl">
+  <template id="officetmpl" data-attype="ElectionResults.Office" data-seq="office">
     <div class="recform">
       <table border="0">
-	<tr><td colspan="2">
 	<tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
 	<input type="hidden" data-key="attype" value="ElectionResults.Office" />
 	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
@@ -99,11 +97,113 @@
   <div class="topsec"><h2>Offices</h2><p>Mayor, City Council, Dog Catcher, etc...</p>
     <div id="offices" class="arraygroup" data-name="Office">
     </div>
-    <div><button id="newoffice">New Office</button></div>
+    <div><button class="newrec" data-btmpl="officetmpl" data-seq="office" id="newoffice">New Office</button></div>
   </div>
-  <div class="topsec"><h2>Geo-Political Units</h2><p>City, County, District, etc...</p></div>
 
-  <template id="contacttmpl">
+
+  <template id="repunittmpl" data-attype="ElectionResults.ReportingUnit" data-seq="gpunit">
+    <div class="recform">
+      <table border="0">
+	<input type="hidden" data-key="attype" value="ElectionResults.ReportingUnit" />
+	<tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
+	<tr><td>Type</td><td><input type="text" data-key="Type" /></td><td>TODO: menu. options: ( "ballot-batch",
+            "ballot-style-area",
+            "borough",
+            "city",
+            "city-council",
+            "combined-precinct",
+            "congressional",
+            "country",
+            "county",
+            "county-council",
+            "drop-box",
+            "judicial",
+            "municipality",
+            "other",
+            "polling-place",
+            "precinct",
+            "school",
+            "special",
+            "split-precinct",
+            "state",
+            "state-house",
+            "state-senate",
+            "town",
+            "township",
+            "utility",
+            "village",
+            "vote-center",
+            "ward",
+            "water"
+	    )</tr>
+	<tr><td colspan="2" class="optional">optional:</td></tr>
+	<tr><td>AuthorityIds</td><td>TODO: look up and make references to People, "AuthorityIds"</td></tr>
+	<tr><td>ComposingGpUnitIds</td><td>TODO: look up and make references to contained Geo-Political units, "ComposingGpUnitIds"</td></tr>
+	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
+	<!-- CountStatus 0+ array of CountStatus records, effectively {"absentee":"in-process","early":"completed"} procedural detail not relevant to pre-election ballot design -->
+	<tr><td>ElectionAdministration</td><td>TODO: a sub struct with ContactInformation, Name (e.g. Somewhere County Clerk), and a list of PersonIds, "ElectionAdministration"</td></tr>
+	<tr><td>External Identifiers</td><td><textarea data-name="ExternalIdentifier"></textarea></td></tr>
+	<tr><td>Is Districted</td><td><input type="checkbox" data-key="IsDistricted"></td></tr>
+	<tr><td>Is Mail-Only</td><td><input type="checkbox" data-key="IsMailOnly"></td></tr>
+	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
+	<tr><td>Number</td><td><input type="text" data-key="Number" /></td></tr>
+	<tr><td>OtherType</td><td><input type="text" data-key="OtherType" /></td><td>(when Type is "other")</td></tr>
+	<tr><td colspan="2">TODO:<br><ul><li>PartyRegistration array of sub struct counting people registered with each party in this reporting unit</li><li>SpatialDimension</li><li>SubUnitsReported (post-election stat)</li><li>TotalSubUnits</li><li>VotersParticipated (post election stat)</li><li>VotersRegistered</li></ul></td></tr>
+      </table>
+    </div>
+  </template>
+  <div class="topsec"><h2>Geo-Political Units</h2><p>City, County, District, etc...</p>
+    <div id="offices" class="arraygroup" data-name="GpUnit"></div>
+    <div><button class="newrec" data-btmpl="repunittmpl" data-seq="gpunit" id="newrepunit">New Reporting Unit</button></div>
+  </div>
+
+  <template id="electiontmpl" data-attype="ElectionResults.Election">
+    <div class="recform">
+      <table border="0">
+	<tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
+	<input type="hidden" data-key="attype" value="ElectionResults.Election" />
+	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
+	<tr><td>Type</td><td><input type="text" data-key="Type" /></td><td>        "general",
+        "other",
+        "partisan-primary-closed",
+        "partisan-primary-open",
+        "primary",
+        "runoff",
+        "special"
+</td></tr>
+	<tr><td>Start Date</td><td><input type="text" data-key="StartDate" /></td><td>YYYY-MM-DD</td></tr>
+	<tr><td>End Date</td><td><input type="text" data-key="EndDate" /></td><td>YYYY-MM-DD</td></tr>
+	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
+	<tr><td>Scope</td><td><input type="text" data-key="ElectionScopeId" /></td><td>TODO: look up and make references to Geo-Political Units, "ElectionScopeId"</td></tr>
+	<tr><td colspan="2" class="optional">optional:</td></tr>
+	<tr><td colspan="2"><h2>Ballot Styles</h2>
+	    <div class="arraygroup" data-name="BallotStyle"></div>
+	    <div><button class="newrec" data-btmpl="bstyletmpl">New Ballot Style</button></div>
+	</td></tr>
+      </table>
+      <button class="deleterec">Delete Person (TODO)</button>
+    </div>
+  </template>
+  <div class="topsec"><h2>Elections</h2>
+    <div id="elections" class="arraygroup" data-name="Election"></div>
+    <div><button class="newrec" data-btmpl="electiontmpl" id="newelection">New Election</button></div>
+  </div>
+
+  <template id="contesttmpl" data-attype="ElectionResults.OrderedContest">
+    <p>TODO: OrderedContest template</p>
+  </template>
+  <template id="bstyletmpl" data-attype="ElectionResults.BallotStyle">
+    <table border="0">
+      <input type="hidden" data-key="attype" value="ElectionResults.BallotStyle" />
+      <tr><td>Geo-Political Units</td><td><textarea data-name="GpUnitIds"></textarea></td><td>space separated reference list: gpunit1 gpunit2</td></tr>
+      <tr><td colspan="2" class="optional">optional:</td></tr>
+      <tr><td>External Identifiers</td><td><textarea data-name="ExternalIdentifier"></textarea></td></tr>
+      <tr><td>Image URIs</td><td><textarea data-name="ImageUri"></textarea></td></tr>
+      <tr><td>Parties</td><td><textarea data-name="PartyIds"></textarea></td>list of party ids: party1 party3<td></td></tr>
+      <tr><td>Items</td><td><div class="arraygroup" data-name="OrderedContent"></div><div><button class="newrec" data-btmpl="contesttmpl">New Contest</button></div></td></tr>
+    </table>
+  </template>
+  <template id="contacttmpl" data-attype="ElectionResults.ContactInformation">
     <table border="0">
       <input type="hidden" data-key="attype" value="ElectionResults.ContactInformation" />
       <tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
