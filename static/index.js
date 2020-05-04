@@ -1,12 +1,45 @@
 (function(){
+    var addClass = function(elem, classname) {
+	var cl = elem.classList;
+	if (cl) {
+	    if (cl.contains(classname)) {return;}
+	    // for (var i = 0; cl[i]; i++) {
+	    // 	if (classname == cl[i]) {
+	    // 	    return
+	    // 	}
+	    // }
+	    cl.add(classname);
+	}
+    };
+    var rmClass = function(elem, classname) {
+	if (!hasClass(elem, classname)) {
+	    return;
+	}
+	//var ncl = new DOMTokenList();
+	var cl = elem.classList;
+	if (!cl) {
+	    return;
+	}
+	cl.remove(classname);
+	// for (var i = 0, ci; ci = cl[i]; i++) {
+	//     if (ci != classname) {
+	// 	ncl.push(ci);
+	//     }
+	// }
+	// elem.classList = ncl;
+    };
     var hasClass = function(elem, classname) {
 	var cl = elem.classList;
 	if (cl) {
-	for (var i = 0; cl[i]; i++) {
-	    if (classname == cl[i]) {
-		return true;
-	    }
+	    return cl.contains(classname);
+	    // for (var i = 0; cl[i]; i++) {
+	    // 	if (classname == cl[i]) {
+	    // 	    return true;
+	    // 	}
+	    // }
 	}
+	if (elem.className == classname) {
+	    return true;
 	}
 	return false;
     };
@@ -191,11 +224,29 @@
 	return true;
     };
 
-    var pushOb = function(elem, ob){
+    var reportExtra = function(ob, obtype, obid, handled){
+	var extraKeys = [];
+	var hd = {};
+	for (var i = 0, hv; hv = handled[i]; i++) {
+	    hd[hv]=1;
+	}
+	for (var obk in ob) {
+	    if (!hd[obk]) {
+		extraKeys.push(obk);
+	    }
+	}
+	if (extraKeys) {
+	    console.log("pushOb {" + obtype + ", " + obid + "} still left with keys: "+extraKeys.join(", "));
+	}
+    };
+    var pushOb = function(elem, ob, shouldConsume){
 	if (!elem.children) {
 	    console.log("pushOb cannot descend ", elem)
 	    return false;
 	}
+	var obtype = ob["@type"] || "unktype";
+	var obid = ob["@id"] || "";
+	var handled = [];
 	for (var i = 0, te; te = elem.children[i]; i++) {
 	    if (hasClass(te, "arraygroup")) {
 		var fieldname = te.getAttribute("data-name");
@@ -223,12 +274,9 @@
 			    continue;
 			}
 		    }
-		    pushOb(je, jv);
+		    pushOb(je, jv, true);
 		}
-		delete ob[fieldname];
-		if (isEmpty(ob)) {
-		    return true;
-		}
+		handled.push(fieldname);
 	    } else if (hasClass(te, "erobject")) {
 		var fieldname = te.getAttribute("data-name");
 		var av = ob[fieldname];
@@ -250,45 +298,110 @@
 		var ov = ob[fieldname];
 		if (ov) {
 		    te.value = ov;
-		    delete ob[fieldname];
-		    if (isEmpty(ob)) {
-			return true;
-		    }
+		    handled.push(fieldname);
 		}
 	    } else if (te.tagName == "TEXTAREA") {
 		var fieldname = te.getAttribute("data-key");
 		var ov = ob[fieldname];
 		if (ov) {
+		    console.log("TODO: unpack " + fieldname + " into TEXTAREA")
 		    te.value = ov;
-		    delete ob[fieldname];
-		    if (isEmpty(ob)) {
-			return true;
-		    }
+		    handled.push(fieldname);
 		}
+	    } else if (hasClass(te, "showjson")) {
+		setJsonShow(te, ob);
 	    } else {
-		var consumed = pushOb(te, ob);
-		if (isEmpty(ob)) {
-		    return true;
-		}
+		pushOb(te, ob);
 	    }
+	}
+	if (shouldConsume) {
+	    //reportExtra(ob, obtype, obid, handled);// TODO: make sure this is clean
 	}
 	return false;
     };
 
-    var deleterec = function() {
-	var pn = this;
+    var setJsonShow = function(te, ob) {
+	var hides = te.getAttribute("data-hide");
+	if (hides) {
+	    var hidep = hides.split(",");
+	    var hided = {};
+	    for (var i = 0, hi; hi = hidep[i]; i++) {
+		hided[hi] = 1;
+	    }
+	    var nob = {};
+	    for (var k in ob) {
+		if (hided[k]) {
+		    continue;
+		}
+		nob[k] = ob[k];
+	    }
+	    ob = nob;
+	}
+	te.innerHTML = JSON.stringify(ob);
+    };
+
+    var parentWithClass = function(pn, classname) {
 	while (pn) {
-	    if (pn.className == "recform") {
-		pn.remove();
-		// TODO: un-claim @id
-		// TODO: cleanup @id sequence, {a1,a234,a1337} -> (a1,a2,a3)
-		return;
+	    if (hasClass(pn, classname)) {
+		return pn;
 	    }
 	    pn = pn.parentNode;
 	}
+	return null;
+    };
+    var deleterec = function() {
+	var pn = parentWithClass(this, "recform");
+	if (pn) {
+	    pn.remove();
+	    // TODO: un-claim @id
+	    // TODO: cleanup @id sequence, {a1,a234,a1337} -> (a1,a2,a3)
+	    return;
+	}
 	this.remove();
     };
+    var doEditMode = function() {
+	var pn = parentWithClass(this, "sectionedshow");
+	if (pn) {
+	    var show = firstChildOfClass(pn, "show");
+	    var edit = firstChildOfClass(pn, "edit");
+	    if (show && edit) {
+		addClass(show,"hidden");
+		rmClass(edit,"hidden");
+		//show.style.visibility = 'hidden';
+		//edit.style.visibility = 'visible';
+	    }
+	}
+    };
+    var doShowMode = function() {
+	var pn = parentWithClass(this, "sectionedshow");
+	if (pn) {
+	    var show = firstChildOfClass(pn, "show");
+	    var edit = firstChildOfClass(pn, "edit");
+	    if (show && edit) {
+		// make sure things are up to date
+		var xo = gatherJson(edit);
+		pushOb(show,xo);
+		// swap visibility
+		rmClass(show,"hidden");
+		addClass(edit,"hidden");
+		//show.style.visibility = 'visible';
+		//edit.style.visibility = 'hidden';
+	    }
+	}
+    }
+    var setOnclickForClass = function(classname, fn) {
+	var they = document.getElementsByClassName(classname);
+	for (var i = 0, db; db = they[i]; i++) {
+	    db.onclick = fn;
+	    console.log(classname + " " + i);
+	}
+    }
     var updateDeleteButtons = function() {
+	setOnclickForClass("deleterec",deleterec);
+	setOnclickForClass("newrec",newrecDo);
+	setOnclickForClass("sectionedit",doEditMode);
+	setOnclickForClass("sectionshow",doShowMode);
+	/*
 	var delbuttons = document.getElementsByClassName("deleterec");
 	for (var i = 0, db; db = delbuttons[i]; i++) {
 	    db.onclick = deleterec;
@@ -297,6 +410,14 @@
 	for (var i = 0, db; db = newbuttons[i]; i++) {
 	    db.onclick = newrecDo;
 	}
+	var editbuttons = document.getElementsByClassName("sectionedit");
+	for (var i = 0, db; db = editbuttons[i]; i++) {
+	    db.onclick = doEditMode;
+	}
+	var showbuttons = document.getElementsByClassName("sectionshow");
+	for (var i = 0, db; db = showbuttons[i]; i++) {
+	    db.onclick = doShowMode;
+	}*/
     };
     updateDeleteButtons();
 
@@ -306,10 +427,15 @@
 	document.getElementById("debugdiv").innerHTML = JSON.stringify(js);
     };
 
-    var savedObj = {"Party":[{"@id":"party1","@type":"ElectionResults.Party","Name":"Stupid","Abbreviation":"","Color":"","IsRecognizedParty":"on","LogoUri":"","Slogan":""},{"@id":"party2","@type":"ElectionResults.Party","Name":"Evil","Abbreviation":"","Color":"","IsRecognizedParty":"on","LogoUri":"","Slogan":""}],"Person":[{"@id":"pers1","@type":"ElectionResults.Person","FullName":"SOMEGUY","Prefix":"","FirstName":"","MiddleName":"","LastName":"","Suffix":"","Nickname":"","Title":"","Profession":"","DateOfBirth":""}],"Office":[{"@id":"office1","@type":"ElectionResults.Office","Name":"Mayor","Term":{"@type":"ElectionResults.Term","StartDate":"2021-01-20","EndDate":"2025-01-20","Type":"full-term"}}]}
+    //var savedObj = {"Party":[{"@id":"party1","@type":"ElectionResults.Party","Name":"Stupid","Abbreviation":"","Color":"","IsRecognizedParty":"on","LogoUri":"","Slogan":""},{"@id":"party2","@type":"ElectionResults.Party","Name":"Evil","Abbreviation":"","Color":"","IsRecognizedParty":"on","LogoUri":"","Slogan":""}],"Person":[{"@id":"pers1","@type":"ElectionResults.Person","FullName":"SOMEGUY","Prefix":"","FirstName":"","MiddleName":"","LastName":"","Suffix":"","Nickname":"","Title":"","Profession":"","DateOfBirth":""}],"Office":[{"@id":"office1","@type":"ElectionResults.Office","Name":"Mayor","Term":{"@type":"ElectionResults.Term","StartDate":"2021-01-20","EndDate":"2025-01-20","Type":"full-term"}}]}
     var loadElectionHandler = function() {
 	if (this.readyState == 4 && this.status == 200) {
 	    pushOb(document.body, JSON.parse(this.responseText));
+	    updateDeleteButtons();
+	    var they = document.getElementsByClassName("sectionshow");
+	    for (var i = 0, db; db = they[i]; i++) {
+		db.onclick();
+	    }
 	}
     };
     var get = function(url, handler) {
@@ -319,5 +445,5 @@
 	http.send();
     };
     get("/static/demo.json", loadElectionHandler);
-    pushOb(document.body, savedObj);
+    //pushOb(document.body, savedObj);
 })();

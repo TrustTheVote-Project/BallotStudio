@@ -9,10 +9,13 @@
   <link rel="stylesheet" type="text/css" href="enhanced.css" media="screen  and (min-width: 40.5em)" />
 -->
 <style>
+  .hidden{display:none;}
   .topsec{border:1px solid #555;padding:0.6em;background-color:#fffbf8;}
   .optional{font-size:80%;color:#555;}
   .fieldnote{font-size:80%;color:#555;}
   .datid{font-size:90%;font-family:monospace;color:#444;}
+  .sectionedshow{border:1px solid #777;}
+  .candidate{border:1px solid #777;}
   div.recform{border:1px solid #555;padding-left:1em;margin:0.5em;background-color:#fafafa;}
 .foo{}
 @media screen and (min-width: 40.5em) {
@@ -25,9 +28,9 @@
   <template id="partytmpl" data-attype="ElectionResults.Party" data-seq="party">
     <div class="recform">
       <table border="0">
+	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
 	<tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
 	<input type="hidden" data-key="attype" value="ElectionResults.Party" />
-	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
 	<tr><td colspan="2" class="optional">optional:</td></tr>
 	<tr><td>Abbreviation</td><td><input type="text" data-key="Abbreviation" /></td></tr>
 	<tr><td>Color</td><td><input type="text" data-key="Color" /></td><td class="fieldnote">HTML color, e.g. #ff0000 for red</td></tr>
@@ -37,7 +40,7 @@
 	<tr><td>Leaders</td><td>TODO: look up and make references to People, "LeaderPersonIds"</td></tr>
 	<tr><td>Logo URI</td><td><textarea data-key="LogoUri"></textarea></td></tr>
 	<tr><td>Slogan</td><td><input type="text" data-key="Slogan" /></td></tr>
-	<tr><td>Scope</td><td>TODO: look up and make references to Geo-Political Units, "PartyScopeGpUnitIds"</td></tr>
+	<tr><td>Scope</td><td><textarea data-name="PartyScopeGpUnitIds"></textarea></td><td>reference by @id to Geo-Political Units (TODO: smart lookup)</td></tr>
       </table>
       <button class="deleterec">Delete Party (TODO)</button>
     </div>
@@ -50,9 +53,9 @@
   <template id="persontmpl" data-attype="ElectionResults.Person" data-seq="person">
     <div class="recform">
       <table border="0">
+	<tr><td>Full Name</td><td><input type="text" data-key="FullName" /></td></tr>
 	<tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
 	<input type="hidden" data-key="attype" value="ElectionResults.Person" />
-	<tr><td>Full Name</td><td><input type="text" data-key="FullName" /></td></tr>
 	<tr><td>Prefix</td><td><input type="text" data-key="Prefix" /></td></tr>
 	<tr><td>First Name</td><td><input type="text" data-key="FirstName" /></td></tr>
 	<tr><td>Middle Name</td><td><input type="text" data-key="MiddleName" /></td><td>TODO: accept list</td></tr>
@@ -64,7 +67,7 @@
 	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
 	<tr><td>Date of Birth</td><td><input type="text" data-key="DateOfBirth" /></td></tr>
 	<tr><td>External Identifiers</td><td><textarea data-name="ExternalIdentifier"></textarea></td></tr>
-	<tr><td>Party</td><td>TODO: look up and make reference to Party, "PartyId"</td></tr>
+	<tr><td>Party</td><td><input type="text" data-key="PartyId" /></td><td>reference by @id to Party (TODO: smart lookup)</td></tr>
       </table>
       <button class="deleterec">Delete Person (TODO)</button>
     </div>
@@ -78,9 +81,9 @@
   <template id="officetmpl" data-attype="ElectionResults.Office" data-seq="office">
     <div class="recform">
       <table border="0">
+	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
 	<tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
 	<input type="hidden" data-key="attype" value="ElectionResults.Office" />
-	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
 	<tr><td colspan="2" class="optional">optional:</td></tr>
 	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
 	<tr><td>Description</td><td><input type="text" data-key="Description" /></td></tr>
@@ -137,15 +140,15 @@
             "water"
 	    )</tr>
 	<tr><td colspan="2" class="optional">optional:</td></tr>
+	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
 	<tr><td>AuthorityIds</td><td>TODO: look up and make references to People, "AuthorityIds"</td></tr>
-	<tr><td>ComposingGpUnitIds</td><td>TODO: look up and make references to contained Geo-Political units, "ComposingGpUnitIds"</td></tr>
+	<tr><td>ComposingGpUnitIds</td><td><textarea data-name="ComposingGpUnitIds"></textarea></td><td>reference by @id to Geo-Political Units (TODO: smart lookup)</td></tr>
 	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
 	<!-- CountStatus 0+ array of CountStatus records, effectively {"absentee":"in-process","early":"completed"} procedural detail not relevant to pre-election ballot design -->
 	<tr><td>ElectionAdministration</td><td>TODO: a sub struct with ContactInformation, Name (e.g. Somewhere County Clerk), and a list of PersonIds, "ElectionAdministration"</td></tr>
 	<tr><td>External Identifiers</td><td><textarea data-name="ExternalIdentifier"></textarea></td></tr>
 	<tr><td>Is Districted</td><td><input type="checkbox" data-key="IsDistricted"></td></tr>
 	<tr><td>Is Mail-Only</td><td><input type="checkbox" data-key="IsMailOnly"></td></tr>
-	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
 	<tr><td>Number</td><td><input type="text" data-key="Number" /></td></tr>
 	<tr><td>OtherType</td><td><input type="text" data-key="OtherType" /></td><td>(when Type is "other")</td></tr>
 	<tr><td colspan="2">TODO:<br><ul><li>PartyRegistration array of sub struct counting people registered with each party in this reporting unit</li><li>SpatialDimension</li><li>SubUnitsReported (post-election stat)</li><li>TotalSubUnits</li><li>VotersParticipated (post election stat)</li><li>VotersRegistered</li></ul></td></tr>
@@ -176,12 +179,20 @@
 	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
 	<tr><td>Scope</td><td><input type="text" data-key="ElectionScopeId" /></td><td>TODO: look up and make references to Geo-Political Units, "ElectionScopeId"</td></tr>
 	<tr><td colspan="2" class="optional">optional:</td></tr>
+	<tr><td colspan="2"><h2>Candidates</h2>
+	    <div class="arraygroup" data-name="Candidate"></div>
+	    <div><button class="newrec" data-btmpl="ecandtmpl">New Candidate</button></div>
+	</td></tr>
+	<tr><td colspan="2"><h2>Contests</h2>
+	    <div class="arraygroup" data-name="Contest"></div>
+	    <div><button class="newrec" data-btmpl="candcontesttmpl">New Candidate Contest</button></div>
+	</td></tr>
 	<tr><td colspan="2"><h2>Ballot Styles</h2>
 	    <div class="arraygroup" data-name="BallotStyle"></div>
 	    <div><button class="newrec" data-btmpl="bstyletmpl">New Ballot Style</button></div>
 	</td></tr>
       </table>
-      <button class="deleterec">Delete Person (TODO)</button>
+      <button class="deleterec">Delete Election</button>
     </div>
   </template>
   <div class="topsec"><h2>Elections</h2>
@@ -189,9 +200,15 @@
     <div><button class="newrec" data-btmpl="electiontmpl" id="newelection">New Election</button></div>
   </div>
 
-  <template id="contesttmpl" data-attype="ElectionResults.OrderedContest">
-    <p>TODO: OrderedContest template</p>
+  <template id="ocontesttmpl" data-attype="ElectionResults.OrderedContest">
+    <table border="0">
+      <input type="hidden" data-key="attype" value="ElectionResults.OrderedContest" />
+      <tr><td>ContestId</td><td><input type="text" data-key="ContestId" /></td><td>reference top level Contest element by id (TODO: smart lookup)</td></tr>
+      <tr><td colspan="2" class="optional">optional:</td></tr>
+      <tr><td>Ordered Items</td><td><textarea data-name="OrderedContestSelectionIds"></textarea></td><td>reference selections by id within the Contest (TODO: smart picker)</td></tr>
+    </table>
   </template>
+
   <template id="bstyletmpl" data-attype="ElectionResults.BallotStyle">
     <table border="0">
       <input type="hidden" data-key="attype" value="ElectionResults.BallotStyle" />
@@ -199,25 +216,59 @@
       <tr><td colspan="2" class="optional">optional:</td></tr>
       <tr><td>External Identifiers</td><td><textarea data-name="ExternalIdentifier"></textarea></td></tr>
       <tr><td>Image URIs</td><td><textarea data-name="ImageUri"></textarea></td></tr>
-      <tr><td>Parties</td><td><textarea data-name="PartyIds"></textarea></td>list of party ids: party1 party3<td></td></tr>
-      <tr><td>Items</td><td><div class="arraygroup" data-name="OrderedContent"></div><div><button class="newrec" data-btmpl="contesttmpl">New Contest</button></div></td></tr>
+      <tr><td>Parties</td><td><textarea data-name="PartyIds"></textarea></td><td>list of party ids: party1 party3</td></tr>
+      <tr><td>Items</td><td><div class="arraygroup" data-name="OrderedContent"></div><div><button class="newrec" data-btmpl="ocontesttmpl">New Contest</button></div></td></tr>
     </table>
   </template>
-  <template id="contacttmpl" data-attype="ElectionResults.ContactInformation">
+
+  <template id="candcontesttmpl" data-attype="ElectionResults.CandidateContest">
     <table border="0">
-      <input type="hidden" data-key="attype" value="ElectionResults.ContactInformation" />
-      <tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
-      <tr><td>Label</td><td><input type="text" data-key="Label" /></td></tr>
-      <tr><td>Address</td><td><textarea data-key="AddressLine"></textarea></td></tr>
-      <tr><td>Directions</td><td><input type="text" data-key="Directions" /></td></tr>
-      <tr><td>Email</td><td><textarea data-key="Email"></textarea></td></tr>
-      <tr><td>Fax</td><td><textarea data-key="Fax"></textarea></td></tr>
-      <tr><td>Label</td><td><input type="text" data-key="Label" /></td></tr>
-      <tr><td>LatLng</td><td><input type="text" data-key="LatLng" /></td></tr>
-      <tr><td>Phone</td><td><textarea data-key="Phone"></textarea></td></tr>
-      <tr><td>Schedule</td><td><input type="text" data-key="Schedule" /></td><td>TODO: sub-form for ElectionResults.Schedule</td></tr>
-      <tr><td>Uri</td><td><textarea data-key="Uri"></textarea></td></tr>
+      <input type="hidden" data-key="attype" value="ElectionResults.CandidateContest" />
+      <tr><td colspan="2">TODO: candidatecontest</td></tr>
     </table>
+  </template>
+
+  <template id="ecandtmpl" data-attype="ElectionResults.Candidate">
+    <div class="candidate"><table border="0">
+      <input type="hidden" data-key="attype" value="ElectionResults.Candidate" />
+      <tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
+      <tr><td>Ballot Name</td><td><input type="text" data-key="BallotName" /></td></tr>
+      <tr><td colspan="2" class="optional">optional:</td></tr>
+      <tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
+      <tr><td>Slogan</td><td><input type="text" data-key="CampaignSlogan" /></td></tr>
+      <tr><td>PersonId</td><td><input type="text" data-key="PersonId" /></td><td>TODO: smart ref lookup</td></tr>
+      <tr><td>External Identifiers</td><td><textarea data-name="ExternalIdentifier"></textarea></td></tr>
+      <tr><td>File Date</td><td><input type="text" data-key="FileDate" /></td><td>YYYY-MM-DD</td></tr>
+      <tr><td>Is Incumbent</td><td><input type="checkbox" data-key="IsIncumbent"></td></tr>
+      <tr><td>Is Top-Ticket</td><td><input type="checkbox" data-key="IsTopTicket"></td></tr>
+      <tr><td>Pre-Election Status</td><td><input type="text" data-key="PreElectionStatus" /></td><td>"filed", "qualified", "withdrawn" (TODO: popup menu)</td></tr>
+    </table></div>
+  </template>
+
+  <template id="contacttmpl" data-attype="ElectionResults.ContactInformation">
+    <div class="sectionedshow">
+      <div class="show hidden">
+	<button class="sectionedit">Edit...</button>
+	<div class="showjson" data-hide="@type"></div>
+      </div>
+      <div class="edit">
+	<button class="sectionshow">shrink</button>
+	<table border="0">
+	  <input type="hidden" data-key="attype" value="ElectionResults.ContactInformation" />
+	  <tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
+	  <tr><td>Label</td><td><input type="text" data-key="Label" /></td></tr>
+	  <tr><td>Address</td><td><textarea data-key="AddressLine"></textarea></td></tr>
+	  <tr><td>Directions</td><td><input type="text" data-key="Directions" /></td></tr>
+	  <tr><td>Email</td><td><textarea data-key="Email"></textarea></td></tr>
+	  <tr><td>Fax</td><td><textarea data-key="Fax"></textarea></td></tr>
+	  <tr><td>Label</td><td><input type="text" data-key="Label" /></td></tr>
+	  <tr><td>LatLng</td><td><input type="text" data-key="LatLng" /></td></tr>
+	  <tr><td>Phone</td><td><textarea data-key="Phone"></textarea></td></tr>
+	  <tr><td>Schedule</td><td><input type="text" data-key="Schedule" /></td><td>TODO: sub-form for ElectionResults.Schedule</td></tr>
+	  <tr><td>Uri</td><td><textarea data-key="Uri"></textarea></td></tr>
+	</table>
+      </div>
+    </div>
   </template>
 
   <div><h2>debug</h2><div id="debugdiv"></div><button id="debugbutton">Do the thing!</button></div>
