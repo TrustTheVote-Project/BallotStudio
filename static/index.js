@@ -162,6 +162,7 @@
 	}
 	return ob;
     }
+    var textareaSplitter = /[, \t\r\n]+/g;
     var gatherJson = function(elem) {
 	var ob = {};
 	var any = false
@@ -185,7 +186,7 @@
 		var fieldname = te.getAttribute("data-key");
 		var fv = te.value;
 		if (fv) {
-		    ob[fieldname] = fv;
+		    ob[fieldname] = fv.split(textareaSplitter);
 		    any = true;
 		}
 	    } else if (hasClass(te, "arraygroup")) {
@@ -229,24 +230,32 @@
 	var hd = {};
 	for (var i = 0, hv; hv = handled[i]; i++) {
 	    hd[hv]=1;
+	    if (hv == '@id') {
+		hd['atid']=1;
+	    } else if (hv == '@type') {
+		hd['attype']=1;
+	    }
 	}
 	for (var obk in ob) {
 	    if (!hd[obk]) {
 		extraKeys.push(obk);
 	    }
 	}
-	if (extraKeys) {
+	if (extraKeys.length) {
 	    console.log("pushOb {" + obtype + ", " + obid + "} still left with keys: "+extraKeys.join(", "));
 	}
     };
-    var pushOb = function(elem, ob, shouldConsume){
+    var pushOb = function(elem, ob, shouldConsume, handled){
 	if (!elem.children) {
 	    console.log("pushOb cannot descend ", elem)
 	    return false;
 	}
 	var obtype = ob["@type"] || "unktype";
 	var obid = ob["@id"] || "";
-	var handled = [];
+	//var handled = [];
+	if (handled === undefined) {
+	    handled = [];
+	}
 	for (var i = 0, te; te = elem.children[i]; i++) {
 	    if (hasClass(te, "arraygroup")) {
 		var fieldname = te.getAttribute("data-name");
@@ -283,10 +292,9 @@
 		if (!av) {
 		    continue;
 		}
+		handled.push(fieldname);
 		for (var j = 0, je; je = te.children[j]; j++) {
-		    if (pushOb(je, av)) {
-			return true;
-		    }
+		    pushOb(je, av, true);
 		}
 	    } else if (te.tagName == "INPUT") {
 		var fieldname = te.getAttribute("data-key");
@@ -304,18 +312,22 @@
 		var fieldname = te.getAttribute("data-key");
 		var ov = ob[fieldname];
 		if (ov) {
-		    console.log("TODO: unpack " + fieldname + " into TEXTAREA")
+		    if (ov.length) {
+			ov = ov.join(" ");
+		    } else {
+			console.log("TODO: unpack " + fieldname + "=" +JSON.stringify(ov)+ " into TEXTAREA")
+		    }
 		    te.value = ov;
 		    handled.push(fieldname);
 		}
 	    } else if (hasClass(te, "showjson")) {
 		setJsonShow(te, ob);
 	    } else {
-		pushOb(te, ob);
+		pushOb(te, ob, false, handled);
 	    }
 	}
 	if (shouldConsume) {
-	    //reportExtra(ob, obtype, obid, handled);// TODO: make sure this is clean
+	    reportExtra(ob, obtype, obid, handled);// TODO: make sure this is clean
 	}
 	return false;
     };
@@ -393,7 +405,7 @@
 	var they = document.getElementsByClassName(classname);
 	for (var i = 0, db; db = they[i]; i++) {
 	    db.onclick = fn;
-	    console.log(classname + " " + i);
+	    //console.log(classname + " " + i);
 	}
     }
     var updateDeleteButtons = function() {

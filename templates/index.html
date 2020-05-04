@@ -29,18 +29,18 @@
     <div class="recform">
       <table border="0">
 	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
-	<tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
+ 	<tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
 	<input type="hidden" data-key="attype" value="ElectionResults.Party" />
 	<tr><td colspan="2" class="optional">optional:</td></tr>
 	<tr><td>Abbreviation</td><td><input type="text" data-key="Abbreviation" /></td></tr>
 	<tr><td>Color</td><td><input type="text" data-key="Color" /></td><td class="fieldnote">HTML color, e.g. #ff0000 for red</td></tr>
 	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
-	<tr><td>External Identifiers</td><td><textarea data-name="ExternalIdentifier"></textarea></td></tr>
+	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
 	<tr><td>Recognized Party</td><td><input type="checkbox" data-key="IsRecognizedParty"></td></tr>
 	<tr><td>Leaders</td><td>TODO: look up and make references to People, "LeaderPersonIds"</td></tr>
 	<tr><td>Logo URI</td><td><textarea data-key="LogoUri"></textarea></td></tr>
 	<tr><td>Slogan</td><td><input type="text" data-key="Slogan" /></td></tr>
-	<tr><td>Scope</td><td><textarea data-name="PartyScopeGpUnitIds"></textarea></td><td>reference by @id to Geo-Political Units (TODO: smart lookup)</td></tr>
+	<tr><td>Scope</td><td><textarea data-key="PartyScopeGpUnitIds"></textarea></td><td>reference by @id to Geo-Political Units (TODO: smart lookup)</td></tr>
       </table>
       <button class="deleterec">Delete Party (TODO)</button>
     </div>
@@ -66,7 +66,7 @@
 	<tr><td>Profession</td><td><input type="text" data-key="Profession" /></td></tr>
 	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
 	<tr><td>Date of Birth</td><td><input type="text" data-key="DateOfBirth" /></td></tr>
-	<tr><td>External Identifiers</td><td><textarea data-name="ExternalIdentifier"></textarea></td></tr>
+	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
 	<tr><td>Party</td><td><input type="text" data-key="PartyId" /></td><td>reference by @id to Party (TODO: smart lookup)</td></tr>
       </table>
       <button class="deleterec">Delete Person (TODO)</button>
@@ -88,7 +88,7 @@
 	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
 	<tr><td>Description</td><td><input type="text" data-key="Description" /></td></tr>
 	<tr><td>Election District</td><td>TODO: look up and make references to Geo-Political Reporting Units, "ElectionDistrictId"</td></tr>
-	<tr><td>External Identifiers</td><td><textarea data-name="ExternalIdentifier"></textarea></td></tr>
+	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
 	<tr><td>Filing Deadline</td><td><input type="text" data-key="FilingDeadline" /></td><td>Format must be: YYYY-MM-DD<br/>TODO: proper date picker.</td></tr>
 	<tr><td>Is Partisan</td><td><input type="checkbox" data-key="IsPartisan"></td></tr>
 	<tr><td>Incumbents</td><td>TODO: look up and make references to People, "OfficeHolderPersonIds"</td></tr>
@@ -142,11 +142,11 @@
 	<tr><td colspan="2" class="optional">optional:</td></tr>
 	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
 	<tr><td>AuthorityIds</td><td>TODO: look up and make references to People, "AuthorityIds"</td></tr>
-	<tr><td>ComposingGpUnitIds</td><td><textarea data-name="ComposingGpUnitIds"></textarea></td><td>reference by @id to Geo-Political Units (TODO: smart lookup)</td></tr>
+	<tr><td>ComposingGpUnitIds</td><td><textarea data-key="ComposingGpUnitIds"></textarea></td><td>reference by @id to Geo-Political Units (TODO: smart lookup)</td></tr>
 	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
 	<!-- CountStatus 0+ array of CountStatus records, effectively {"absentee":"in-process","early":"completed"} procedural detail not relevant to pre-election ballot design -->
 	<tr><td>ElectionAdministration</td><td>TODO: a sub struct with ContactInformation, Name (e.g. Somewhere County Clerk), and a list of PersonIds, "ElectionAdministration"</td></tr>
-	<tr><td>External Identifiers</td><td><textarea data-name="ExternalIdentifier"></textarea></td></tr>
+	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
 	<tr><td>Is Districted</td><td><input type="checkbox" data-key="IsDistricted"></td></tr>
 	<tr><td>Is Mail-Only</td><td><input type="checkbox" data-key="IsMailOnly"></td></tr>
 	<tr><td>Number</td><td><input type="text" data-key="Number" /></td></tr>
@@ -205,18 +205,18 @@
       <input type="hidden" data-key="attype" value="ElectionResults.OrderedContest" />
       <tr><td>ContestId</td><td><input type="text" data-key="ContestId" /></td><td>reference top level Contest element by id (TODO: smart lookup)</td></tr>
       <tr><td colspan="2" class="optional">optional:</td></tr>
-      <tr><td>Ordered Items</td><td><textarea data-name="OrderedContestSelectionIds"></textarea></td><td>reference selections by id within the Contest (TODO: smart picker)</td></tr>
+      <tr><td>Ordered Items</td><td><textarea data-key="OrderedContestSelectionIds"></textarea></td><td>reference selections by id within the Contest (TODO: smart picker)</td></tr>
     </table>
   </template>
 
   <template id="bstyletmpl" data-attype="ElectionResults.BallotStyle">
     <table border="0">
       <input type="hidden" data-key="attype" value="ElectionResults.BallotStyle" />
-      <tr><td>Geo-Political Units</td><td><textarea data-name="GpUnitIds"></textarea></td><td>space separated reference list: gpunit1 gpunit2</td></tr>
+      <tr><td>Geo-Political Units</td><td><textarea data-key="GpUnitIds"></textarea></td><td>space separated reference list: gpunit1 gpunit2</td></tr>
       <tr><td colspan="2" class="optional">optional:</td></tr>
-      <tr><td>External Identifiers</td><td><textarea data-name="ExternalIdentifier"></textarea></td></tr>
-      <tr><td>Image URIs</td><td><textarea data-name="ImageUri"></textarea></td></tr>
-      <tr><td>Parties</td><td><textarea data-name="PartyIds"></textarea></td><td>list of party ids: party1 party3</td></tr>
+      <tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
+      <tr><td>Image URIs</td><td><textarea data-key="ImageUri"></textarea></td></tr>
+      <tr><td>Parties</td><td><textarea data-key="PartyIds"></textarea></td><td>list of party ids: party1 party3</td></tr>
       <tr><td>Items</td><td><div class="arraygroup" data-name="OrderedContent"></div><div><button class="newrec" data-btmpl="ocontesttmpl">New Contest</button></div></td></tr>
     </table>
   </template>
@@ -224,7 +224,38 @@
   <template id="candcontesttmpl" data-attype="ElectionResults.CandidateContest">
     <table border="0">
       <input type="hidden" data-key="attype" value="ElectionResults.CandidateContest" />
-      <tr><td colspan="2">TODO: candidatecontest</td></tr>
+      <tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
+      <tr><td>Election Dsitrct</td><td><input type="text" data-key="ElectionDistrictId" /></td><td>reference Geo-Political unit by @id (TODO: smart lookup)</td></tr>
+      <tr><td>Votes Allowed</td><td><input type="number" min="1" step="1" data-key="VotesAllowed" /></td></tr>
+      <tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
+      <tr><td colspan="2" class="optional">optional:</td></tr>
+      <tr><td>Abbreviation</td><td><input type="text" data-key="Abbreviation" /></td></tr>
+      <tr><td>Ballot Title</td><td><input type="text" data-key="BallotTitle" /></td></tr>
+      <tr><td>Ballot Subtitle</td><td><input type="text" data-key="BallotSubTitle" /></td></tr>
+      <tr><td colspan="2"><h2>Selections</h2>
+	  <div class="arraygroup" data-name="ContestSelection"></div>
+	  <div><button class="newrec" data-btmpl="candseltmpl">New Selection</button></div>
+      </td></tr>
+      <tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
+      <tr><td>Enable Rotation</td><td><input type="checkbox" data-key="HasRotation"></td></tr>
+      <tr><td>Number Elected</td><td><input type="number" min="1" step="1" data-key="NumberElected" /></td></tr>
+      <tr><td>Number Runoff</td><td><input type="number" min="1" step="1" data-key="NumberRunoff" /></td></tr>
+      <tr><td>Offices</td><td><textarea data-key="OfficeIds"></textarea></td>References to Office by @id (TODO: smart lookup)<td></td></tr>
+      <tr><td>Vote Variation</td><td><input type="text" data-key="VoteVariation" /></td><td>"approval", "borda", "cumulative", "majority", "n-of-m", "other", "plurality", "proportional", "range", "rcv", "super-majority" (TODO: popup menu)</td></tr>
+      <tr><td>Vote Variation Other</td><td><input type="text" data-key="OtherVoteVariation" /></td><td>when "Vote Variation" is "other"</td></tr>
+      <tr><td>Sequence Order</td><td><input type="number" min="1" step="1" data-key="SequenceOrder" /></td></tr>
+      <tr><td>PrimaryPartyIds</td><td><textarea data-key="PrimaryPartyIds"></textarea></td>References to Party or Coalition by @id (TODO: smart lookup)<td></td></tr>
+    </table>
+  </template>
+
+  <template id="candseltmpl" data-attype="ElectionResults.CandidateSelection">
+    <table border="0">
+      <input type="hidden" data-key="attype" value="ElectionResults.CandidateSelection" />
+      <tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
+      <tr><td>Candidates</td><td><textarea data-key="CandidateIds"></textarea></td><td>references to Candidates by @id (TODO: smart lookup)</td></tr>
+      <tr><td>Endorsing Parties</td><td><textarea data-key="EndorsementPartyIds"></textarea></td><td>references to Party or Coalition by @id (TODO: smart lookup)</td></tr>
+      <tr><td>Is Write-In</td><td><input type="checkbox" data-key="IsWriteIn"></td></tr>
+      <tr><td>Sequence Order</td><td><input type="number" min="1" step="1" data-key="SequenceOrder" /></td></tr>
     </table>
   </template>
 
@@ -237,7 +268,7 @@
       <tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
       <tr><td>Slogan</td><td><input type="text" data-key="CampaignSlogan" /></td></tr>
       <tr><td>PersonId</td><td><input type="text" data-key="PersonId" /></td><td>TODO: smart ref lookup</td></tr>
-      <tr><td>External Identifiers</td><td><textarea data-name="ExternalIdentifier"></textarea></td></tr>
+      <tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
       <tr><td>File Date</td><td><input type="text" data-key="FileDate" /></td><td>YYYY-MM-DD</td></tr>
       <tr><td>Is Incumbent</td><td><input type="checkbox" data-key="IsIncumbent"></td></tr>
       <tr><td>Is Top-Ticket</td><td><input type="checkbox" data-key="IsTopTicket"></td></tr>
