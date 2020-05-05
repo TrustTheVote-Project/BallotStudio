@@ -163,6 +163,61 @@
 	return ob;
     }
     var textareaSplitter = /[, \t\r\n]+/g;
+    var whitespace = " \t\r\n";
+    // TODO: split text like CSV
+    var extractQuoted = function(t,startpos,out) {
+		// extract quoted substring
+		i++;
+		if (i==t.length){return out;} // garbage, quit. TODO: raise exception
+		var qstart = i;
+		while (i < t.length) {
+		    c = t[i];
+		    if (c == '"') {
+			if((i+1 < t.length) && (t[i+1] == '"')) {
+			    // skip "" escaped "
+			    i = i+1;
+			} else {
+			    // end quoted region, unescaped contained quotes, save
+			    out.push(t.substring(qstart,i).replace("\"\"", "\""));
+			    // consume extra whitespace
+			    i++;
+			    while (i < t.length) {
+				if (!whitespace.includes(t[i])) {
+				    break;
+				}
+				i++;
+			    }
+			    return i;
+			}
+			i++;
+		    }
+		}
+    };
+    var textToArray = function(t) {
+	if (!t) {return null;}
+	var mode=0;
+	var i = 0;
+	var fstart = i;
+	var out = [];
+	while (i < t.length) {
+	    var c = t[i];
+	    if (c == '"') {
+		i = extractQuoted(t, i, out);
+		continue;
+	    }
+	    if (c == ',') {
+		out.push(t.substring(fstart,i));
+		i++;
+		fstart = i;
+		continue;
+	    }
+	    i++;
+	}
+	if (i != fstart) {
+	    out.push(t.substring(fstart,i));
+	}
+	return out;
+    };
     var gatherJson = function(elem) {
 	var ob = {};
 	var any = false
@@ -186,7 +241,7 @@
 		var fieldname = te.getAttribute("data-key");
 		var fv = te.value;
 		if (fv) {
-		    ob[fieldname] = fv.split(textareaSplitter);
+		    ob[fieldname] = textToArray(fv);//fv.split(textareaSplitter);
 		    any = true;
 		}
 	    } else if (hasClass(te, "arraygroup")) {
@@ -433,10 +488,23 @@
     };
     updateDeleteButtons();
 
+    var drawResultHandler = function() {
+	if (this.readyState == 4 && this.status == 200) {
+	    var html = document.getElementById("debugdiv").innerHTML;
+	    html += "<pre>" + this.responseText + "</pre>";
+	    var ob = JSON.parse(this.responseText);
+	    if (ob && ob.item) {
+		html += "<p style=\"font-size:200%\"><a href=\"/item?i=" + ob.item + "\">PDF</a></p>";
+	    }
+	    document.getElementById("debugdiv").innerHTML = html;
+	}
+    };
+
     var debugbutton = document.getElementById("debugbutton");
     debugbutton.onclick = function() {
 	var js = gatherJson(document.body);
-	document.getElementById("debugdiv").innerHTML = JSON.stringify(js);
+	document.getElementById("debugdiv").innerHTML = "<pre>" + JSON.stringify(js) + "</pre>";
+	POSTjson("/draw?bubbles=1", js, drawResultHandler);
     };
 
     //var savedObj = {"Party":[{"@id":"party1","@type":"ElectionResults.Party","Name":"Stupid","Abbreviation":"","Color":"","IsRecognizedParty":"on","LogoUri":"","Slogan":""},{"@id":"party2","@type":"ElectionResults.Party","Name":"Evil","Abbreviation":"","Color":"","IsRecognizedParty":"on","LogoUri":"","Slogan":""}],"Person":[{"@id":"pers1","@type":"ElectionResults.Person","FullName":"SOMEGUY","Prefix":"","FirstName":"","MiddleName":"","LastName":"","Suffix":"","Nickname":"","Title":"","Profession":"","DateOfBirth":""}],"Office":[{"@id":"office1","@type":"ElectionResults.Office","Name":"Mayor","Term":{"@type":"ElectionResults.Term","StartDate":"2021-01-20","EndDate":"2025-01-20","Type":"full-term"}}]}
@@ -450,12 +518,23 @@
 	    }
 	}
     };
-    var get = function(url, handler) {
+    var GET = function(url, handler) {
 	var http = new XMLHttpRequest();
 	http.onreadystatechange = handler;
 	http.open("GET",url,true);
 	http.send();
     };
-    get("/static/demo.json", loadElectionHandler);
+    GET("/static/demo.json", loadElectionHandler);
+    var POSTjson = function(url, ob, handler) {
+	var data = JSON.stringify(ob);
+	POST(url, data, 'application/json', handler);
+    };
+    var POST = function(url, data, contentType, handler) {
+	var http = new XMLHttpRequest();
+	http.onreadystatechange = handler;
+	http.open("POST",url,true);
+	http.setRequestHeader('Content-Type', contentType);
+	http.send(data);
+    };
     //pushOb(document.body, savedObj);
 })();

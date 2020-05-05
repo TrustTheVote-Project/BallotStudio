@@ -16,6 +16,7 @@
   .datid{font-size:90%;font-family:monospace;color:#444;}
   .sectionedshow{border:1px solid #777;}
   .candidate{border:1px solid #777;}
+  .contest{border:1px solid #777;}
   div.recform{border:1px solid #555;padding-left:1em;margin:0.5em;background-color:#fafafa;}
 .foo{}
 @media screen and (min-width: 40.5em) {
@@ -222,6 +223,7 @@
   </template>
 
   <template id="candcontesttmpl" data-attype="ElectionResults.CandidateContest">
+    <div class="contest">
     <table border="0">
       <input type="hidden" data-key="attype" value="ElectionResults.CandidateContest" />
       <tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
@@ -246,6 +248,7 @@
       <tr><td>Sequence Order</td><td><input type="number" min="1" step="1" data-key="SequenceOrder" /></td></tr>
       <tr><td>PrimaryPartyIds</td><td><textarea data-key="PrimaryPartyIds"></textarea></td>References to Party or Coalition by @id (TODO: smart lookup)<td></td></tr>
     </table>
+    </div>
   </template>
 
   <template id="candseltmpl" data-attype="ElectionResults.CandidateSelection">
