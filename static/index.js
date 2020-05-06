@@ -164,7 +164,6 @@
     }
     var textareaSplitter = /[, \t\r\n]+/g;
     var whitespace = " \t\r\n";
-    // TODO: split text like CSV
     var extractQuoted = function(t,startpos,out) {
 		// extract quoted substring
 		i++;
@@ -193,6 +192,7 @@
 		    }
 		}
     };
+    // split like CSV
     var textToArray = function(t) {
 	if (!t) {return null;}
 	var mode=0;
@@ -215,6 +215,22 @@
 	}
 	if (i != fstart) {
 	    out.push(t.substring(fstart,i));
+	}
+	return out;
+    };
+    var commaEscape = function(t) {
+	if (t.include(",")) {
+	    return "\"" + t.replace("\"", "\"\"") + "\""
+	}
+	return t
+    }
+    var arrayToText = function(ta) {
+	if (!ta || (!ta.length)) {
+	    return null;
+	}
+	var out = commaEscape(ta[0]);
+	for (var i = 1, t; t = ta[i]; i++) {
+	    out += "," + commaEscape(t);
 	}
 	return out;
     };
@@ -368,7 +384,7 @@
 		var ov = ob[fieldname];
 		if (ov) {
 		    if (ov.length) {
-			ov = ov.join(" ");
+			ov = arrayToText(ov);
 		    } else {
 			console.log("TODO: unpack " + fieldname + "=" +JSON.stringify(ov)+ " into TEXTAREA")
 		    }
