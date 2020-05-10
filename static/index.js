@@ -1,4 +1,6 @@
 (function(){
+    var electionid = null;
+
     var addClass = function(elem, classname) {
 	var cl = elem.classList;
 	if (cl) {
@@ -219,7 +221,7 @@
 	return out;
     };
     var commaEscape = function(t) {
-	if (t.include(",")) {
+	if (t.includes(",")) {
 	    return "\"" + t.replace("\"", "\"\"") + "\""
 	}
 	return t
@@ -523,6 +525,40 @@
 	POSTjson("/draw?bubbles=1", js, drawResultHandler);
     };
 
+    var saveResultHandler = function(buttonelem, http) {
+	var dbt = null;
+	if (http.readyState >= 2) {
+	    var dbt = firstChildOfClass(buttonelem.parentNode, "debugtext");
+	    if (http.readyState == 2 || http.readyState == 3) {
+		if (dbt) {
+		    dbt.innerHTML = "<span style=\"background-color:#ffa;font-weight:bolt;font-size:120%;\">saving...</span>";
+		}
+	    } else if (http.readyState == 4) {
+		// done
+		if (http.status == 200 && !electionid) {
+		    var response = JSON.parse(http.responseText);
+		    electionid = response.itemid;
+		    // TODO: update page url to be /edit/{electionid}
+		}
+		if (dbt) {
+		    if (http.status == 200) {
+			dbt.innerHTML = "saved <a href=\"/edit/" + electionid + "\">election " + electionid + "</a> at " + Date();
+		    } else {
+			var msg = "error: " + http.status + " " + http.statusText;
+			dbt.innerHTML = msg;
+		    }
+		}
+	    }
+	}
+    };
+    var savebuttonclick = function() {
+	var js = gatherJson(document.body);
+	var eid = electionid || 0;
+	var savebutton = this;
+	POSTjson("/election/"+eid, js, function(){saveResultHandler(savebutton, this);});
+    };
+    setOnclickForClass("savebutton",savebuttonclick);
+
     //var savedObj = {"Party":[{"@id":"party1","@type":"ElectionResults.Party","Name":"Stupid","Abbreviation":"","Color":"","IsRecognizedParty":"on","LogoUri":"","Slogan":""},{"@id":"party2","@type":"ElectionResults.Party","Name":"Evil","Abbreviation":"","Color":"","IsRecognizedParty":"on","LogoUri":"","Slogan":""}],"Person":[{"@id":"pers1","@type":"ElectionResults.Person","FullName":"SOMEGUY","Prefix":"","FirstName":"","MiddleName":"","LastName":"","Suffix":"","Nickname":"","Title":"","Profession":"","DateOfBirth":""}],"Office":[{"@id":"office1","@type":"ElectionResults.Office","Name":"Mayor","Term":{"@type":"ElectionResults.Term","StartDate":"2021-01-20","EndDate":"2025-01-20","Type":"full-term"}}]}
     var loadElectionHandler = function() {
 	if (this.readyState == 4 && this.status == 200) {
@@ -537,20 +573,31 @@
     var GET = function(url, handler) {
 	var http = new XMLHttpRequest();
 	http.onreadystatechange = handler;
+	http.timeout = 9000;
 	http.open("GET",url,true);
 	http.send();
     };
-    GET("/static/demo.json", loadElectionHandler);
+    //GET("/static/demo.json", loadElectionHandler);
     var POSTjson = function(url, ob, handler) {
 	var data = JSON.stringify(ob);
 	POST(url, data, 'application/json', handler);
     };
     var POST = function(url, data, contentType, handler) {
 	var http = new XMLHttpRequest();
+	http.timeout = 9000;
 	http.onreadystatechange = handler;
 	http.open("POST",url,true);
 	http.setRequestHeader('Content-Type', contentType);
 	http.send(data);
     };
     //pushOb(document.body, savedObj);
+    (function(){
+	var eidd = document.getElementById('electionid');
+	if (eidd) {
+	    electionid = eidd.getAttribute('data-id');
+	}
+	if (electionid) {
+	    GET("/election/"+electionid, loadElectionHandler);
+	}
+    })();
 })();

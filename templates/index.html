@@ -18,6 +18,7 @@
   .candidate{border:1px solid #777;}
   .contest{border:1px solid #777;}
   div.recform{border:1px solid #555;padding-left:1em;margin:0.5em;background-color:#fafafa;}
+  button.reloadbutton{display:none;}
 .foo{}
 @media screen and (min-width: 40.5em) {
 .foo{}
@@ -26,6 +27,7 @@
 </head>
 <body>
   <h1>Ballot Studio</h1>
+  <div><button class="savebutton">Save</button> - <button class="reloadbutton">Reload</button><span class="debugtext"></span></div>
   <template id="partytmpl" data-attype="ElectionResults.Party" data-seq="party">
     <div class="recform">
       <table border="0">
@@ -177,7 +179,6 @@
 </td></tr>
 	<tr><td>Start Date</td><td><input type="text" data-key="StartDate" /></td><td>YYYY-MM-DD</td></tr>
 	<tr><td>End Date</td><td><input type="text" data-key="EndDate" /></td><td>YYYY-MM-DD</td></tr>
-	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
 	<tr><td>Scope</td><td><input type="text" data-key="ElectionScopeId" /></td><td>TODO: look up and make references to Geo-Political Units, "ElectionScopeId"</td></tr>
 	<tr><td colspan="2" class="optional">optional:</td></tr>
 	<tr><td colspan="2"><h2>Candidates</h2>
@@ -305,7 +306,9 @@
     </div>
   </template>
 
+  <div><button class="savebutton">Save</button> - <button class="reloadbutton">Reload</button><span class="debugtext"></span></div>
   <div><h2>debug</h2><div id="debugdiv"></div><button id="debugbutton">Do the thing!</button></div>
+  <div id="electionid" data-id="{{electionid}}" style="display:none"></div>
   <script src="/static/index.js"></script>
 </body>
 </html>

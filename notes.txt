@@ -325,3 +325,23 @@ FLASK_ENV=development FLASK_APP=app.py flask run
 
 
 TODO: storage for election editing
+
+2020-05-07 13:31:01 EDT (Thursday, May 07 01:31:01 PM)
+
+call
+
+NIST 1500-100 for election results
+
+NIST standard "cast vote record"
+https://pages.nist.gov/CastVoteRecords/
+
+
+home assisted voting
+* login step, find correct ballot for voter
+* vote step, seperate server, doesn't know who the voter is
+* webapp does accessible UI stuff
+* results in ballot identical to standard ballot, with bubbles filled in, printed by user, mailed in if they like it.
+
+
+
+phone scan demo?
