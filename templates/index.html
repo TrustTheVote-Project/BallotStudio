@@ -17,6 +17,35 @@
   .sectionedshow{border:1px solid #777;}
   .candidate{border:1px solid #777;}
   .contest{border:1px solid #777;}
+
+  .autocomplete{position:relative;display:inline-block;}
+.autocomplete-items {
+  position: absolute;
+  border: 1px solid #d4d4d4;
+  border-bottom: none;
+  border-top: none;
+  z-index: 99;
+  /*position the autocomplete items to be the same width as the container:*/
+  top: 100%;
+  left: 0;
+  right: 0;
+}
+.autocomplete-items div {
+  padding: 10px;
+  cursor: pointer;
+  background-color: #fff;
+  border-bottom: 1px solid #d4d4d4;
+}
+.autocomplete-items div:hover {
+  /*when hovering an item:*/
+  background-color: #e9e9e9;
+}
+.autocomplete-active {
+  /*when navigating through the items using the arrow keys:*/
+  background-color: DodgerBlue !important;
+  color: #ffffff;
+}
+
   div.recform{border:1px solid #555;padding-left:1em;margin:0.5em;background-color:#fafafa;}
   button.reloadbutton{display:none;}
 .foo{}
@@ -40,7 +69,9 @@
 	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
 	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
 	<tr><td>Recognized Party</td><td><input type="checkbox" data-key="IsRecognizedParty"></td></tr>
-	<tr><td>Leaders</td><td>TODO: look up and make references to People, "LeaderPersonIds"</td></tr>
+	<tr><td>Leaders</td><td><textarea data-key="LeaderPersonIds"></textarea></td><td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Person"></div>
+	    <br/>TODO: keep references to @id behind the scenes, display FullName or best available name by code
+	    <br/>TODO: look up and make references to People, "LeaderPersonIds"</td></tr>
 	<tr><td>Logo URI</td><td><textarea data-key="LogoUri"></textarea></td></tr>
 	<tr><td>Slogan</td><td><input type="text" data-key="Slogan" /></td></tr>
 	<tr><td>Scope</td><td><textarea data-key="PartyScopeGpUnitIds"></textarea></td><td>reference by @id to Geo-Political Units (TODO: smart lookup)</td></tr>

@@ -5,11 +5,6 @@
 	var cl = elem.classList;
 	if (cl) {
 	    if (cl.contains(classname)) {return;}
-	    // for (var i = 0; cl[i]; i++) {
-	    // 	if (classname == cl[i]) {
-	    // 	    return
-	    // 	}
-	    // }
 	    cl.add(classname);
 	}
     };
@@ -17,28 +12,16 @@
 	if (!hasClass(elem, classname)) {
 	    return;
 	}
-	//var ncl = new DOMTokenList();
 	var cl = elem.classList;
 	if (!cl) {
 	    return;
 	}
 	cl.remove(classname);
-	// for (var i = 0, ci; ci = cl[i]; i++) {
-	//     if (ci != classname) {
-	// 	ncl.push(ci);
-	//     }
-	// }
-	// elem.classList = ncl;
     };
     var hasClass = function(elem, classname) {
 	var cl = elem.classList;
 	if (cl) {
 	    return cl.contains(classname);
-	    // for (var i = 0; cl[i]; i++) {
-	    // 	if (classname == cl[i]) {
-	    // 	    return true;
-	    // 	}
-	    // }
 	}
 	if (elem.className == classname) {
 	    return true;
@@ -290,6 +273,94 @@
 	    return null;
 	}
     };
+    // Recursively search election tree for typed objects, return {attype:[],...}
+  var obsByType = function(ob, bytype, byid, seen) {
+    if (!((ob instanceof Object) || (ob instanceof Array))) {
+      return;
+    }
+    // if (!seen) {
+    //   seen = {};
+    // }
+    // if(seen[ob]){
+    //   return;
+    // }
+    // seen[ob]=1;
+    var atid = ob['@id'];
+    if (atid) {
+      if (byid[atid]) {
+	console.log("id collision, dup: " + atid);
+      } else {
+	byid[atid] = ob;
+      }
+    }
+    var attype = ob['@type'];
+    if (attype) {
+      var they = bytype[attype];
+      if (they) {
+	they.push(ob);
+      } else {
+	they = [ob];
+	bytype[attype] = they;
+      }
+    }
+    console.log("atid=" + atid + " attypye=" + attype);
+    for (const key in ob) {
+      obsByType(ob[key], bytype, byid, seen);
+    }
+    // if (ob.length) {
+    //     for (var i = 0, e; e = ob[i]; i++) {
+    //       bytype = obsByType(e, bytype, seen);
+    //     }
+    // }
+  };
+  var obcache = null;
+  var obtcache = null;
+  var obidcache = null;
+  var obcachet = 0;
+  var ensureObCaches = function() {
+    var now = Date.now();
+    if (!obcache || ((now - obcachet) > 5000)) {
+      // TODO: obcache=null on input de-focus to invalidate the cache
+      obcache = gatherJson(document.body);
+      obtcache = {};
+      obidcache = {};
+      obsByType(obcache, obtcache, obidcache);
+      obcachet = now;
+    }
+  };
+  var searchObs = function(attype, text) {
+    ensureObCaches();
+    var they = obtcache[attype];
+    if (!they){return null;}
+    var matches = [];
+    for (var i = 0, e; e = they[i]; i++) {
+      for (const key in e) {
+	if (key == '@id' || key == '@type') {
+	  continue
+	}
+	var v = e[key];
+	if (v instanceof String || (typeof(v) == "string")) {
+	  if (v.includes(text)) {
+	    matches.push(e);
+	    break; // done with e
+	  }
+	} else if (v instanceof Array) {
+	  var hit = false;
+	  for (var vi = 0, vv; vv = v[vi]; vi++) {
+	    if ((vv instanceof String) && (vv.includes(text))) {
+	      matches.push(e);
+	      hit = true;
+	      break;
+	    }
+	  }
+	  if (hit) {
+	    break; // done with e
+	  }
+	}
+      }
+    }
+    return matches;
+  };
 
     var isEmpty = function(ob) {
 	for (var k in ob) {
@@ -452,8 +523,6 @@
 	    if (show && edit) {
 		addClass(show,"hidden");
 		rmClass(edit,"hidden");
-		//show.style.visibility = 'hidden';
-		//edit.style.visibility = 'visible';
 	    }
 	}
     };
@@ -469,8 +538,6 @@
 		// swap visibility
 		rmClass(show,"hidden");
 		addClass(edit,"hidden");
-		//show.style.visibility = 'visible';
-		//edit.style.visibility = 'hidden';
 	    }
 	}
     }
@@ -478,33 +545,124 @@
 	var they = document.getElementsByClassName(classname);
 	for (var i = 0, db; db = they[i]; i++) {
 	    db.onclick = fn;
-	    //console.log(classname + " " + i);
 	}
     }
-    var updateDeleteButtons = function() {
-	setOnclickForClass("deleterec",deleterec);
-	setOnclickForClass("newrec",newrecDo);
-	setOnclickForClass("sectionedit",doEditMode);
-	setOnclickForClass("sectionshow",doShowMode);
-	/*
-	var delbuttons = document.getElementsByClassName("deleterec");
-	for (var i = 0, db; db = delbuttons[i]; i++) {
-	    db.onclick = deleterec;
-	}
-	var newbuttons = document.getElementsByClassName("newrec");
-	for (var i = 0, db; db = newbuttons[i]; i++) {
-	    db.onclick = newrecDo;
-	}
-	var editbuttons = document.getElementsByClassName("sectionedit");
-	for (var i = 0, db; db = editbuttons[i]; i++) {
-	    db.onclick = doEditMode;
-	}
-	var showbuttons = document.getElementsByClassName("sectionshow");
-	for (var i = 0, db; db = showbuttons[i]; i++) {
-	    db.onclick = doShowMode;
-	}*/
-    };
-    updateDeleteButtons();
+
+  var autocompleteSummarizers = {
+    "ElectionResults.Person": function(rec) {
+      if (rec.FullName) {return rec.FullName;}
+      var out = rec.Prefix || "";
+      if (rec.FirstName) {out += " " + rec.FirstName;}
+      if (rec.Nickname) {out += " (" + rec.Nickname + ")";}
+      if (rec.MiddleName) {out += " " + rec.MiddleName;}
+      if (rec.LastName) {out += " " + rec.LastName;}
+      if (rec.Suffix) {out += ", " + rec.Suffix;}
+      return out;
+    }
+  };
+  var getAutocompleteSummarizer = function(attype) {
+    var f = autocompleteSummarizers[attype];
+    if (f) {return f;}
+    return JSON.stringify;
+  };
+  
+  var closeAutocompleteLists = function(elem) {
+    // close everything except what was passed in
+    var x = document.getElementsByClassName("autocomplete-items");
+    for (var i = 0; i < x.length; i++) {
+      if (elem != x[i]) {// TODO: if elem == current active autocomplete field, don't close, was " && elem != inp"
+	x[i].parentNode.removeChild(x[i]);
+      }
+    }
+  };
+  // clicking outside an autocomplete should close them all.
+  // TODO: keep the active one if we click in that
+  document.addEventListener("click", function (e) {
+    closeAutocompleteLists(e.target);
+  });
+  var autocompleteItemClickListener = function(itemelem, e, rootinput) {
+    rootinput.value = itemelem.getAttribute("data-atid");
+    closeAutocompleteLists();
+  };
+  var autocompleteInputListener = function(rootinput, e, ctx) {
+    var val = rootinput.value;
+    closeAutocompleteLists();
+    if (!val){return false;}
+    var attype = rootinput.getAttribute("data-acattype");
+    if (!attype){return false;}
+    var items = searchObs(attype, val);
+    if (!items || !items.length){return false;}
+    var summarizer = getAutocompleteSummarizer(attype);
+    ctx.currentFocus = -1;
+    var itemsdiv = document.createElement("DIV");
+    itemsdiv.setAttribute("id", rootinput.id + "autocomplete-list");
+    itemsdiv.setAttribute("class", "autocomplete-items");
+    rootinput.parentNode.appendChild(itemsdiv);
+    for (var i = 0, ie; ie=items[i]; i++) {
+      var adiv = document.createElement("DIV");
+      adiv.innerHTML = summarizer(ie);
+      adiv.setAttribute("data-atid", ie["@id"]);
+      adiv.addEventListener("click", function(e){autocompleteItemClickListener(this, e, rootinput);});
+      itemsdiv.appendChild(adiv);
+    }
+  };
+  var setActive = function(rootinput, ctx, newActive) {
+    var itemsdiv = document.getElementById(rootinput.id + "autocomplete-list");
+    if (!itemsdiv){return;}
+    var items = itemsdiv.getElementsByTagName("div");
+    if (!items){return;}
+    if (newActive < 0 || newActive >= items.length) {
+      return;
+    }
+    for (var i = 0, ie; ie = items[i]; i++) {
+      if (i == newActive) {
+	ie.classList.add("autocomplete-active");
+	ctx.currentFocus = newActive;
+      } else {
+	ie.classList.remove("autocomplete-active");
+      }
+    }
+  };
+  var autocompleteKeydownListener = function(rootinput, e, ctx) {
+    if (e.keyCode == 13){// enter
+      e.preventDefault();
+      var itemsdiv = document.getElementById(rootinput.id + "autocomplete-list");
+      if (itemsdiv && ctx.currentFocus > -1) {
+	var items = itemsdiv.getElementsByTagName("div");
+	items[ctx.currentFocus].click();
+      }
+    } else if (e.keyCode == 40) {// down arrow
+      setActive(rootinput, ctx, ctx.currentFocus + 1);
+    } else if (e.keyCode == 38) {// up arrow
+      setActive(rootinput, ctx, ctx.currentFocus - 1);
+    }
+  };
+  var idcounter = 1;
+  var autocompleteElementClousureContext = function(elem) {
+    var ctx={};
+    if (!elem.id){elem.id = "i" + idcounter;idcounter++;}
+    elem.addEventListener("input", function(e){
+      return autocompleteInputListener(this, e, ctx);
+    });
+    elem.addEventListener("keydown", function(e){
+      return autocompleteKeydownListener(this, e, ctx);
+    });
+  };
+  var enableAutocompletes = function() {
+    var they = document.getElementsByClassName("acsearch");
+    for (var i = 0, elem; elem = they[i]; i++) {
+      autocompleteElementClousureContext(elem);
+    }
+  };
+  
+  var updateDeleteButtons = function() {
+    setOnclickForClass("deleterec",deleterec);
+    setOnclickForClass("newrec",newrecDo);
+    setOnclickForClass("sectionedit",doEditMode);
+    setOnclickForClass("sectionshow",doShowMode);
+    enableAutocompletes();
+  };
+  updateDeleteButtons();
 
     var drawResultHandler = function() {
 	if (this.readyState == 4 && this.status == 200) {
@@ -559,7 +717,6 @@
     };
     setOnclickForClass("savebutton",savebuttonclick);
 
-    //var savedObj = {"Party":[{"@id":"party1","@type":"ElectionResults.Party","Name":"Stupid","Abbreviation":"","Color":"","IsRecognizedParty":"on","LogoUri":"","Slogan":""},{"@id":"party2","@type":"ElectionResults.Party","Name":"Evil","Abbreviation":"","Color":"","IsRecognizedParty":"on","LogoUri":"","Slogan":""}],"Person":[{"@id":"pers1","@type":"ElectionResults.Person","FullName":"SOMEGUY","Prefix":"","FirstName":"","MiddleName":"","LastName":"","Suffix":"","Nickname":"","Title":"","Profession":"","DateOfBirth":""}],"Office":[{"@id":"office1","@type":"ElectionResults.Office","Name":"Mayor","Term":{"@type":"ElectionResults.Term","StartDate":"2021-01-20","EndDate":"2025-01-20","Type":"full-term"}}]}
     var loadElectionHandler = function() {
 	if (this.readyState == 4 && this.status == 200) {
 	    pushOb(document.body, JSON.parse(this.responseText));
