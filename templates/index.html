@@ -18,6 +18,9 @@
   .candidate{border:1px solid #777;}
   .contest{border:1px solid #777;}
 
+  span.idref{border:solid 1px #eea;background-color:#fffff8;padding:1px 0.1em 1px 0.7em;}
+  .idreflist{background-color:#eee;}
+
   .autocomplete{position:relative;display:inline-block;}
 .autocomplete-items {
   position: absolute;
@@ -69,9 +72,12 @@
 	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
 	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
 	<tr><td>Recognized Party</td><td><input type="checkbox" data-key="IsRecognizedParty"></td></tr>
-	<tr><td>Leaders</td><td><textarea data-key="LeaderPersonIds"></textarea></td><td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Person"></div>
-	    <br/>TODO: keep references to @id behind the scenes, display FullName or best available name by code
-	    <br/>TODO: look up and make references to People, "LeaderPersonIds"</td></tr>
+	<tr class="acgroup">
+	  <td>Leaders</td>
+	  <td class="idreflist" data-key="LeaderPersonIds"></td>
+	  <!-- <td><textarea data-key="LeaderPersonIds"></textarea></td> -->
+	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Person" data-action="append"></div></td>
+	</tr>
 	<tr><td>Logo URI</td><td><textarea data-key="LogoUri"></textarea></td></tr>
 	<tr><td>Slogan</td><td><input type="text" data-key="Slogan" /></td></tr>
 	<tr><td>Scope</td><td><textarea data-key="PartyScopeGpUnitIds"></textarea></td><td>reference by @id to Geo-Political Units (TODO: smart lookup)</td></tr>

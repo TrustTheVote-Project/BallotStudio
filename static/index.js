@@ -40,6 +40,19 @@
 	}
 	return null;
     };
+  var allChildrenOfClass = function(elem, classname, out) {
+    if (!out) {
+      out = [];
+    }
+    if (hasClass(elem, classname)){
+      out.push(elem);
+      return out;
+    }
+    for (var i = 0; elem.children[i]; i++) {
+      out = allChildrenOfClass(elem.children[i], classname, out);
+    }
+    return out;
+  };
     var sequenceCounters = {};
     var usedSeqIds = {};
     var claimSeq = function(seqName, atid) {
@@ -256,6 +269,15 @@
 		    ob[fieldname] = fv;
 		    any = true;
 		}
+	    } else if (hasClass(te, "idreflist")) {
+	      var fieldname = te.getAttribute("data-key");
+	      var they = allChildrenOfClass(te, "idref");
+	      if (they.length) {
+		var ar = [];
+		for (var ri = 0, r; r = they[ri]; ri++) {
+		  ar.push(r.getAttribute("data-atid"));
+		}
+	      }
 	    } else {
 		var to = gatherJson(te);
 		if (to != null) {
@@ -322,13 +344,19 @@
     if (!obcache || ((now - obcachet) > 5000)) {
       // TODO: obcache=null on input de-focus to invalidate the cache
       obcache = gatherJson(document.body);
+      obcachet = now;
+      obtcache = null;
+      obidcache = null;
+    }
+    if (!obtcache) {
       obtcache = {};
       obidcache = {};
       obsByType(obcache, obtcache, obidcache);
-      obcachet = now;
     }
   };
+  // search known ElectionReport objects for text
   var searchObs = function(attype, text) {
+    text = text.toLowerCase();
     ensureObCaches();
     var they = obtcache[attype];
     if (!they){return null;}
@@ -340,6 +368,7 @@
 	}
 	var v = e[key];
 	if (v instanceof String || (typeof(v) == "string")) {
+	  v = v.toLowerCase();
 	  if (v.includes(text)) {
 	    matches.push(e);
 	    break; // done with e
@@ -347,10 +376,13 @@
 	} else if (v instanceof Array) {
 	  var hit = false;
 	  for (var vi = 0, vv; vv = v[vi]; vi++) {
-	    if ((vv instanceof String) && (vv.includes(text))) {
-	      matches.push(e);
-	      hit = true;
-	      break;
+	    if ((vv instanceof String) || (typeof(vv) == "string")) {
+	      vv = vv.toLowerCase();
+	      if (vv.includes(text)) {
+		matches.push(e);
+		hit = true;
+		break;
+	      }
 	    }
 	  }
 	  if (hit) {
@@ -440,6 +472,8 @@
 		for (var j = 0, je; je = te.children[j]; j++) {
 		    pushOb(je, av, true);
 		}
+	    } else if (hasClass(te, "idreflist")) {
+	      // TODO: unpack idreflist
 	    } else if (te.tagName == "INPUT") {
 		var fieldname = te.getAttribute("data-key");
 		if (fieldname == "attype") {
@@ -580,8 +614,21 @@
   document.addEventListener("click", function (e) {
     closeAutocompleteLists(e.target);
   });
-  var autocompleteItemClickListener = function(itemelem, e, rootinput) {
-    rootinput.value = itemelem.getAttribute("data-atid");
+  var autocompleteItemClickListener = function() {
+    //var rootinput = this.getAttribute("rootinput");
+    if (this.rootinput.getAttribute("data-action") == "append") {
+      var container = parentWithClass(this, "acgroup");
+      var idreflist = firstChildOfClass(container, "idreflist");
+      var nir = document.createElement("SPAN");
+      nir.className = "idref";
+      nir.setAttribute("data-atid", this.getAttribute("data-atid"));
+      // TODO: make delx work
+      nir.innerHTML = this.innerHTML + "<img class=\"delx\" src=\"/static/delx.svg\" height=\"14\" width=\"30\">";
+      idreflist.appendChild(nir);
+      this.rootinput.value = null;
+    } else {
+      this.rootinput.value = this.getAttribute("data-atid");
+    }
     closeAutocompleteLists();
   };
   var autocompleteInputListener = function(rootinput, e, ctx) {
@@ -602,7 +649,8 @@
       var adiv = document.createElement("DIV");
       adiv.innerHTML = summarizer(ie);
       adiv.setAttribute("data-atid", ie["@id"]);
-      adiv.addEventListener("click", function(e){autocompleteItemClickListener(this, e, rootinput);});
+      adiv.rootinput = rootinput;
+      adiv.addEventListener("click", autocompleteItemClickListener);
       itemsdiv.appendChild(adiv);
     }
   };
@@ -718,14 +766,18 @@
     setOnclickForClass("savebutton",savebuttonclick);
 
     var loadElectionHandler = function() {
-	if (this.readyState == 4 && this.status == 200) {
-	    pushOb(document.body, JSON.parse(this.responseText));
-	    updateDeleteButtons();
-	    var they = document.getElementsByClassName("sectionshow");
-	    for (var i = 0, db; db = they[i]; i++) {
-		db.onclick();
-	    }
+      if (this.readyState == 4 && this.status == 200) {
+	obcache = JSON.parse(this.responseText);
+	obcachet = Date.now();
+	obtcache = null;
+	ensureObCaches();
+	pushOb(document.body, obcache);
+	updateDeleteButtons();
+	var they = document.getElementsByClassName("sectionshow");
+	for (var i = 0, db; db = they[i]; i++) {
+	  db.onclick();
 	}
+      }
     };
     var GET = function(url, handler) {
 	var http = new XMLHttpRequest();
