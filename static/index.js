@@ -478,6 +478,9 @@
 	      var fieldname = te.getAttribute("data-key");
 	      var refs = ob[fieldname];
 	      if (refs) {
+		if (!(refs instanceof Array)) {
+		  refs = [refs];
+		}
 		for (var ri = 0, r; r = refs[ri]; ri++) {
 		  var nir = document.createElement("SPAN");
 		  nir.className = "idref";
@@ -616,6 +619,10 @@
       if (rec.Suffix) {out += ", " + rec.Suffix;}
       return out;
     },
+    "ElectionResults.Party": function(rec) {
+      if (rec.Name) {return rec.Name;}
+      return JSON.stringify(rec);
+    },
     "ElectionResults.ReportingUnit": function(rec) {
       if (rec.Name) {return rec.Name;}
       return JSON.stringify(rec);
@@ -648,23 +655,24 @@
   });
   var delxHTML = "<img class=\"delx\" src=\"/static/delx.svg\" height=\"14\" width=\"30\">";
   var autocompleteItemClickListener = function() {
-    //var rootinput = this.getAttribute("rootinput");
-    if (this.rootinput.getAttribute("data-action") == "append") {
-      var container = parentWithClass(this, "acgroup");
-      var idreflist = firstChildOfClass(container, "idreflist");
-      var nir = document.createElement("SPAN");
-      nir.className = "idref";
-      nir.setAttribute("data-atid", this.getAttribute("data-atid"));
-      nir.innerHTML = this.innerHTML + delxHTML;
+    var container = parentWithClass(this, "acgroup");
+    var idreflist = firstChildOfClass(container, "idreflist");
+    var nir = document.createElement("SPAN");
+    nir.className = "idref";
+    nir.setAttribute("data-atid", this.getAttribute("data-atid"));
+    nir.innerHTML = this.innerHTML + delxHTML;
+    var action = this.rootinput.getAttribute("data-action");
+    if (action == "append") {
       idreflist.appendChild(nir);
-      var delxes = allChildrenOfClass(idreflist, "delx");
-      for (var di = 0, dx; dx = delxes[di]; di++) {
-	dx.onclick = delxClick;
-      }
-      this.rootinput.value = null;
     } else {
-      this.rootinput.value = this.getAttribute("data-atid");
+      idreflist.innerHTML = "";
+      idreflist.appendChild(nir);
     }
+    var delxes = allChildrenOfClass(idreflist, "delx");
+    for (var di = 0, dx; dx = delxes[di]; di++) {
+      dx.onclick = delxClick;
+    }
+    this.rootinput.value = null;
     closeAutocompleteLists();
   };
   var search_acattype = function(acattype, val) {

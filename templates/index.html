@@ -85,10 +85,10 @@
 	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingDevice,ElectionResults.ReportingUnit" data-action="append"> <small>(type a region's name to add it to the scope of this party. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
 	</tr>
       </table>
-      <button class="deleterec">Delete Party (TODO)</button>
+      <button class="deleterec">Delete Party</button>
     </div>
   </template>
-  <div class="topsec"><h2>Parties</h2>
+  <div class="topsec"><a name="Parties"><h2>Parties</h2></a>
     <div id="parties" class="arraygroup" data-name="Party"></div>
     <div><button class="newrec" id="newparty" data-btmpl="partytmpl" data-seq="party">New Party</button></div>
   </div>
@@ -101,7 +101,7 @@
 	<input type="hidden" data-key="attype" value="ElectionResults.Person" />
 	<tr><td>Prefix</td><td><input type="text" data-key="Prefix" /></td></tr>
 	<tr><td>First Name</td><td><input type="text" data-key="FirstName" /></td></tr>
-	<tr><td>Middle Name</td><td><input type="text" data-key="MiddleName" /></td><td>TODO: accept list</td></tr>
+	<tr><td>Middle Name</td><td><textarea data-key="MiddleName"></textarea></td></tr>
 	<tr><td>Last Name</td><td><input type="text" data-key="LastName" /></td></tr>
 	<tr><td>Suffix</td><td><input type="text" data-key="Suffix" /></td></tr>
 	<tr><td>Nickname</td><td><input type="text" data-key="Nickname" /></td></tr>
@@ -110,7 +110,11 @@
 	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
 	<tr><td>Date of Birth</td><td><input type="text" data-key="DateOfBirth" /></td></tr>
 	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
-	<tr><td>Party</td><td><input type="text" data-key="PartyId" /></td><td>reference by @id to Party (TODO: smart lookup)</td></tr>
+	<tr class="acgroup">
+	  <td>Party</td>
+	  <td class="idreflist" data-key="PartyId"></td>
+	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Party" data-action="set"> <small>(type a party's name to set it as the Party for this Person. The Party must already have an entry in the <a href="#Parties">Parties section</a>.)</small></div></td>
+	</tr>
       </table>
       <button class="deleterec">Delete Person (TODO)</button>
     </div>
