@@ -575,6 +575,10 @@
 	    }
 	}
     }
+  var delxClick = function() {
+    var idref = parentWithClass(this, "idref");
+    idref.parentNode.removeChild(idref);
+  };
     var setOnclickForClass = function(classname, fn) {
 	var they = document.getElementsByClassName(classname);
 	for (var i = 0, db; db = they[i]; i++) {
@@ -622,9 +626,12 @@
       var nir = document.createElement("SPAN");
       nir.className = "idref";
       nir.setAttribute("data-atid", this.getAttribute("data-atid"));
-      // TODO: make delx work
       nir.innerHTML = this.innerHTML + "<img class=\"delx\" src=\"/static/delx.svg\" height=\"14\" width=\"30\">";
       idreflist.appendChild(nir);
+      var delxes = allChildrenOfClass(idreflist, "delx");
+      for (var di = 0, dx; dx = delxes[di]; di++) {
+	dx.onclick = delxClick;
+      }
       this.rootinput.value = null;
     } else {
       this.rootinput.value = this.getAttribute("data-atid");
@@ -708,6 +715,7 @@
     setOnclickForClass("newrec",newrecDo);
     setOnclickForClass("sectionedit",doEditMode);
     setOnclickForClass("sectionshow",doShowMode);
+    setOnclickForClass("delx",delxClick);
     enableAutocompletes();
   };
   updateDeleteButtons();
