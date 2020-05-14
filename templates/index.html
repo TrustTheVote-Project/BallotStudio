@@ -112,7 +112,7 @@
 	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
 	<tr class="acgroup">
 	  <td>Party</td>
-	  <td class="idreflist" data-key="PartyId"></td>
+	  <td class="idreflist" data-key="PartyId" data-one="true"></td>
 	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Party" data-action="set"> <small>(Type a party's name to set it as the Party for this Person. The Party must already have an entry in the <a href="#Parties">Parties section</a>.)</small></div></td>
 	</tr>
       </table>
@@ -136,7 +136,7 @@
 	<tr><td>Description</td><td><input type="text" data-key="Description" /></td></tr>
 	<tr class="acgroup">
 	  <td>Election District</td>
-	  <td class="idreflist" data-key="ElectionDistrictId"></td>
+	  <td class="idreflist" data-key="ElectionDistrictId" data-one="true"></td>
 	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingUnit" data-action="set"> <small>(Type a region's name to set it to the scope of this Office. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
 	</tr>
 	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
@@ -240,7 +240,7 @@
 	<tr><td>End Date</td><td><input type="text" data-key="EndDate" /></td><td>YYYY-MM-DD</td></tr>
 	<tr class="acgroup">
 	  <td>Scope</td>
-	  <td class="idreflist" data-key="ElectionScopeId"></td>
+	  <td class="idreflist" data-key="ElectionScopeId" data-one="true"></td>
 	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingUnit" data-action="set"> <small>(Type a region's name to add it to the scope of this election. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
 	</tr>
 	<tr><td colspan="2" class="optional">optional:</td></tr>
@@ -270,7 +270,7 @@
       <input type="hidden" data-key="attype" value="ElectionResults.OrderedContest" />
       <tr class="acgroup">
 	<td>Contest</td>
-	<td class="idreflist" data-key="ContestId"></td>
+	<td class="idreflist" data-key="ContestId" data-one="true"></td>
 	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.PartyContest,ElectionResults.BallotMeasureContest,ElectionResults.CandidateContest,ElectionResults.RetentionContest" data-action="set"> <small>(Type a contest's name to set it at this point in the ballot. The Contest must already have an entry in the "Contests" section of this election.)</small></div></td>
       </tr>
       <tr><td colspan="2" class="optional">optional:</td></tr>
@@ -305,7 +305,7 @@
       <tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
       <tr class="acgroup">
 	<td>Election District</td>
-	<td class="idreflist" data-key="ElectionDistrictId"></td>
+	<td class="idreflist" data-key="ElectionDistrictId" data-one="true"></td>
 	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingUnit" data-action="set"> <small>(Type a region's name to set it as the district of this contest. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
       </tr>
       <tr><td>Votes Allowed</td><td><input type="number" min="1" step="1" data-key="VotesAllowed" /></td></tr>
@@ -368,7 +368,7 @@
       <tr><td>Slogan</td><td><input type="text" data-key="CampaignSlogan" /></td></tr>
       <tr class="acgroup">
 	<td>Persion</td>
-	<td class="idreflist" data-key="PersonId"></td>
+	<td class="idreflist" data-key="PersonId" data-one="true"></td>
 	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Person" data-action="set"> <small>(Type a person's name to set them as this candidate. The person must already have an entry in the <a href="#People">People section</a>.)</small></div></td>
       </tr>
       <tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>

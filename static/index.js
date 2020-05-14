@@ -277,7 +277,16 @@
 	  for (var ri = 0, r; r = they[ri]; ri++) {
 	    ar.push(r.getAttribute("data-atid"));
 	  }
-	  ob[fieldname] = ar;
+	  if (te.getAttribute("data-one")) {
+	    if (ar.length > 0){
+	      ob[fieldname] = ar[0];
+	      if (ar.length > 1) {
+		consol.log("idreflist "+fieldname+" one but got " + ar.length);
+	      }
+	    }
+	  } else {
+	    ob[fieldname] = ar;
+	  }
 	  any = true;
 	}
       } else {
@@ -792,11 +801,11 @@
     var drawResultHandler = function() {
 	if (this.readyState == 4 && this.status == 200) {
 	    var html = document.getElementById("debugdiv").innerHTML;
-	    html += "<pre>" + this.responseText + "</pre>";
 	    var ob = JSON.parse(this.responseText);
 	    if (ob && ob.item) {
 		html += "<p style=\"font-size:200%\"><a href=\"/item?i=" + ob.item + "\">PDF</a></p>";
 	    }
+	    html += "<pre>" + this.responseText + "</pre>";
 	    document.getElementById("debugdiv").innerHTML = html;
 	}
     };
