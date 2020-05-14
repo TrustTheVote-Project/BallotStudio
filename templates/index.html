@@ -79,7 +79,11 @@
 	</tr>
 	<tr><td>Logo URI</td><td><textarea data-key="LogoUri"></textarea></td></tr>
 	<tr><td>Slogan</td><td><input type="text" data-key="Slogan" /></td></tr>
-	<tr><td>Scope</td><td><textarea data-key="PartyScopeGpUnitIds"></textarea></td><td>reference by @id to Geo-Political Units (TODO: smart lookup)</td></tr>
+	<tr class="acgroup">
+	  <td>Scope</td>
+	  <td class="idreflist" data-key="PartyScopeGpUnitIds"></td>
+	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingDevice,ElectionResults.ReportingUnit" data-action="append"> <small>(type a region's name to add it to the scope of this party. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
+	</tr>
       </table>
       <button class="deleterec">Delete Party (TODO)</button>
     </div>
@@ -194,7 +198,7 @@
       </table>
     </div>
   </template>
-  <div class="topsec"><h2>Geo-Political Units</h2><p>City, County, District, etc...</p>
+  <div class="topsec"><a name="GPUnits"><h2>Geo-Political Units</h2></a><p>City, County, District, etc...</p>
     <div id="offices" class="arraygroup" data-name="GpUnit"></div>
     <div><button class="newrec" data-btmpl="repunittmpl" data-seq="gpunit" id="newrepunit">New Reporting Unit</button></div>
   </div>

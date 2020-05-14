@@ -615,12 +615,21 @@
       if (rec.LastName) {out += " " + rec.LastName;}
       if (rec.Suffix) {out += ", " + rec.Suffix;}
       return out;
+    },
+    "ElectionResults.ReportingUnit": function(rec) {
+      if (rec.Name) {return rec.Name;}
+      return JSON.stringify(rec);
     }
   };
   var getAutocompleteSummarizer = function(attype) {
     var f = autocompleteSummarizers[attype];
     if (f) {return f;}
     return JSON.stringify;
+  };
+  var summarize = function(rec) {
+    var attype = rec['@type'];
+    var sf = autocompleteSummarizers[attype] || JSON.stringify;
+    return sf(rec);
   };
 
   var closeAutocompleteLists = function(elem) {
@@ -658,15 +667,29 @@
     }
     closeAutocompleteLists();
   };
+  var search_acattype = function(acattype, val) {
+    // might be a comma sep list of @type-s
+    if (!acattype.includes(",")) {
+      return searchObs(acattype, val);
+    }
+    var they = acattype.split(",");
+    var matches = [];
+    for (var i = 0, t; t=they[i]; i++) {
+      var tm = searchObs(t, val);
+      if(tm){
+	matches = matches.concat(tm);
+      }
+    }
+    return matches;
+  };
   var autocompleteInputListener = function(rootinput, e, ctx) {
     var val = rootinput.value;
     closeAutocompleteLists();
     if (!val){return false;}
     var attype = rootinput.getAttribute("data-acattype");
     if (!attype){return false;}
-    var items = searchObs(attype, val);
+    var items = search_acattype(attype, val);
     if (!items || !items.length){return false;}
-    var summarizer = getAutocompleteSummarizer(attype);
     ctx.currentFocus = -1;
     var itemsdiv = document.createElement("DIV");
     itemsdiv.setAttribute("id", rootinput.id + "autocomplete-list");
@@ -674,7 +697,7 @@
     rootinput.parentNode.appendChild(itemsdiv);
     for (var i = 0, ie; ie=items[i]; i++) {
       var adiv = document.createElement("DIV");
-      adiv.innerHTML = summarizer(ie);
+      adiv.innerHTML = summarize(ie);
       adiv.setAttribute("data-atid", ie["@id"]);
       adiv.rootinput = rootinput;
       adiv.addEventListener("click", autocompleteItemClickListener);
