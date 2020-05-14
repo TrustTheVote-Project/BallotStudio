@@ -75,8 +75,7 @@
 	<tr class="acgroup">
 	  <td>Leaders</td>
 	  <td class="idreflist" data-key="LeaderPersonIds"></td>
-	  <!-- <td><textarea data-key="LeaderPersonIds"></textarea></td> -->
-	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Person" data-action="append"></div></td>
+	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Person" data-action="append"> <small>(type a person's name to add them as a leader of this party. The person must already have an entry in the <a href="#People">People section</a>.)</small></div></td>
 	</tr>
 	<tr><td>Logo URI</td><td><textarea data-key="LogoUri"></textarea></td></tr>
 	<tr><td>Slogan</td><td><input type="text" data-key="Slogan" /></td></tr>
@@ -112,7 +111,7 @@
       <button class="deleterec">Delete Person (TODO)</button>
     </div>
   </template>
-  <div class="topsec"><h2>People</h2>
+  <a name="People"><div class="topsec"><h2>People</h2></a>
     <div id="people" class="arraygroup" data-name="Person"></div>
     <div><button class="newrec" data-btmpl="persontmpl" data-seq="person" id="newperson">New Person</button></div>
   </div>

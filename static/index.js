@@ -232,69 +232,71 @@
 	}
 	return out;
     };
-    var gatherJson = function(elem) {
-	var ob = {};
-	var any = false
-	for (var i = 0, te; te = elem.children[i]; i++) {
-	    if (te.tagName == "INPUT") {
-		var fieldname = te.getAttribute("data-key");
-		if (fieldname == "attype") {
-		    fieldname = "@type";
-		} else if (fieldname == "atid") {
-		    fieldname = "@id";
-		}
-		var fv = te.value;
-		if (te.type == "checkbox") {
-		    fv = te.checked;
-		}
-		if (fv) {
-		    ob[fieldname] = fv;
-		    any = true;
-		}
-	    } else if (te.tagName == "TEXTAREA") {
-		var fieldname = te.getAttribute("data-key");
-		var fv = te.value;
-		if (fv) {
-		    ob[fieldname] = textToArray(fv);//fv.split(textareaSplitter);
-		    any = true;
-		}
-	    } else if (hasClass(te, "arraygroup")) {
-		var fieldname = te.getAttribute("data-name");
-		ob[fieldname] = gatherArray(te);
-		any = true;
-	    } else if (hasClass(te, "erobject")) {
-		var fieldname = te.getAttribute("data-name");
-		var fv = gatherJson(te);
-		if (fv) {
-		    ob[fieldname] = fv;
-		    any = true;
-		}
-	    } else if (hasClass(te, "idreflist")) {
-	      var fieldname = te.getAttribute("data-key");
-	      var they = allChildrenOfClass(te, "idref");
-	      if (they.length) {
-		var ar = [];
-		for (var ri = 0, r; r = they[ri]; ri++) {
-		  ar.push(r.getAttribute("data-atid"));
-		}
-	      }
-	    } else {
-		var to = gatherJson(te);
-		if (to != null) {
-		    for (var k in to) {
-			ob[k]=to[k];
-			any = true;
-		    }
-		}
-	    }
+  var gatherJson = function(elem) {
+    var ob = {};
+    var any = false
+    for (var i = 0, te; te = elem.children[i]; i++) {
+      if (te.tagName == "INPUT") {
+	var fieldname = te.getAttribute("data-key");
+	if (fieldname == "attype") {
+	  fieldname = "@type";
+	} else if (fieldname == "atid") {
+	  fieldname = "@id";
 	}
-	if (any) {
-	    //console.log("gathered ", ob);
-	    return ob;
-	} else {
-	    return null;
+	var fv = te.value;
+	if (te.type == "checkbox") {
+	  fv = te.checked;
 	}
-    };
+	if (fv) {
+	  ob[fieldname] = fv;
+	  any = true;
+	}
+      } else if (te.tagName == "TEXTAREA") {
+	var fieldname = te.getAttribute("data-key");
+	var fv = te.value;
+	if (fv) {
+	  ob[fieldname] = textToArray(fv);//fv.split(textareaSplitter);
+	  any = true;
+	}
+      } else if (hasClass(te, "arraygroup")) {
+	var fieldname = te.getAttribute("data-name");
+	ob[fieldname] = gatherArray(te);
+	any = true;
+      } else if (hasClass(te, "erobject")) {
+	var fieldname = te.getAttribute("data-name");
+	var fv = gatherJson(te);
+	if (fv) {
+	  ob[fieldname] = fv;
+	  any = true;
+	}
+      } else if (hasClass(te, "idreflist")) {
+	var fieldname = te.getAttribute("data-key");
+	var they = allChildrenOfClass(te, "idref");
+	if (they.length) {
+	  var ar = [];
+	  for (var ri = 0, r; r = they[ri]; ri++) {
+	    ar.push(r.getAttribute("data-atid"));
+	  }
+	  ob[fieldname] = ar;
+	  any = true;
+	}
+      } else {
+	var to = gatherJson(te);
+	if (to != null) {
+	  for (var k in to) {
+	    ob[k]=to[k];
+	    any = true;
+	  }
+	}
+      }
+    }
+    if (any) {
+      //console.log("gathered ", ob);
+      return ob;
+    } else {
+      return null;
+    }
+  };
     // Recursively search election tree for typed objects, return {attype:[],...}
   var obsByType = function(ob, bytype, byid, seen) {
     if (!((ob instanceof Object) || (ob instanceof Array))) {
@@ -325,7 +327,7 @@
 	bytype[attype] = they;
       }
     }
-    console.log("atid=" + atid + " attypye=" + attype);
+    //console.log("atid=" + atid + " attypye=" + attype);
     for (const key in ob) {
       obsByType(ob[key], bytype, byid, seen);
     }
@@ -336,8 +338,8 @@
     // }
   };
   var obcache = null;
-  var obtcache = null;
-  var obidcache = null;
+  var obtcache = null; // { @type: [{},...], ... }, list per @type
+  var obidcache = null; // { @id: {}, ... }, lookup by @id
   var obcachet = 0;
   var ensureObCaches = function() {
     var now = Date.now();
@@ -473,7 +475,24 @@
 		    pushOb(je, av, true);
 		}
 	    } else if (hasClass(te, "idreflist")) {
-	      // TODO: unpack idreflist
+	      var fieldname = te.getAttribute("data-key");
+	      var refs = ob[fieldname];
+	      if (refs) {
+		for (var ri = 0, r; r = refs[ri]; ri++) {
+		  var nir = document.createElement("SPAN");
+		  nir.className = "idref";
+		  nir.setAttribute("data-atid", r);
+		  var rob = obidcache[r];
+		  if (rob) {
+		    var summary = getAutocompleteSummarizer(rob["@type"])(rob);
+		    nir.innerHTML = summary + delxHTML;
+		  } else {
+		    nir.innerHTML = r + delxHTML;
+		  }
+		  te.appendChild(nir);
+		}
+		handled.push(fieldname);
+	      }
 	    } else if (te.tagName == "INPUT") {
 		var fieldname = te.getAttribute("data-key");
 		if (fieldname == "attype") {
@@ -603,7 +622,7 @@
     if (f) {return f;}
     return JSON.stringify;
   };
-  
+
   var closeAutocompleteLists = function(elem) {
     // close everything except what was passed in
     var x = document.getElementsByClassName("autocomplete-items");
@@ -618,6 +637,7 @@
   document.addEventListener("click", function (e) {
     closeAutocompleteLists(e.target);
   });
+  var delxHTML = "<img class=\"delx\" src=\"/static/delx.svg\" height=\"14\" width=\"30\">";
   var autocompleteItemClickListener = function() {
     //var rootinput = this.getAttribute("rootinput");
     if (this.rootinput.getAttribute("data-action") == "append") {
@@ -626,7 +646,7 @@
       var nir = document.createElement("SPAN");
       nir.className = "idref";
       nir.setAttribute("data-atid", this.getAttribute("data-atid"));
-      nir.innerHTML = this.innerHTML + "<img class=\"delx\" src=\"/static/delx.svg\" height=\"14\" width=\"30\">";
+      nir.innerHTML = this.innerHTML + delxHTML;
       idreflist.appendChild(nir);
       var delxes = allChildrenOfClass(idreflist, "delx");
       for (var di = 0, dx; dx = delxes[di]; di++) {
@@ -682,9 +702,14 @@
     if (e.keyCode == 13){// enter
       e.preventDefault();
       var itemsdiv = document.getElementById(rootinput.id + "autocomplete-list");
-      if (itemsdiv && ctx.currentFocus > -1) {
-	var items = itemsdiv.getElementsByTagName("div");
-	items[ctx.currentFocus].click();
+      if (itemsdiv) {
+	if (ctx.currentFocus > -1) {
+	  var items = itemsdiv.getElementsByTagName("div");
+	  items[ctx.currentFocus].click();
+	}
+      } else {
+	// TODO: accept what's typed in as literal though it may be wrong?
+	// TODO: show warning "no known @type ..."
       }
     } else if (e.keyCode == 40) {// down arrow
       setActive(rootinput, ctx, ctx.currentFocus + 1);
@@ -709,7 +734,7 @@
       autocompleteElementClousureContext(elem);
     }
   };
-  
+
   var updateDeleteButtons = function() {
     setOnclickForClass("deleterec",deleterec);
     setOnclickForClass("newrec",newrecDo);

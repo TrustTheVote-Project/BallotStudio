@@ -16,6 +16,7 @@ from . import draw
 ElectionPrinter = draw.ElectionPrinter
 
 app = Flask(__name__)
+logger = app.logger
 
 _cache = None
 
@@ -41,7 +42,9 @@ def db():
         # TODO: ownership, ACLs, any kind of security at all
         c.execute("CREATE TABLE IF NOT EXISTS elections (data TEXT)") # use builtin ROWID
         conn.commit()
-        _putelection(demorace.ElectionReport, 1, conn)
+        demo = _getelection(1, conn)
+        if not demo:
+            _putelection(demorace.ElectionReport, 1, conn)
         g._database = conn
     return conn
 
@@ -56,19 +59,22 @@ def _putelection(ob, itemid, conn):
         # TODO: why isn't sqlite "ON CONFLICT ..." syntax working? sqlite3.sqlite_version === '3.22.0'
         #c.execute("INSERT INTO elections (ROWID, data) VALUES (?, ?) ON CONFLICT (ROWID) DO UPDATE SET data = EXCLUDED.data", (itemid, json.dumps(ob)))
         c.execute("INSERT OR REPLACE INTO elections (ROWID, data) VALUES (?, ?)", (itemid, json.dumps(ob)))
-        c.close()
         conn.commit()
+        c.close()
         return itemid
     else:
         c.execute("INSERT INTO elections (data) VALUES (?)", (json.dumps(ob),))
         itemid = c.lastrowid
-        c.close()
         conn.commit()
+        c.close()
         return itemid
 
 
 def getelection(itemid):
     conn = db()
+    return _getelection(itemid, conn)
+
+def _getelection(itemid, conn):
     c = conn.cursor()
     c.execute("SELECT data FROM elections WHERE ROWID = ?", (int(itemid),))
     row = c.fetchone()
