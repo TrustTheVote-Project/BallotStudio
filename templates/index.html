@@ -75,14 +75,14 @@
 	<tr class="acgroup">
 	  <td>Leaders</td>
 	  <td class="idreflist" data-key="LeaderPersonIds"></td>
-	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Person" data-action="append"> <small>(type a person's name to add them as a leader of this party. The person must already have an entry in the <a href="#People">People section</a>.)</small></div></td>
+	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Person" data-action="append"> <small>(Type a person's name to add them as a leader of this party. The person must already have an entry in the <a href="#People">People section</a>.)</small></div></td>
 	</tr>
 	<tr><td>Logo URI</td><td><textarea data-key="LogoUri"></textarea></td></tr>
 	<tr><td>Slogan</td><td><input type="text" data-key="Slogan" /></td></tr>
 	<tr class="acgroup">
 	  <td>Scope</td>
 	  <td class="idreflist" data-key="PartyScopeGpUnitIds"></td>
-	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingDevice,ElectionResults.ReportingUnit" data-action="append"> <small>(type a region's name to add it to the scope of this party. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
+	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingDevice,ElectionResults.ReportingUnit" data-action="append"> <small>(Type a region's name to add it to the scope of this party. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
 	</tr>
       </table>
       <button class="deleterec">Delete Party</button>
@@ -113,10 +113,10 @@
 	<tr class="acgroup">
 	  <td>Party</td>
 	  <td class="idreflist" data-key="PartyId"></td>
-	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Party" data-action="set"> <small>(type a party's name to set it as the Party for this Person. The Party must already have an entry in the <a href="#Parties">Parties section</a>.)</small></div></td>
+	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Party" data-action="set"> <small>(Type a party's name to set it as the Party for this Person. The Party must already have an entry in the <a href="#Parties">Parties section</a>.)</small></div></td>
 	</tr>
       </table>
-      <button class="deleterec">Delete Person (TODO)</button>
+      <button class="deleterec">Delete Person</button>
     </div>
   </template>
   <a name="People"><div class="topsec"><h2>People</h2></a>
@@ -134,14 +134,22 @@
 	<tr><td colspan="2" class="optional">optional:</td></tr>
 	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
 	<tr><td>Description</td><td><input type="text" data-key="Description" /></td></tr>
-	<tr><td>Election District</td><td>TODO: look up and make references to Geo-Political Reporting Units, "ElectionDistrictId"</td></tr>
+	<tr class="acgroup">
+	  <td>Election District</td>
+	  <td class="idreflist" data-key="ElectionDistrictId"></td>
+	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingUnit" data-action="set"> <small>(Type a region's name to set it to the scope of this Office. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
+	</tr>
 	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
 	<tr><td>Filing Deadline</td><td><input type="text" data-key="FilingDeadline" /></td><td>Format must be: YYYY-MM-DD<br/>TODO: proper date picker.</td></tr>
 	<tr><td>Is Partisan</td><td><input type="checkbox" data-key="IsPartisan"></td></tr>
-	<tr><td>Incumbents</td><td>TODO: look up and make references to People, "OfficeHolderPersonIds"</td></tr>
+	<tr class="acgroup">
+	  <td>Incumbents</td>
+	  <td class="idreflist" data-key="OfficeHolderPersonIds"></td>
+	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Person" data-action="append"> <small>(Type a person's name to add them as a current holder of this office. The person must already have an entry in the <a href="#People">People section</a>.)</small></div></td>
+	</tr>
 	<tr><td>Term</td><td class="erobject" data-name="Term"><table border="0"><tr><td>Term Label</td><td><input type="hidden" data-key="attype" value="ElectionResults.Term" /><input type="text" data-key="Label" /></td></tr><tr><td>Term Start Date</td><td><input type="text" data-key="StartDate" /></td><td>YYYY-MM-DD</td></tr><tr><td>Term End Date</td><td><input type="text" data-key="EndDate" /></td><td>YYYY-MM-DD</td></tr><tr><td>Term Type</td><td><input type="text" data-key="Type" /></td><td>term type must be "full-term" or "unexpired-term"</td></tr></table></td></tr>
       </table>
-      <button class="deleterec">Delete Office (TODO)</button>
+      <button class="deleterec">Delete Office</button>
     </div>
   </template>
   <div class="topsec"><h2>Offices</h2><p>Mayor, City Council, Dog Catcher, etc...</p>
@@ -188,8 +196,16 @@
 	    )</tr>
 	<tr><td colspan="2" class="optional">optional:</td></tr>
 	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
-	<tr><td>AuthorityIds</td><td>TODO: look up and make references to People, "AuthorityIds"</td></tr>
-	<tr><td>ComposingGpUnitIds</td><td><textarea data-key="ComposingGpUnitIds"></textarea></td><td>reference by @id to Geo-Political Units (TODO: smart lookup)</td></tr>
+	<tr class="acgroup">
+	  <td>Authorities</td>
+	  <td class="idreflist" data-key="AuthorityIds"></td>
+	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Person" data-action="append"> <small>(Type a person's name to add them as an authority for this region. The person must already have an entry in the <a href="#People">People section</a>.)</small></div></td>
+	</tr>
+	<tr class="acgroup">
+	  <td>Composing GpUnits</td>
+	  <td class="idreflist" data-key="ComposingGpUnitIds"></td>
+	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingDevice,ElectionResults.ReportingUnit" data-action="append"> <small>(Type a region's name to add it as a sub-region of this region. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
+	</tr>
 	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
 	<!-- CountStatus 0+ array of CountStatus records, effectively {"absentee":"in-process","early":"completed"} procedural detail not relevant to pre-election ballot design -->
 	<tr><td>ElectionAdministration</td><td>TODO: a sub struct with ContactInformation, Name (e.g. Somewhere County Clerk), and a list of PersonIds, "ElectionAdministration"</td></tr>
@@ -210,7 +226,6 @@
   <template id="electiontmpl" data-attype="ElectionResults.Election">
     <div class="recform">
       <table border="0">
-	<tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
 	<input type="hidden" data-key="attype" value="ElectionResults.Election" />
 	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
 	<tr><td>Type</td><td><input type="text" data-key="Type" /></td><td>        "general",
@@ -223,7 +238,11 @@
 </td></tr>
 	<tr><td>Start Date</td><td><input type="text" data-key="StartDate" /></td><td>YYYY-MM-DD</td></tr>
 	<tr><td>End Date</td><td><input type="text" data-key="EndDate" /></td><td>YYYY-MM-DD</td></tr>
-	<tr><td>Scope</td><td><input type="text" data-key="ElectionScopeId" /></td><td>TODO: look up and make references to Geo-Political Units, "ElectionScopeId"</td></tr>
+	<tr class="acgroup">
+	  <td>Scope</td>
+	  <td class="idreflist" data-key="ElectionScopeId"></td>
+	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingUnit" data-action="set"> <small>(Type a region's name to add it to the scope of this election. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
+	</tr>
 	<tr><td colspan="2" class="optional">optional:</td></tr>
 	<tr><td colspan="2"><h2>Candidates</h2>
 	    <div class="arraygroup" data-name="Candidate"></div>
@@ -249,7 +268,11 @@
   <template id="ocontesttmpl" data-attype="ElectionResults.OrderedContest">
     <table border="0">
       <input type="hidden" data-key="attype" value="ElectionResults.OrderedContest" />
-      <tr><td>ContestId</td><td><input type="text" data-key="ContestId" /></td><td>reference top level Contest element by id (TODO: smart lookup)</td></tr>
+      <tr class="acgroup">
+	<td>Contest</td>
+	<td class="idreflist" data-key="ContestId"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.PartyContest,ElectionResults.BallotMeasureContest,ElectionResults.CandidateContest,ElectionResults.RetentionContest" data-action="set"> <small>(Type a contest's name to set it at this point in the ballot. The Contest must already have an entry in the "Contests" section of this election.)</small></div></td>
+      </tr>
       <tr><td colspan="2" class="optional">optional:</td></tr>
       <tr><td>Ordered Items</td><td><textarea data-key="OrderedContestSelectionIds"></textarea></td><td>reference selections by id within the Contest (TODO: smart picker)</td></tr>
     </table>
@@ -258,11 +281,19 @@
   <template id="bstyletmpl" data-attype="ElectionResults.BallotStyle">
     <table border="0">
       <input type="hidden" data-key="attype" value="ElectionResults.BallotStyle" />
-      <tr><td>Geo-Political Units</td><td><textarea data-key="GpUnitIds"></textarea></td><td>space separated reference list: gpunit1 gpunit2</td></tr>
+      <tr class="acgroup">
+	<td>Geo-Political Units</td>
+	<td class="idreflist" data-key="GpUnitIds"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingDevice,ElectionResults.ReportingUnit" data-action="append"> <small>(Type a region's name to add it to the scope of this ballot style. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
+      </tr>
       <tr><td colspan="2" class="optional">optional:</td></tr>
       <tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
       <tr><td>Image URIs</td><td><textarea data-key="ImageUri"></textarea></td></tr>
-      <tr><td>Parties</td><td><textarea data-key="PartyIds"></textarea></td><td>list of party ids: party1 party3</td></tr>
+      <tr class="acgroup">
+	<td>Parties</td>
+	<td class="idreflist" data-key="PartyIds"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Party,ElectionResults.Coalition" data-action="append"> <small>(Type a party or coalition's name to have it use this ballot style. The Party or Coalition must already have an entry in the <a href="#Parties">Parties section</a>.)</small></div></td>
+      </tr>
       <tr><td>Items</td><td><div class="arraygroup" data-name="OrderedContent"></div><div><button class="newrec" data-btmpl="ocontesttmpl">New Contest</button></div></td></tr>
     </table>
   </template>
@@ -272,7 +303,11 @@
     <table border="0">
       <input type="hidden" data-key="attype" value="ElectionResults.CandidateContest" />
       <tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
-      <tr><td>Election Dsitrct</td><td><input type="text" data-key="ElectionDistrictId" /></td><td>reference Geo-Political unit by @id (TODO: smart lookup)</td></tr>
+      <tr class="acgroup">
+	<td>Election District</td>
+	<td class="idreflist" data-key="ElectionDistrictId"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingUnit" data-action="set"> <small>(Type a region's name to set it as the district of this contest. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
+      </tr>
       <tr><td>Votes Allowed</td><td><input type="number" min="1" step="1" data-key="VotesAllowed" /></td></tr>
       <tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
       <tr><td colspan="2" class="optional">optional:</td></tr>
@@ -287,11 +322,19 @@
       <tr><td>Enable Rotation</td><td><input type="checkbox" data-key="HasRotation"></td></tr>
       <tr><td>Number Elected</td><td><input type="number" min="1" step="1" data-key="NumberElected" /></td></tr>
       <tr><td>Number Runoff</td><td><input type="number" min="1" step="1" data-key="NumberRunoff" /></td></tr>
-      <tr><td>Offices</td><td><textarea data-key="OfficeIds"></textarea></td>References to Office by @id (TODO: smart lookup)<td></td></tr>
+      <tr class="acgroup">
+	<td>Offices</td>
+	<td class="idreflist" data-key="OfficeIds"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Office" data-action="append"> <small>(Type an office name to add it to this contest. The office must already have an entry in this Election's "Offices" section)</small></div></td>
+      </tr>
       <tr><td>Vote Variation</td><td><input type="text" data-key="VoteVariation" /></td><td>"approval", "borda", "cumulative", "majority", "n-of-m", "other", "plurality", "proportional", "range", "rcv", "super-majority" (TODO: popup menu)</td></tr>
       <tr><td>Vote Variation Other</td><td><input type="text" data-key="OtherVoteVariation" /></td><td>when "Vote Variation" is "other"</td></tr>
       <tr><td>Sequence Order</td><td><input type="number" min="1" step="1" data-key="SequenceOrder" /></td></tr>
-      <tr><td>PrimaryPartyIds</td><td><textarea data-key="PrimaryPartyIds"></textarea></td>References to Party or Coalition by @id (TODO: smart lookup)<td></td></tr>
+      <tr class="acgroup">
+	<td>Party Primaries</td>
+	<td class="idreflist" data-key="PrimaryPartyIds"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Party,ElectionResults.Coalition" data-action="append"> <small>(Type a party or coalition's name to this contest. The Party or Coalition must already have an entry in the <a href="#Parties">Parties section</a>.)</small></div></td>
+      </tr>
     </table>
     </div>
   </template>
@@ -300,8 +343,16 @@
     <table border="0">
       <input type="hidden" data-key="attype" value="ElectionResults.CandidateSelection" />
       <tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
-      <tr><td>Candidates</td><td><textarea data-key="CandidateIds"></textarea></td><td>references to Candidates by @id (TODO: smart lookup)</td></tr>
-      <tr><td>Endorsing Parties</td><td><textarea data-key="EndorsementPartyIds"></textarea></td><td>references to Party or Coalition by @id (TODO: smart lookup)</td></tr>
+      <tr class="acgroup">
+	<td>Candidates</td>
+	<td class="idreflist" data-key="CandidateIds"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Person" data-action="append"> <small>(Type a candidate's name to add them to this ballot selection. A selection is typically one candidate but may be a pair for a ticket or more for a slate. The candidate must already have an entry in this Election's "Candidates" section.)</small></div></td>
+      </tr>
+      <tr class="acgroup">
+	<td>Endorsing Parties</td>
+	<td class="idreflist" data-key="EndorsementPartyIds"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Party" data-action="append"> <small>(Type a party's name to add it as endorsing this selection. The Party must already have an entry in the <a href="#Parties">Parties section</a>.)</small></div></td>
+      </tr>
       <tr><td>Is Write-In</td><td><input type="checkbox" data-key="IsWriteIn"></td></tr>
       <tr><td>Sequence Order</td><td><input type="number" min="1" step="1" data-key="SequenceOrder" /></td></tr>
     </table>
@@ -315,7 +366,11 @@
       <tr><td colspan="2" class="optional">optional:</td></tr>
       <tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
       <tr><td>Slogan</td><td><input type="text" data-key="CampaignSlogan" /></td></tr>
-      <tr><td>PersonId</td><td><input type="text" data-key="PersonId" /></td><td>TODO: smart ref lookup</td></tr>
+      <tr class="acgroup">
+	<td>Persion</td>
+	<td class="idreflist" data-key="PersonId"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Person" data-action="set"> <small>(Type a person's name to set them as this candidate. The person must already have an entry in the <a href="#People">People section</a>.)</small></div></td>
+      </tr>
       <tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
       <tr><td>File Date</td><td><input type="text" data-key="FileDate" /></td><td>YYYY-MM-DD</td></tr>
       <tr><td>Is Incumbent</td><td><input type="checkbox" data-key="IsIncumbent"></td></tr>

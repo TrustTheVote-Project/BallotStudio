@@ -626,6 +626,19 @@
     "ElectionResults.ReportingUnit": function(rec) {
       if (rec.Name) {return rec.Name;}
       return JSON.stringify(rec);
+    },
+    "ElectionResults.CandidateContest": function(rec) {
+      if (rec.Name) {return rec.Name;}
+      return JSON.stringify(rec);
+    },
+    "ElectionResults.Candidate": function(rec) {
+      if (rec.BallotName) {return rec.BallotName;}
+      // TODO: could fall through to referred person?
+      return JSON.stringify(rec);
+    },
+    "ElectionResults.Office": function(rec) {
+      if (rec.Name) {return rec.Name;}
+      return JSON.stringify(rec);
     }
   };
   var getAutocompleteSummarizer = function(attype) {
