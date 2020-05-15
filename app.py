@@ -1,12 +1,13 @@
 import base64
 import io
 import json
+import logging
 import os
 import sqlite3
 import time
 
 # pip install Flask python-memcached
-from flask import Flask, render_template, request, g
+from flask import Flask, render_template, request, g, url_for
 #import memcache
 memcache = None
 
@@ -16,7 +17,13 @@ from . import draw
 ElectionPrinter = draw.ElectionPrinter
 
 app = Flask(__name__)
-logger = app.logger
+if os.getenv("BFLASK_CONF"):
+    app.config.from_envvar("BFLASK_CONF")
+
+if (os.getenv('SERVER_SOFTWARE') or '').startswith('gunicorn') and (__name__ != '__main__'):
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)
 
 _cache = None
 
@@ -50,7 +57,7 @@ def db():
 
 def putelection(ob, itemid=None):
     conn = db()
-    _putelection(ob, itemid, conn)
+    return _putelection(ob, itemid, conn)
 
 def _putelection(ob, itemid, conn):
     c = conn.cursor()
@@ -64,8 +71,9 @@ def _putelection(ob, itemid, conn):
         return itemid
     else:
         c.execute("INSERT INTO elections (data) VALUES (?)", (json.dumps(ob),))
-        itemid = c.lastrowid
         conn.commit()
+        itemid = c.lastrowid
+        app.logger.info('new election %s', itemid)
         c.close()
         return itemid
 
@@ -79,16 +87,23 @@ def _getelection(itemid, conn):
     c.execute("SELECT data FROM elections WHERE ROWID = ?", (int(itemid),))
     row = c.fetchone()
     c.close()
+    if not row:
+        return None
     return json.loads(row[0])
 
 
 @app.route('/')
 def home():
-    return render_template('index.html', electionid="")
+    return render_template('index.html', electionid="", urls=_election_urls(), prefix=request.environ.get('SCRIPT_NAME','').rstrip('/'))
 
 @app.route('/edit/<int:electionid>')
 def edit(electionid):
-    return render_template('index.html', electionid=electionid)
+    ctx = {
+        "electionid":electionid,
+        "urls":_election_urls(electionid),
+        "prefix":request.environ.get('SCRIPT_NAME','').rstrip('/'),
+    }
+    return render_template('index.html', **ctx)
 
 @app.route('/draw', methods=['POST'])
 def drawHandler():
@@ -131,23 +146,74 @@ def itemHandler():
     pdfbytes = base64.b64decode(bothob['pdfb64'])
     return pdfbytes, 200, {"Content-Type":"application/pdf"}
 
+def _election_urls(itemid=None):
+    if itemid is not None:
+        out = {
+            "itemid":itemid,
+            "url":url_for('elections', itemid=itemid),
+            "pdf":url_for('election_pdf', itemid=itemid),
+            "bubbles":url_for('election_bubblejson', itemid=itemid),
+            "edit":url_for('edit', electionid=itemid),
+            "post":url_for('elections', itemid=itemid),
+        }
+    else:
+        out = {
+            "post":url_for('putNewElection'),
+        }
+    out['staticroot'] = request.environ.get('SCRIPT_NAME','').rstrip('/') + '/static'
+    return out
+
 @app.route("/election", methods=['POST'])
 def putNewElection():
     er = request.get_json()
-    # todo: validate content
+    bothob = _er_bothob(er)
     itemid = putelection(er)
-    return {"itemid":itemid}, 200
+    mc().set('e{}'.format(itemid), bothob, time=3600)
+    return _election_urls(itemid), 200
 
 @app.route("/election/<int:itemid>", methods=['GET', 'POST'])
 def elections(itemid):
     if request.method == 'POST':
         er = request.get_json()
-        # todo: validate content
+        bothob = _er_bothob(er)
+        mc().set('e{}'.format(itemid), bothob, time=3600)
         itemid = putelection(er, itemid)
-        return {"itemid":itemid}, 200
+        return _election_urls(itemid), 200
     elif request.method == 'GET':
         er = getelection(itemid)
         if er is None:
-            return {'error': 'no item {}'.format(itemid)}, 404
+            return {'error': 'no election {}'.format(itemid)}, 404
         return er, 200
     return 'nope', 400
+
+def _er_bothob(er):
+    elections = er.get('Election', [])
+    el = elections[0]
+    ep = ElectionPrinter(er, el)
+    pdfbytes = io.BytesIO()
+    ep.draw(outfile=pdfbytes)
+    pdfbytes = pdfbytes.getvalue()
+    return {'pdf':pdfbytes, 'bubbles':ep.getBubbles()}
+
+def _bothob_core(itemid):
+    er = getelection(itemid)
+    if er is None:
+        return {'error': 'no election {}'.format(itemid)}, 404
+
+    cachekey = 'e{}'.format(itemid)
+    bothob = mc().get(cachekey)
+    if not bothob:
+        bothob = _er_bothob(er)
+        mc().set(cachekey, bothob, time=3600)
+    return bothob
+
+@app.route("/election/<int:itemid>.pdf")
+def election_pdf(itemid):
+    bothob = _bothob_core(itemid)
+    pdfbytes = bothob['pdf']
+    return pdfbytes, 200, {"Content-Type":"application/pdf"}
+
+@app.route("/election/<int:itemid>_bubbles.json")
+def election_bubblejson(itemid):
+    bothob = _bothob_core(itemid)
+    return bothob['bubbles'], 200 # implicit dict-to-json return

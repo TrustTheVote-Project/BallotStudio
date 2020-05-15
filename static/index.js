@@ -1,5 +1,16 @@
 (function(){
-    var electionid = null;
+  var electionid = null;
+  var urls = null;
+  (function() {
+    var eidd = document.getElementById('electionid');
+    if (eidd) {
+      electionid = eidd.getAttribute('data-id');
+    }
+    var urlsd = document.getElementById('urls');
+    if (urlsd) {
+      urls = JSON.parse(decodeURIComponent(urlsd.getAttribute("data-urls")));
+    }
+  })();
 
     var addClass = function(elem, classname) {
 	var cl = elem.classList;
@@ -675,7 +686,7 @@
   document.addEventListener("click", function (e) {
     closeAutocompleteLists(e.target);
   });
-  var delxHTML = "<img class=\"delx\" src=\"/static/delx.svg\" height=\"14\" width=\"30\">";
+  var delxHTML = "<img class=\"delx\" src=\""+urls.staticroot+"/delx.svg\" height=\"14\" width=\"30\">";
   var autocompleteItemClickListener = function() {
     var container = parentWithClass(this, "acgroup");
     var idreflist = firstChildOfClass(container, "idreflist");
@@ -814,7 +825,7 @@
     debugbutton.onclick = function() {
 	var js = gatherJson(document.body);
 	document.getElementById("debugdiv").innerHTML = "<pre>" + JSON.stringify(js) + "</pre>";
-	POSTjson("/draw?bubbles=1", js, drawResultHandler);
+	//POSTjson("/draw?bubbles=1", js, drawResultHandler);
     };
 
     var saveResultHandler = function(buttonelem, http) {
@@ -828,9 +839,13 @@
 	    } else if (http.readyState == 4) {
 		// done
 		if (http.status == 200 && !electionid) {
-		    var response = JSON.parse(http.responseText);
-		    electionid = response.itemid;
-		    // TODO: update page url to be /edit/{electionid}
+		  var response = JSON.parse(http.responseText);
+		  if ((!urls) || (urls.edit != response.edit)) {
+		    window.location = window.location.protocol + '//' + window.location.host + response.edit;
+		    return;
+		  }
+		  electionid = response.itemid;
+		  urls = response;
 		}
 		if (dbt) {
 		    if (http.status == 200) {
@@ -847,7 +862,7 @@
 	var js = gatherJson(document.body);
 	var eid = electionid || 0;
 	var savebutton = this;
-	POSTjson("/election/"+eid, js, function(){saveResultHandler(savebutton, this);});
+	POSTjson(urls.post, js, function(){saveResultHandler(savebutton, this);});
     };
     setOnclickForClass("savebutton",savebuttonclick);
 
@@ -887,12 +902,8 @@
     };
     //pushOb(document.body, savedObj);
     (function(){
-	var eidd = document.getElementById('electionid');
-	if (eidd) {
-	    electionid = eidd.getAttribute('data-id');
-	}
-	if (electionid) {
-	    GET("/election/"+electionid, loadElectionHandler);
-	}
+      if (urls && urls.url) {
+	GET(urls.url, loadElectionHandler);
+      }
     })();
 })();
