@@ -722,7 +722,8 @@ class ElectionPrinter:
             c = canvas.Canvas(outarg, pagesize=gs.pagesize) # pageCompression=1
             bs.draw(c, letter)
             c.save()
-            sys.stdout.write(bs_fname + '\n')
+            #sys.stdout.write(bs_fname + '\n')
+            return bs_fname
     def getBubbles(self):
         """{
 "pagesize": (width pt, height pt),
@@ -765,7 +766,8 @@ def main():
         er = json.load(fin)
     for el in er.get('Election', []):
         ep = ElectionPrinter(er, el)
-        ep.draw(args.outdir, args.prefix)
+        fname_written = ep.draw(args.outdir, args.prefix)
+        sys.stdout.write(fname_written + '\n')
         if args.bubbles:
             if args.bubbles == '-':
                 bout = sys.stdout
