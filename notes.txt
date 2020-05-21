@@ -1,7 +1,10 @@
+# Dependency setup
+
 hg clone https://hg.reportlab.com/hg-public/reportlab
 (cd reportlab && pip install -e .)
 pip install fonttools Flask
-python3 a.py
+apt-get install -y ghostscript imagemagick
+
 
 
 # Cost Notes
@@ -351,5 +354,9 @@ home assisted voting
 
 phone scan demo?
 
+
+curl -O http://127.0.0.1:5000/election/1.pdf
+pdftoppm < 1.pdf > 1.ppm
+convert ppm:- png:- <1.ppm > 1.png
 
 https://www.w3schools.com/howto/howto_js_autocomplete.asp

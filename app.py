@@ -1,13 +1,16 @@
+# pip install Flask
+# pdf to png requires ghostscript `pdftoppm` and ImageMagick `convert`
 import base64
 import io
 import json
 import logging
 import os
 import sqlite3
+import subprocess
 import time
 
-# pip install Flask python-memcached
 from flask import Flask, render_template, request, g, url_for
+# pip install python-memcached
 #import memcache
 memcache = None
 
@@ -90,6 +93,17 @@ def _getelection(itemid, conn):
     if not row:
         return None
     return json.loads(row[0])
+
+
+# pdf bytes in, png bytes out
+# bounces of two subprocess calls (all pipes, no disk) 'pdftoppm' and 'convert'
+def pdfToPng(pdfbytes):
+    result = subprocess.run(['pdftoppm'], input=pdfbytes, stdout=subprocess.PIPE)
+    result.check_returncode()
+    ppmbytes = result.stdout
+    result = subprocess.run(['convert', 'ppm:-', 'png:-'], input=ppmbytes, stdout=subprocess.PIPE)
+    result.check_returncode()
+    return result.stdout # png bytes
 
 
 @app.route('/')
@@ -212,6 +226,15 @@ def election_pdf(itemid):
     bothob = _bothob_core(itemid)
     pdfbytes = bothob['pdf']
     return pdfbytes, 200, {"Content-Type":"application/pdf"}
+
+@app.route("/election/<int:itemid>.png")
+def election_png(itemid):
+    bothob = _bothob_core(itemid)
+    pngbytes = bothob.get('png')
+    if pngbytes is None:
+        pngbytes = pdfToPng(bothob['pdf'])
+        bothob['png'] = pngbytes
+    return pngbytes, 200, {"Content-Type":"image/png"}
 
 @app.route("/election/<int:itemid>_bubbles.json")
 def election_bubblejson(itemid):
