@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+<head>
+  <title>Scan A Ballot</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+<!--
+  <link rel="stylesheet" type="text/css" href="style.css" media="screen, handheld" />
+  <link rel="stylesheet" type="text/css" href="enhanced.css" media="screen  and (min-width: 40.5em)" />
+-->
+<style>
+</style>
+</head>
+<body>
+  <form method="POST" action="/scan/{{ electionid }}" enctype="multipart/form-data">
+    <input name="image" type="file" accept="image/*">
+    <button name="b" value="1">Scan</button>
+  </form>
+</body>
+</html>

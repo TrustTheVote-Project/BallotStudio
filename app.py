@@ -240,3 +240,15 @@ def election_png(itemid):
 def election_bubblejson(itemid):
     bothob = _bothob_core(itemid)
     return bothob['bubbles'], 200 # implicit dict-to-json return
+
+@app.route("/election/<int:electionid>/scan")
+def scanform(electionid):
+    if request.method == 'POST':
+        return 'wat', 500
+    elif request.method == 'GET':
+        return render_template('scanform.html', electionid=electionid)
+    return 'nope', 400
+
+@app.route("/scan/<int:electionid>", methods=['POST'])
+def scanproxy(electionid):
+    return 'wat', 500
