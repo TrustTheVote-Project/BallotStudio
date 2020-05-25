@@ -60,7 +60,7 @@
 <body>
   <h1>Ballot Studio</h1>
   <div><button class="savebutton">Save</button> - <button class="reloadbutton">Reload</button><span class="debugtext"></span></div>
-  {% if urls and urls.pdf and urls.bubbles %}<div><a href="{{ urls.pdf }}">PDF</a> - <a href="{{ urls.bubbles }}">bubbles json</a></div>{% endif %}
+  {% if electionid %}<div><a href="{{ url_for('election_pdf', itemid=electionid) }}">PDF</a> - <a href="{{ url_for('election_bubblejson', itemid=electionid) }}">bubbles json</a> - <a href="{{ url_for('scanform', electionid=electionid) }}">Upload a scan...</a></div>{% endif %}
   <template id="partytmpl" data-attype="ElectionResults.Party" data-seq="party">
     <div class="recform">
       <table border="0">
