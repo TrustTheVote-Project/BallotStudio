@@ -9,6 +9,10 @@
   <link rel="stylesheet" type="text/css" href="enhanced.css" media="screen  and (min-width: 40.5em)" />
 -->
 <style>
+  .hyv{font-size:130%;font-weight:bold;}
+  .contestname{font-size:120%;font-weight:bold;padding-left:1em;}
+  .cnl{padding-left:2em;}
+  .candname{font-size:110%;}
 </style>
 </head>
 <body>
@@ -16,8 +20,10 @@
     <input name="image" type="file" accept="image/*">
     <button name="b" value="1">Scan</button>
   </form>
+  <div id="results"></div>
   <div id="dbg"></div>
   <div id="electionid" data-id="{{electionid}}" style="display:none"></div>
+  <div id="urls" data-urls="{{urls|tojson|urlencode}}" style="display:none"></div>
   <script src="{{ prefix }}/static/scan.js"></script>
 </body>
 </html>

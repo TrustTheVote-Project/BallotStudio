@@ -322,13 +322,6 @@
     if (!((ob instanceof Object) || (ob instanceof Array))) {
       return;
     }
-    // if (!seen) {
-    //   seen = {};
-    // }
-    // if(seen[ob]){
-    //   return;
-    // }
-    // seen[ob]=1;
     var atid = ob['@id'];
     if (atid) {
       if (byid[atid]) {
@@ -347,15 +340,9 @@
 	bytype[attype] = they;
       }
     }
-    //console.log("atid=" + atid + " attypye=" + attype);
     for (const key in ob) {
       obsByType(ob[key], bytype, byid, seen);
     }
-    // if (ob.length) {
-    //     for (var i = 0, e; e = ob[i]; i++) {
-    //       bytype = obsByType(e, bytype, seen);
-    //     }
-    // }
   };
   var obcache = null;
   var obtcache = null; // { @type: [{},...], ... }, list per @type

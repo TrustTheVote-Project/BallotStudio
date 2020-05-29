@@ -246,7 +246,7 @@ def scanform(electionid):
     if request.method == 'POST':
         return 'wat', 500
     elif request.method == 'GET':
-        return render_template('scanform.html', electionid=electionid)
+        return render_template('scanform.html', electionid=electionid, urls=_election_urls(electionid))
     return 'nope', 400
 
 @app.route("/scan/<int:electionid>", methods=['POST'])
