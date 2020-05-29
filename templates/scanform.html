@@ -12,9 +12,12 @@
 </style>
 </head>
 <body>
-  <form method="POST" action="/scan/{{ electionid }}" enctype="multipart/form-data">
+  <form id="imf" method="POST" action="/scan/{{ electionid }}" enctype="multipart/form-data">
     <input name="image" type="file" accept="image/*">
     <button name="b" value="1">Scan</button>
   </form>
+  <div id="dbg"></div>
+  <div id="electionid" data-id="{{electionid}}" style="display:none"></div>
+  <script src="{{ prefix }}/static/scan.js"></script>
 </body>
 </html>
