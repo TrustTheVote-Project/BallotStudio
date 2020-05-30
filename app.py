@@ -43,14 +43,49 @@ def mc():
         _cache = cache.Cache()
     return _cache
 
+# TODO: ownership, ACLs, any kind of security at all
+current_schema = [
+    "CREATE TABLE IF NOT EXISTS elections (data TEXT, meta TEXT)", # use builtin ROWID
+    "CREATE TABLE IF NOT EXISTS migrations (mid INT PRIMARY KEY) WITHOUT ROWID",
+]
+
+# never delete a migration or change its int key
+migrations = [
+    (1, ["CREATE TABLE IF NOT EXISTS migrations (mid INT PRIMARY KEY) WITHOUT ROWID","ALTER TABLE elections ADD COLUMN meta TEXT"])
+]
+
 def db():
     conn = getattr(g, '_database', None)
     if conn is None:
         sqlite3path = os.getenv('BALLOTSTUDIO_SQLITE') or 'ballotstudio.sqlite'
         conn = sqlite3.connect(sqlite3path)
         c = conn.cursor()
-        # TODO: ownership, ACLs, any kind of security at all
-        c.execute("CREATE TABLE IF NOT EXISTS elections (data TEXT)") # use builtin ROWID
+        try:
+            c.execute("SELECT mid FROM migrations")
+            migrations_done = set([row[0] for row in c.fetchall()])
+        except:
+            migrations_done = set()
+        try:
+            c.execute("SELECT COUNT(*) FROM elections")
+            row = c.fetchone()
+            num_elections = row and row[0]
+        except:
+            num_elections = 0
+        if not num_elections:
+            # new db
+            for stmt in current_schema:
+                c.execute(stmt)
+            # mark all migrations as applied
+            c.executemany("INSERT INTO migrations (mid) VALUES (?)", [(mig[0],) for mig in migrations])
+        else:
+            migs_applied = []
+            for mig in migrations:
+                mid = mig[0]
+                if mid not in migrations_done:
+                    for stmt in mig[1]:
+                        c.execute(stmt)
+                    migs_applied.append( (mid,) )
+            c.executemany("INSERT INTO migrations (mid) VALUES (?)", migs_applied)
         conn.commit()
         demo = _getelection(1, conn)
         if not demo:

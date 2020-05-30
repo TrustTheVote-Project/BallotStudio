@@ -13,15 +13,19 @@
   .contestname{font-size:120%;font-weight:bold;padding-left:1em;}
   .cnl{padding-left:2em;}
   .candname{font-size:110%;}
+  #dbg{font-family:monospace;margin:18px 0 0 0;color:#777;font-size:80%;}
+  p{margin:5px 0 5px 0;}
 </style>
 </head>
 <body>
-  <form id="imf" method="POST" action="/scan/{{ electionid }}" enctype="multipart/form-data">
+  <p><a href="{{ url_for('election_pdf', itemid=electionid) }}">print this ballot PDF</a></p>
+  <p>mark your votes, scan, and upload the image here:</p>
+  <p><form id="imf" method="POST" action="/scan/{{ electionid }}" enctype="multipart/form-data">
     <input name="image" type="file" accept="image/*">
     <button name="b" value="1">Scan</button>
-  </form>
-  <div id="results"></div>
-  <div id="dbg"></div>
+  </form></p>
+  <p id="results"></p>
+  <p id="dbg"></p>
   <div id="electionid" data-id="{{electionid}}" style="display:none"></div>
   <div id="urls" data-urls="{{urls|tojson|urlencode}}" style="display:none"></div>
   <script src="{{ prefix }}/static/scan.js"></script>
