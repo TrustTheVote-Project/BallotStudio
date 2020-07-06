@@ -812,8 +812,12 @@
     debugbutton.onclick = function() {
 	var js = gatherJson(document.body);
 	document.getElementById("debugdiv").innerHTML = "<pre>" + JSON.stringify(js) + "</pre>";
-	//POSTjson("/draw?bubbles=1", js, drawResultHandler);
     };
+
+  var demobutton = document.getElementById("demobutton");
+  demobutton.onclick = function() {
+    GET('/static/demoelection.json', loadElectionHandler);
+  };
 
     var saveResultHandler = function(buttonelem, http) {
 	var dbt = null;

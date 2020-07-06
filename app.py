@@ -164,9 +164,6 @@ def drawHandler():
     ep = ElectionPrinter(er, el)
     pdfbytes = io.BytesIO()
     ep.draw(outfile=pdfbytes)
-    itemid = request.args.get('i')
-    if not itemid:
-        itemid = '{:08x}'.format(int(time.time()-1588036000))
     bothob = {
         'pdfb64': base64.b64encode(pdfbytes.getvalue()).decode(),
         'bubbles': ep.getBubbles(),
@@ -174,6 +171,9 @@ def drawHandler():
     if request.args.get('both'):
         return bothob, 200
     if request.args.get('bubbles'):
+        itemid = request.args.get('i')
+        if not itemid:
+            itemid = '{:08x}'.format(int(time.time()-1588036000))
         mc().set(itemid, bothob, time=3600)
         return {'bubbles':ep.getBubbles(),'item':itemid}, 200
     # otherwise just pdf

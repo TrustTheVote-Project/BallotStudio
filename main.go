@@ -47,6 +47,10 @@ func maybeerr(w http.ResponseWriter, err error, code int, format string, args ..
 type StudioHandler struct {
 	udb login.UserDB
 	edb electionAppDB
+
+	drawBackend string
+
+	cache Cache
 }
 
 var pdfPathRe *regexp.Regexp
@@ -95,9 +99,28 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	m = pdfPathRe.FindStringSubmatch(path)
 	if m != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(400)
-		w.Write([]byte(`{"error":"TODO implement pdf"}`))
+		var bothob *DrawBothOb
+		cr := sh.cache.Get(m[1])
+		if cr != nil {
+			bothob = cr.(*DrawBothOb)
+		} else {
+			electionid, err := strconv.ParseInt(m[1], 10, 64)
+			if maybeerr(w, err, 400, "bad item") {
+				return
+			}
+			er, err := sh.edb.GetElection(electionid)
+			if maybeerr(w, err, 400, "no item") {
+				return
+			}
+			bothob, err = draw(sh.drawBackend, er.Data)
+			if maybeerr(w, err, 500, "draw fail") {
+				return
+			}
+			sh.cache.Put(m[1], bothob, uint64(len(bothob.Pdf)+len(bothob.BubblesJson)))
+		}
+		w.Header().Set("Content-Type", "application/pdf")
+		w.WriteHeader(200)
+		w.Write(bothob.Pdf)
 		return
 	}
 	m = bubblesPathRe.FindStringSubmatch(path)
@@ -248,6 +271,8 @@ func main() {
 	flag.StringVar(&sqlitePath, "sqlite", "", "path to sqlite3 db to keep local data in")
 	var postgresConnectString string
 	flag.StringVar(&postgresConnectString, "postgres", "", "connection string to postgres database")
+	var drawBackend string
+	flag.StringVar(&drawBackend, "draw-backend", "", "url to drawing backend")
 	flag.Parse()
 
 	templates, err := template.ParseGlob("gotemplates/*.html")
@@ -292,7 +317,11 @@ func main() {
 	maybefail(err, "db setup, %v", err)
 
 	getdb := func() (login.UserDB, error) { return udb, nil }
-	sh := StudioHandler{udb, edb}
+	sh := StudioHandler{
+		udb:         udb,
+		edb:         edb,
+		drawBackend: drawBackend,
+	}
 	mux := http.NewServeMux()
 	mux.Handle("/election", &sh)
 	mux.Handle("/election/", &sh)

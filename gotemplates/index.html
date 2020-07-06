@@ -1,0 +1,420 @@
+<!doctype html>
+<html>
+<head>
+  <title>Ballot Studio</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+<!--
+  <link rel="stylesheet" type="text/css" href="style.css" media="screen, handheld" />
+  <link rel="stylesheet" type="text/css" href="enhanced.css" media="screen  and (min-width: 40.5em)" />
+-->
+<style>
+  .hidden{display:none;}
+  .topsec{border:1px solid #555;padding:0.6em;background-color:#fffbf8;}
+  .optional{font-size:80%;color:#555;}
+  .fieldnote{font-size:80%;color:#555;}
+  .datid{font-size:90%;font-family:monospace;color:#444;}
+  .sectionedshow{border:1px solid #777;}
+  .candidate{border:1px solid #777;}
+  .contest{border:1px solid #777;}
+
+  span.idref{border:solid 1px #eea;background-color:#fffff8;padding:1px 0.1em 1px 0.7em;}
+  .idreflist{background-color:#eee;}
+
+  .autocomplete{position:relative;display:inline-block;}
+.autocomplete-items {
+  position: absolute;
+  border: 1px solid #d4d4d4;
+  border-bottom: none;
+  border-top: none;
+  z-index: 99;
+  /*position the autocomplete items to be the same width as the container:*/
+  top: 100%;
+  left: 0;
+  right: 0;
+}
+.autocomplete-items div {
+  padding: 10px;
+  cursor: pointer;
+  background-color: #fff;
+  border-bottom: 1px solid #d4d4d4;
+}
+.autocomplete-items div:hover {
+  /*when hovering an item:*/
+  background-color: #e9e9e9;
+}
+.autocomplete-active {
+  /*when navigating through the items using the arrow keys:*/
+  background-color: DodgerBlue !important;
+  color: #ffffff;
+}
+
+  div.recform{border:1px solid #555;padding-left:1em;margin:0.5em;background-color:#fafafa;}
+  button.reloadbutton{display:none;}
+.foo{}
+@media screen and (min-width: 40.5em) {
+.foo{}
+}
+</style>
+</head>
+<body>
+  <h1>Ballot Studio</h1>
+  <div><button class="savebutton">Save</button> - <button class="reloadbutton">Reload</button><span class="debugtext"></span></div>
+  {{ if .ElectionId }}<div><a href="{{ .PDFURL }}">PDF</a> - <a href="{{ .BubbleJSONURL }}">bubbles json</a> - <a href="{{ .ScanFormURL }}">Upload a scan...</a></div>{{ end }}
+  <template id="partytmpl" data-attype="ElectionResults.Party" data-seq="party">
+    <div class="recform">
+      <table border="0">
+	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
+ 	<tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
+	<input type="hidden" data-key="attype" value="ElectionResults.Party" />
+	<tr><td colspan="2" class="optional">optional:</td></tr>
+	<tr><td>Abbreviation</td><td><input type="text" data-key="Abbreviation" /></td></tr>
+	<tr><td>Color</td><td><input type="text" data-key="Color" /></td><td class="fieldnote">HTML color, e.g. #ff0000 for red</td></tr>
+	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
+	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
+	<tr><td>Recognized Party</td><td><input type="checkbox" data-key="IsRecognizedParty"></td></tr>
+	<tr class="acgroup">
+	  <td>Leaders</td>
+	  <td class="idreflist" data-key="LeaderPersonIds"></td>
+	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Person" data-action="append"> <small>(Type a person's name to add them as a leader of this party. The person must already have an entry in the <a href="#People">People section</a>.)</small></div></td>
+	</tr>
+	<tr><td>Logo URI</td><td><textarea data-key="LogoUri"></textarea></td></tr>
+	<tr><td>Slogan</td><td><input type="text" data-key="Slogan" /></td></tr>
+	<tr class="acgroup">
+	  <td>Scope</td>
+	  <td class="idreflist" data-key="PartyScopeGpUnitIds"></td>
+	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingDevice,ElectionResults.ReportingUnit" data-action="append"> <small>(Type a region's name to add it to the scope of this party. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
+	</tr>
+      </table>
+      <button class="deleterec">Delete Party</button>
+    </div>
+  </template>
+  <div class="topsec"><a name="Parties"><h2>Parties</h2></a>
+    <div id="parties" class="arraygroup" data-name="Party"></div>
+    <div><button class="newrec" id="newparty" data-btmpl="partytmpl" data-seq="party">New Party</button></div>
+  </div>
+
+  <template id="persontmpl" data-attype="ElectionResults.Person" data-seq="person">
+    <div class="recform">
+      <table border="0">
+	<tr><td>Full Name</td><td><input type="text" data-key="FullName" /></td></tr>
+	<tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
+	<input type="hidden" data-key="attype" value="ElectionResults.Person" />
+	<tr><td>Prefix</td><td><input type="text" data-key="Prefix" /></td></tr>
+	<tr><td>First Name</td><td><input type="text" data-key="FirstName" /></td></tr>
+	<tr><td>Middle Name</td><td><textarea data-key="MiddleName"></textarea></td></tr>
+	<tr><td>Last Name</td><td><input type="text" data-key="LastName" /></td></tr>
+	<tr><td>Suffix</td><td><input type="text" data-key="Suffix" /></td></tr>
+	<tr><td>Nickname</td><td><input type="text" data-key="Nickname" /></td></tr>
+	<tr><td>Title</td><td><input type="text" data-key="Title" /></td></tr>
+	<tr><td>Profession</td><td><input type="text" data-key="Profession" /></td></tr>
+	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
+	<tr><td>Date of Birth</td><td><input type="text" data-key="DateOfBirth" /></td></tr>
+	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
+	<tr class="acgroup">
+	  <td>Party</td>
+	  <td class="idreflist" data-key="PartyId" data-one="true"></td>
+	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Party" data-action="set"> <small>(Type a party's name to set it as the Party for this Person. The Party must already have an entry in the <a href="#Parties">Parties section</a>.)</small></div></td>
+	</tr>
+      </table>
+      <button class="deleterec">Delete Person</button>
+    </div>
+  </template>
+  <a name="People"><div class="topsec"><h2>People</h2></a>
+    <div id="people" class="arraygroup" data-name="Person"></div>
+    <div><button class="newrec" data-btmpl="persontmpl" data-seq="person" id="newperson">New Person</button></div>
+  </div>
+
+
+  <template id="officetmpl" data-attype="ElectionResults.Office" data-seq="office">
+    <div class="recform">
+      <table border="0">
+	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
+	<tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
+	<input type="hidden" data-key="attype" value="ElectionResults.Office" />
+	<tr><td colspan="2" class="optional">optional:</td></tr>
+	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
+	<tr><td>Description</td><td><input type="text" data-key="Description" /></td></tr>
+	<tr class="acgroup">
+	  <td>Election District</td>
+	  <td class="idreflist" data-key="ElectionDistrictId" data-one="true"></td>
+	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingUnit" data-action="set"> <small>(Type a region's name to set it to the scope of this Office. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
+	</tr>
+	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
+	<tr><td>Filing Deadline</td><td><input type="text" data-key="FilingDeadline" /></td><td>Format must be: YYYY-MM-DD<br/>TODO: proper date picker.</td></tr>
+	<tr><td>Is Partisan</td><td><input type="checkbox" data-key="IsPartisan"></td></tr>
+	<tr class="acgroup">
+	  <td>Incumbents</td>
+	  <td class="idreflist" data-key="OfficeHolderPersonIds"></td>
+	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Person" data-action="append"> <small>(Type a person's name to add them as a current holder of this office. The person must already have an entry in the <a href="#People">People section</a>.)</small></div></td>
+	</tr>
+	<tr><td>Term</td><td class="erobject" data-name="Term"><table border="0"><tr><td>Term Label</td><td><input type="hidden" data-key="attype" value="ElectionResults.Term" /><input type="text" data-key="Label" /></td></tr><tr><td>Term Start Date</td><td><input type="text" data-key="StartDate" /></td><td>YYYY-MM-DD</td></tr><tr><td>Term End Date</td><td><input type="text" data-key="EndDate" /></td><td>YYYY-MM-DD</td></tr><tr><td>Term Type</td><td><input type="text" data-key="Type" /></td><td>term type must be "full-term" or "unexpired-term"</td></tr></table></td></tr>
+      </table>
+      <button class="deleterec">Delete Office</button>
+    </div>
+  </template>
+  <div class="topsec"><h2>Offices</h2><p>Mayor, City Council, Dog Catcher, etc...</p>
+    <div id="offices" class="arraygroup" data-name="Office">
+    </div>
+    <div><button class="newrec" data-btmpl="officetmpl" data-seq="office" id="newoffice">New Office</button></div>
+  </div>
+
+
+  <template id="repunittmpl" data-attype="ElectionResults.ReportingUnit" data-seq="gpunit">
+    <div class="recform">
+      <table border="0">
+	<input type="hidden" data-key="attype" value="ElectionResults.ReportingUnit" />
+	<tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
+	<tr><td>Type</td><td><input type="text" data-key="Type" /></td><td>TODO: menu. options: ( "ballot-batch",
+            "ballot-style-area",
+            "borough",
+            "city",
+            "city-council",
+            "combined-precinct",
+            "congressional",
+            "country",
+            "county",
+            "county-council",
+            "drop-box",
+            "judicial",
+            "municipality",
+            "other",
+            "polling-place",
+            "precinct",
+            "school",
+            "special",
+            "split-precinct",
+            "state",
+            "state-house",
+            "state-senate",
+            "town",
+            "township",
+            "utility",
+            "village",
+            "vote-center",
+            "ward",
+            "water"
+	    )</tr>
+	<tr><td colspan="2" class="optional">optional:</td></tr>
+	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
+	<tr class="acgroup">
+	  <td>Authorities</td>
+	  <td class="idreflist" data-key="AuthorityIds"></td>
+	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Person" data-action="append"> <small>(Type a person's name to add them as an authority for this region. The person must already have an entry in the <a href="#People">People section</a>.)</small></div></td>
+	</tr>
+	<tr class="acgroup">
+	  <td>Composing GpUnits</td>
+	  <td class="idreflist" data-key="ComposingGpUnitIds"></td>
+	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingDevice,ElectionResults.ReportingUnit" data-action="append"> <small>(Type a region's name to add it as a sub-region of this region. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
+	</tr>
+	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
+	<!-- CountStatus 0+ array of CountStatus records, effectively {"absentee":"in-process","early":"completed"} procedural detail not relevant to pre-election ballot design -->
+	<tr><td>ElectionAdministration</td><td>TODO: a sub struct with ContactInformation, Name (e.g. Somewhere County Clerk), and a list of PersonIds, "ElectionAdministration"</td></tr>
+	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
+	<tr><td>Is Districted</td><td><input type="checkbox" data-key="IsDistricted"></td></tr>
+	<tr><td>Is Mail-Only</td><td><input type="checkbox" data-key="IsMailOnly"></td></tr>
+	<tr><td>Number</td><td><input type="text" data-key="Number" /></td></tr>
+	<tr><td>OtherType</td><td><input type="text" data-key="OtherType" /></td><td>(when Type is "other")</td></tr>
+	<tr><td colspan="2">TODO:<br><ul><li>PartyRegistration array of sub struct counting people registered with each party in this reporting unit</li><li>SpatialDimension</li><li>SubUnitsReported (post-election stat)</li><li>TotalSubUnits</li><li>VotersParticipated (post election stat)</li><li>VotersRegistered</li></ul></td></tr>
+      </table>
+    </div>
+  </template>
+  <div class="topsec"><a name="GPUnits"><h2>Geo-Political Units</h2></a><p>City, County, District, etc...</p>
+    <div id="offices" class="arraygroup" data-name="GpUnit"></div>
+    <div><button class="newrec" data-btmpl="repunittmpl" data-seq="gpunit" id="newrepunit">New Reporting Unit</button></div>
+  </div>
+
+  <template id="electiontmpl" data-attype="ElectionResults.Election">
+    <div class="recform">
+      <table border="0">
+	<input type="hidden" data-key="attype" value="ElectionResults.Election" />
+	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
+	<tr><td>Type</td><td><input type="text" data-key="Type" /></td><td>        "general",
+        "other",
+        "partisan-primary-closed",
+        "partisan-primary-open",
+        "primary",
+        "runoff",
+        "special"
+</td></tr>
+	<tr><td>Start Date</td><td><input type="text" data-key="StartDate" /></td><td>YYYY-MM-DD</td></tr>
+	<tr><td>End Date</td><td><input type="text" data-key="EndDate" /></td><td>YYYY-MM-DD</td></tr>
+	<tr class="acgroup">
+	  <td>Scope</td>
+	  <td class="idreflist" data-key="ElectionScopeId" data-one="true"></td>
+	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingUnit" data-action="set"> <small>(Type a region's name to add it to the scope of this election. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
+	</tr>
+	<tr><td colspan="2" class="optional">optional:</td></tr>
+	<tr><td colspan="2"><h2>Candidates</h2>
+	    <div class="arraygroup" data-name="Candidate"></div>
+	    <div><button class="newrec" data-btmpl="ecandtmpl">New Candidate</button></div>
+	</td></tr>
+	<tr><td colspan="2"><h2>Contests</h2>
+	    <div class="arraygroup" data-name="Contest"></div>
+	    <div><button class="newrec" data-btmpl="candcontesttmpl">New Candidate Contest</button></div>
+	</td></tr>
+	<tr><td colspan="2"><h2>Ballot Styles</h2>
+	    <div class="arraygroup" data-name="BallotStyle"></div>
+	    <div><button class="newrec" data-btmpl="bstyletmpl">New Ballot Style</button></div>
+	</td></tr>
+      </table>
+      <button class="deleterec">Delete Election</button>
+    </div>
+  </template>
+  <div class="topsec"><h2>Elections</h2>
+    <div id="elections" class="arraygroup" data-name="Election"></div>
+    <div><button class="newrec" data-btmpl="electiontmpl" id="newelection">New Election</button></div>
+  </div>
+
+  <template id="ocontesttmpl" data-attype="ElectionResults.OrderedContest">
+    <table border="0">
+      <input type="hidden" data-key="attype" value="ElectionResults.OrderedContest" />
+      <tr class="acgroup">
+	<td>Contest</td>
+	<td class="idreflist" data-key="ContestId" data-one="true"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.PartyContest,ElectionResults.BallotMeasureContest,ElectionResults.CandidateContest,ElectionResults.RetentionContest" data-action="set"> <small>(Type a contest's name to set it at this point in the ballot. The Contest must already have an entry in the "Contests" section of this election.)</small></div></td>
+      </tr>
+      <tr><td colspan="2" class="optional">optional:</td></tr>
+      <tr><td>Ordered Items</td><td><textarea data-key="OrderedContestSelectionIds"></textarea></td><td>reference selections by id within the Contest (TODO: smart picker)</td></tr>
+    </table>
+  </template>
+
+  <template id="bstyletmpl" data-attype="ElectionResults.BallotStyle">
+    <table border="0">
+      <input type="hidden" data-key="attype" value="ElectionResults.BallotStyle" />
+      <tr class="acgroup">
+	<td>Geo-Political Units</td>
+	<td class="idreflist" data-key="GpUnitIds"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingDevice,ElectionResults.ReportingUnit" data-action="append"> <small>(Type a region's name to add it to the scope of this ballot style. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
+      </tr>
+      <tr><td colspan="2" class="optional">optional:</td></tr>
+      <tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
+      <tr><td>Image URIs</td><td><textarea data-key="ImageUri"></textarea></td></tr>
+      <tr class="acgroup">
+	<td>Parties</td>
+	<td class="idreflist" data-key="PartyIds"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Party,ElectionResults.Coalition" data-action="append"> <small>(Type a party or coalition's name to have it use this ballot style. The Party or Coalition must already have an entry in the <a href="#Parties">Parties section</a>.)</small></div></td>
+      </tr>
+      <tr><td>Items</td><td><div class="arraygroup" data-name="OrderedContent"></div><div><button class="newrec" data-btmpl="ocontesttmpl">New Contest</button></div></td></tr>
+    </table>
+  </template>
+
+  <template id="candcontesttmpl" data-attype="ElectionResults.CandidateContest">
+    <div class="contest">
+    <table border="0">
+      <input type="hidden" data-key="attype" value="ElectionResults.CandidateContest" />
+      <tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
+      <tr class="acgroup">
+	<td>Election District</td>
+	<td class="idreflist" data-key="ElectionDistrictId" data-one="true"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingUnit" data-action="set"> <small>(Type a region's name to set it as the district of this contest. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
+      </tr>
+      <tr><td>Votes Allowed</td><td><input type="number" min="1" step="1" data-key="VotesAllowed" /></td></tr>
+      <tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
+      <tr><td colspan="2" class="optional">optional:</td></tr>
+      <tr><td>Abbreviation</td><td><input type="text" data-key="Abbreviation" /></td></tr>
+      <tr><td>Ballot Title</td><td><input type="text" data-key="BallotTitle" /></td></tr>
+      <tr><td>Ballot Subtitle</td><td><input type="text" data-key="BallotSubTitle" /></td></tr>
+      <tr><td colspan="2"><h2>Selections</h2>
+	  <div class="arraygroup" data-name="ContestSelection"></div>
+	  <div><button class="newrec" data-btmpl="candseltmpl">New Selection</button></div>
+      </td></tr>
+      <tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
+      <tr><td>Enable Rotation</td><td><input type="checkbox" data-key="HasRotation"></td></tr>
+      <tr><td>Number Elected</td><td><input type="number" min="1" step="1" data-key="NumberElected" /></td></tr>
+      <tr><td>Number Runoff</td><td><input type="number" min="1" step="1" data-key="NumberRunoff" /></td></tr>
+      <tr class="acgroup">
+	<td>Offices</td>
+	<td class="idreflist" data-key="OfficeIds"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Office" data-action="append"> <small>(Type an office name to add it to this contest. The office must already have an entry in this Election's "Offices" section)</small></div></td>
+      </tr>
+      <tr><td>Vote Variation</td><td><input type="text" data-key="VoteVariation" /></td><td>"approval", "borda", "cumulative", "majority", "n-of-m", "other", "plurality", "proportional", "range", "rcv", "super-majority" (TODO: popup menu)</td></tr>
+      <tr><td>Vote Variation Other</td><td><input type="text" data-key="OtherVoteVariation" /></td><td>when "Vote Variation" is "other"</td></tr>
+      <tr><td>Sequence Order</td><td><input type="number" min="1" step="1" data-key="SequenceOrder" /></td></tr>
+      <tr class="acgroup">
+	<td>Party Primaries</td>
+	<td class="idreflist" data-key="PrimaryPartyIds"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Party,ElectionResults.Coalition" data-action="append"> <small>(Type a party or coalition's name to this contest. The Party or Coalition must already have an entry in the <a href="#Parties">Parties section</a>.)</small></div></td>
+      </tr>
+    </table>
+    </div>
+  </template>
+
+  <template id="candseltmpl" data-attype="ElectionResults.CandidateSelection">
+    <table border="0">
+      <input type="hidden" data-key="attype" value="ElectionResults.CandidateSelection" />
+      <tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
+      <tr class="acgroup">
+	<td>Candidates</td>
+	<td class="idreflist" data-key="CandidateIds"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Person" data-action="append"> <small>(Type a candidate's name to add them to this ballot selection. A selection is typically one candidate but may be a pair for a ticket or more for a slate. The candidate must already have an entry in this Election's "Candidates" section.)</small></div></td>
+      </tr>
+      <tr class="acgroup">
+	<td>Endorsing Parties</td>
+	<td class="idreflist" data-key="EndorsementPartyIds"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Party" data-action="append"> <small>(Type a party's name to add it as endorsing this selection. The Party must already have an entry in the <a href="#Parties">Parties section</a>.)</small></div></td>
+      </tr>
+      <tr><td>Is Write-In</td><td><input type="checkbox" data-key="IsWriteIn"></td></tr>
+      <tr><td>Sequence Order</td><td><input type="number" min="1" step="1" data-key="SequenceOrder" /></td></tr>
+    </table>
+  </template>
+
+  <template id="ecandtmpl" data-attype="ElectionResults.Candidate">
+    <div class="candidate"><table border="0">
+      <input type="hidden" data-key="attype" value="ElectionResults.Candidate" />
+      <tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
+      <tr><td>Ballot Name</td><td><input type="text" data-key="BallotName" /></td></tr>
+      <tr><td colspan="2" class="optional">optional:</td></tr>
+      <tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
+      <tr><td>Slogan</td><td><input type="text" data-key="CampaignSlogan" /></td></tr>
+      <tr class="acgroup">
+	<td>Persion</td>
+	<td class="idreflist" data-key="PersonId" data-one="true"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Person" data-action="set"> <small>(Type a person's name to set them as this candidate. The person must already have an entry in the <a href="#People">People section</a>.)</small></div></td>
+      </tr>
+      <tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
+      <tr><td>File Date</td><td><input type="text" data-key="FileDate" /></td><td>YYYY-MM-DD</td></tr>
+      <tr><td>Is Incumbent</td><td><input type="checkbox" data-key="IsIncumbent"></td></tr>
+      <tr><td>Is Top-Ticket</td><td><input type="checkbox" data-key="IsTopTicket"></td></tr>
+      <tr><td>Pre-Election Status</td><td><input type="text" data-key="PreElectionStatus" /></td><td>"filed", "qualified", "withdrawn" (TODO: popup menu)</td></tr>
+    </table></div>
+  </template>
+
+  <template id="contacttmpl" data-attype="ElectionResults.ContactInformation">
+    <div class="sectionedshow">
+      <div class="show hidden">
+	<button class="sectionedit">Edit...</button>
+	<div class="showjson" data-hide="@type"></div>
+      </div>
+      <div class="edit">
+	<button class="sectionshow">shrink</button>
+	<table border="0">
+	  <input type="hidden" data-key="attype" value="ElectionResults.ContactInformation" />
+	  <tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
+	  <tr><td>Label</td><td><input type="text" data-key="Label" /></td></tr>
+	  <tr><td>Address</td><td><textarea data-key="AddressLine"></textarea></td></tr>
+	  <tr><td>Directions</td><td><input type="text" data-key="Directions" /></td></tr>
+	  <tr><td>Email</td><td><textarea data-key="Email"></textarea></td></tr>
+	  <tr><td>Fax</td><td><textarea data-key="Fax"></textarea></td></tr>
+	  <tr><td>Label</td><td><input type="text" data-key="Label" /></td></tr>
+	  <tr><td>LatLng</td><td><input type="text" data-key="LatLng" /></td></tr>
+	  <tr><td>Phone</td><td><textarea data-key="Phone"></textarea></td></tr>
+	  <tr><td>Schedule</td><td><input type="text" data-key="Schedule" /></td><td>TODO: sub-form for ElectionResults.Schedule</td></tr>
+	  <tr><td>Uri</td><td><textarea data-key="Uri"></textarea></td></tr>
+	</table>
+      </div>
+    </div>
+  </template>
+
+  <div><button class="savebutton">Save</button> - <button class="reloadbutton">Reload</button><span class="debugtext"></span></div>
+  <div>
+    <h2>debug</h2>
+    <div id="debugdiv"></div>
+    <button id="debugbutton">Do the thing!</button>
+    <button id="demobutton">Load Demo Election</button>
+  </div>
+  <div id="electionid" data-id="{{ .ElectionId }}" style="display:none"></div>
+  <div id="urls" data-urls="{{ .JsonAttr  }}" style="display:none"></div>
+  <script src="/static/index.js"></script>
+</body>
+</html>
