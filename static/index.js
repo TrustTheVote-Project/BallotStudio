@@ -4,7 +4,7 @@
   (function() {
     var eidd = document.getElementById('electionid');
     if (eidd) {
-      electionid = eidd.getAttribute('data-id');
+      electionid = parseInt(eidd.getAttribute('data-id')) || 0;
     }
     var urlsd = document.getElementById('urls');
     if (urlsd) {
