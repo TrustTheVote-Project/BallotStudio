@@ -360,3 +360,8 @@ pdftoppm < 1.pdf > 1.ppm
 convert ppm:- png:- <1.ppm > 1.png
 
 https://www.w3schools.com/howto/howto_js_autocomplete.asp
+
+2020-07-05 23:43:30 EDT (Sunday, July 05 11:43:30 PM)
+
+FLASK_ENV=development FLASK_APP=app.py /home/bolson/src/ve36/bin/flask run
+go build && ./ballotstudio -draw-backend http://127.0.0.1:5000/
