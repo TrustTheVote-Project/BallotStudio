@@ -60,11 +60,11 @@ type Cache struct {
 	ai          uint64 // access counter by which get/put are seen
 }
 
-func (c *Cache) Put(key string, v interface{}, size uint64) {
+func (c *Cache) Put(key string, v interface{}, size int) {
 	ent := &cacheEntry{
 		key:  key,
 		data: v,
-		size: size,
+		size: uint64(size),
 		seen: c.ai,
 	}
 	c.ai++
@@ -74,13 +74,13 @@ func (c *Cache) Put(key string, v interface{}, size uint64) {
 	prev := c.byKey[key]
 	if prev != nil {
 		c.currentSize -= prev.size
-		c.currentSize += size
+		c.currentSize += uint64(size)
 		c.bySeen.they[prev.seeni] = ent
 		heap.Fix(&c.bySeen, prev.seeni)
 		c.byKey[key] = ent
 	} else {
 		c.byKey[key] = ent
-		c.currentSize += size
+		c.currentSize += uint64(size)
 		heap.Push(&c.bySeen, ent)
 	}
 	if c.MaxSize == 0 {

@@ -1,14 +1,24 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/png"
+	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
+	"os/exec"
 	"path"
 	"strings"
+
+	_ "github.com/spakin/netpbm"
 )
+
+// go get github.com/spakin/netpbm
 
 type DrawBothOb struct {
 	Pdf         []byte
@@ -54,6 +64,7 @@ func draw(backendUrl string, electionjson string) (both *DrawBothOb, err error) 
 		}
 		return nil, fmt.Errorf("draw POST bad response, %v, %#v", err, string(dbb))
 	}
+	// json.Unmarshal helpfully converts "base64 content" unpacked into []byte
 	/*
 		pdf := make([]byte, base64.StdEncoding.DecodedLen(len(dbr.PdfB64)))
 		actual, err := base64.StdEncoding.Decode(pdf, dbr.PdfB64)
@@ -73,4 +84,61 @@ func draw(backendUrl string, electionjson string) (both *DrawBothOb, err error) 
 		return nil, fmt.Errorf("draw POST bad response bj, %v", err)
 	}
 	return &DrawBothOb{Pdf: dbr.PdfB64, BubblesJson: bj}, nil
+}
+
+func asyncReadAll(fin io.ReadCloser, result chan []byte) {
+	data, err := ioutil.ReadAll(fin)
+	if err != nil {
+		log.Printf("pdftoppm read err, %v", err)
+		close(result)
+		return
+	}
+	//log.Printf("got %d bytes from pdftoppm", len(data))
+	result <- data
+	close(result)
+}
+
+// uses subprocess `pdftoppm`
+func pdftopng(pdf []byte) (pngbytes []byte, err error) {
+	cmd := exec.Command("pdftoppm")
+	if err != nil {
+		return nil, fmt.Errorf("could not cmd pdftoppm, %v", err)
+	}
+	stdinput, err := cmd.StdinPipe()
+	if err != nil {
+		return nil, fmt.Errorf("could not start pdftoppm stdin, %v", err)
+	}
+	stdoutget, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, fmt.Errorf("could not start pdftoppm stdout, %v", err)
+	}
+	//log.Print("starting pdftoppm")
+	err = cmd.Start()
+	if err != nil {
+		return nil, fmt.Errorf("could not start pdftoppm, %v", err)
+	}
+	result := make(chan []byte, 1)
+	go asyncReadAll(stdoutget, result)
+	_, err = stdinput.Write(pdf)
+	if err != nil {
+		return nil, fmt.Errorf("could not write pdftoppm, %v", err)
+	}
+	//log.Printf("sent %d/%d bytes of pdf to pdftoppm", n, len(pdf))
+	stdinput.Close()
+	err = cmd.Wait()
+	if err != nil {
+		return nil, fmt.Errorf("pdftoppm wait, %v", err)
+	}
+	ppm := <-result
+	im, format, err := image.Decode(bytes.NewReader(ppm))
+	if err != nil {
+		return nil, fmt.Errorf("ppm decode as %s, %v", format, err)
+	}
+	pngw := bytes.Buffer{}
+	err = png.Encode(&pngw, im)
+	if err != nil {
+		return nil, fmt.Errorf("png encode, %v", err)
+	}
+	pngbytes = pngw.Bytes()
+	return
 }

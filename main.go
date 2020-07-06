@@ -99,24 +99,11 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	m = pdfPathRe.FindStringSubmatch(path)
 	if m != nil {
-		var bothob *DrawBothOb
-		cr := sh.cache.Get(m[1])
-		if cr != nil {
-			bothob = cr.(*DrawBothOb)
-		} else {
-			electionid, err := strconv.ParseInt(m[1], 10, 64)
-			if maybeerr(w, err, 400, "bad item") {
-				return
-			}
-			er, err := sh.edb.GetElection(electionid)
-			if maybeerr(w, err, 400, "no item") {
-				return
-			}
-			bothob, err = draw(sh.drawBackend, er.Data)
-			if maybeerr(w, err, 500, "draw fail") {
-				return
-			}
-			sh.cache.Put(m[1], bothob, uint64(len(bothob.Pdf)+len(bothob.BubblesJson)))
+		bothob, err := sh.getPdf(m[1])
+		if err != nil {
+			he := err.(httpError)
+			maybeerr(w, he.err, he.code, he.msg)
+			return
 		}
 		w.Header().Set("Content-Type", "application/pdf")
 		w.WriteHeader(200)
@@ -125,16 +112,28 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	m = bubblesPathRe.FindStringSubmatch(path)
 	if m != nil {
+		bothob, err := sh.getPdf(m[1])
+		if err != nil {
+			he := err.(httpError)
+			maybeerr(w, he.err, he.code, he.msg)
+			return
+		}
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(400)
-		w.Write([]byte(`{"error":"TODO implement bubbles"}`))
+		w.WriteHeader(200)
+		w.Write(bothob.BubblesJson)
 		return
 	}
 	m = pngPathRe.FindStringSubmatch(path)
 	if m != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(400)
-		w.Write([]byte(`{"error":"TODO implement png"}`))
+		pngbytes, err := sh.getPng(m[1])
+		if err != nil {
+			he := err.(httpError)
+			maybeerr(w, he.err, he.code, he.msg)
+			return
+		}
+		w.Header().Set("Content-Type", "image/png")
+		w.WriteHeader(200)
+		w.Write(pngbytes)
 		return
 	}
 	m = scanPathRe.FindStringSubmatch(path)
@@ -193,6 +192,58 @@ func (sh *StudioHandler) handleElectionDocGET(w http.ResponseWriter, r *http.Req
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 	w.Write([]byte(er.Data))
+}
+
+func (sh *StudioHandler) getPdf(el string) (bothob *DrawBothOb, err error) {
+	cr := sh.cache.Get(el)
+	if cr != nil {
+		bothob = cr.(*DrawBothOb)
+	} else {
+		electionid, err := strconv.ParseInt(el, 10, 64)
+		if err != nil {
+			return nil, &httpError{400, "bad item", err}
+		}
+		er, err := sh.edb.GetElection(electionid)
+		if err != nil {
+			return nil, &httpError{400, "no item", err}
+		}
+		bothob, err = draw(sh.drawBackend, er.Data)
+		if err != nil {
+			return nil, &httpError{500, "draw fail", err}
+		}
+		sh.cache.Put(el, bothob, len(bothob.Pdf)+len(bothob.BubblesJson))
+	}
+	return
+}
+
+func (sh *StudioHandler) getPng(el string) (pngbytes []byte, err error) {
+	pngkey := el + ".png"
+	cr := sh.cache.Get(pngkey)
+	if cr != nil {
+		pngbytes = cr.([]byte)
+		return
+	}
+	var bothob *DrawBothOb
+	bothob, err = sh.getPdf(el)
+	if err != nil {
+		return nil, err
+	}
+	pngbytes, err = pdftopng(bothob.Pdf)
+	if err != nil {
+		return nil, &httpError{500, "png fail", err}
+	}
+	sh.cache.Put(pngkey, pngbytes, len(pngbytes))
+	return
+}
+
+type httpError struct {
+	code int
+	msg  string
+	err  error
+}
+
+func (he httpError) Error() string {
+	return fmt.Sprintf("%d %s, %v", he.code, he.msg, he.err)
 }
 
 type editHandler struct {
