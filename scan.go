@@ -75,7 +75,7 @@ func getImage(w http.ResponseWriter, r *http.Request) (imbytes []byte) {
 	}
 
 	mpreader, err := r.MultipartReader()
-	if maybeerr(w, err, 400, "bad image, %v", err) {
+	if maybeerr(w, err, 400, "bad multipart, %v", err) {
 		return
 	}
 	for true {
@@ -83,14 +83,14 @@ func getImage(w http.ResponseWriter, r *http.Request) (imbytes []byte) {
 		if err == io.EOF {
 			break
 		}
-		if maybeerr(w, err, 400, "bad multipart, %v", err) {
+		if maybeerr(w, err, 400, "bad multipart part, %v", err) {
 			return
 		}
 
 		//log.Printf("got part cd=%v fn=%v form=%v", part.Header.Get("Content-Disposition"), part.FileName(), part.FormName())
 		if isImage(part.Header.Get("Content-Type")) {
 			imbytes, err = ioutil.ReadAll(part)
-			if maybeerr(w, err, 400, "bad multipart, %v", err) {
+			if maybeerr(w, err, 400, "bad multipart image, %v", err) {
 				return
 			}
 			return

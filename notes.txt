@@ -365,3 +365,5 @@ https://www.w3schools.com/howto/howto_js_autocomplete.asp
 
 FLASK_ENV=development FLASK_APP=app.py /home/bolson/src/ve36/bin/flask run
 go build && ./ballotstudio -draw-backend http://127.0.0.1:5000/
+go build && ./ballotstudio -draw-backend http://127.0.0.1:5000/ -sqlite bss
+go build && ./ballotstudio -draw-backend http://127.0.0.1:5000/ -sqlite bss -im-archive-dir /tmp/scan-archive

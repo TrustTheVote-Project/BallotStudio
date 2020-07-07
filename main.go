@@ -34,7 +34,7 @@ func maybeerr(w http.ResponseWriter, err error, code int, format string, args ..
 		return false
 	}
 	msg := fmt.Sprintf(format, args...)
-	if code >= 500 {
+	if code >= 500 || true {
 		log.Print(msg, "\t", err)
 	}
 	w.Header().Set("Content-Type", "text/plain")
@@ -62,7 +62,8 @@ type StudioHandler struct {
 
 	cache Cache
 
-	archiver ImageArchiver
+	scantemplate *template.Template
+	archiver     ImageArchiver
 }
 
 var pdfPathRe *regexp.Regexp
@@ -156,15 +157,20 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// `^/election/(\d+)/scan$`
 	m = scanPathRe.FindStringSubmatch(path)
 	if m != nil {
+		// POST: receive image
+		// GET: serve a page with image upload
 		if r.Method == "POST" {
 			sh.handleElectionScanPOST(w, r, user, m[1])
 			return
 		}
-		// GET: serve a page with image upload
-		// POST: receive image
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(400)
-		w.Write([]byte(`{"error":"TODO implement scan"}`))
+		electionid, err := strconv.ParseInt(m[1], 10, 64)
+		if maybeerr(w, err, 400, "bad item") {
+			return
+		}
+		w.Header().Set("Content-Type", "text/html")
+		ec := EditContext{}
+		ec.set(electionid)
+		sh.scantemplate.Execute(w, ec)
 		return
 	}
 	w.Header().Set("Content-Type", "text/plain")
@@ -190,6 +196,15 @@ func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Re
 	if maybeerr(w, err, 400, "bad json") {
 		return
 	}
+	if itemid != 0 {
+		older, _ := sh.edb.GetElection(itemid)
+		if older != nil {
+			if older.Owner != user.Guid {
+				texterr(w, http.StatusUnauthorized, "nope")
+				return
+			}
+		}
+	}
 	er := electionRecord{
 		Id:    itemid,
 		Owner: user.Guid,
@@ -212,18 +227,20 @@ func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Re
 }
 
 func (sh *StudioHandler) handleElectionDocGET(w http.ResponseWriter, r *http.Request, user *login.User, itemid int64) {
-	if user == nil {
-		texterr(w, http.StatusUnauthorized, "nope")
-		return
-	}
+	// Allow everything to be readable? TODO: flexible ACL?
+	// if user == nil {
+	// 	texterr(w, http.StatusUnauthorized, "nope")
+	// 	return
+	// }
 	er, err := sh.edb.GetElection(itemid)
 	if maybeerr(w, err, 400, "no item") {
 		return
 	}
-	if user.Guid != er.Owner {
-		texterr(w, http.StatusForbidden, "nope")
-		return
-	}
+	// Allow everything to be readable? TODO: flexible ACL?
+	// if user.Guid != er.Owner {
+	// 	texterr(w, http.StatusForbidden, "nope")
+	// 	return
+	// }
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 	w.Write([]byte(er.Data))
@@ -360,6 +377,8 @@ func main() {
 	flag.StringVar(&postgresConnectString, "postgres", "", "connection string to postgres database")
 	var drawBackend string
 	flag.StringVar(&drawBackend, "draw-backend", "", "url to drawing backend")
+	var imageArchiveDir string
+	flag.StringVar(&imageArchiveDir, "im-archive-dir", "", "directory to archive uploaded scanned images to; will mkdir -p")
 	flag.Parse()
 
 	templates, err := template.ParseGlob("gotemplates/*.html")
@@ -405,10 +424,14 @@ func main() {
 	maybefail(err, "udb setup, %v", err)
 
 	getdb := func() (login.UserDB, error) { return udb, nil }
+	archiver, err := NewFileImageArchiver(imageArchiveDir)
+	maybefail(err, "image archive dir, %v", err)
 	sh := StudioHandler{
-		udb:         udb,
-		edb:         edb,
-		drawBackend: drawBackend,
+		udb:          udb,
+		edb:          edb,
+		drawBackend:  drawBackend,
+		scantemplate: templates.Lookup("scanform.html"),
+		archiver:     archiver,
 	}
 	edith := editHandler{udb, indextemplate}
 

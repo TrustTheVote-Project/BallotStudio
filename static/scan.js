@@ -17,7 +17,8 @@
   imf.addEventListener('submit', function(e){
     e.preventDefault();
     var fi = imf.elements[0].files[0];
-    POST('/scan/' + electionid, fi, fi.type, function(){imageuploadHandler(this);});
+    var url = (urls && urls.scan) || ('/scan/' + electionid);
+    POST(url, fi, fi.type, function(){imageuploadHandler(this);});
   });
   var imageuploadHandler = function(http) {
     var dbg = document.getElementById("dbg");
