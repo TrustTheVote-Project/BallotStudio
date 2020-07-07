@@ -43,6 +43,16 @@ func maybeerr(w http.ResponseWriter, err error, code int, format string, args ..
 	return true
 }
 
+func texterr(w http.ResponseWriter, code int, format string, args ...interface{}) {
+	msg := fmt.Sprintf(format, args...)
+	if code >= 500 {
+		log.Print(msg)
+	}
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(code)
+	w.Write([]byte(msg))
+}
+
 // handler of /election and /election/*{,.pdf,.png,_bubbles.json,/scan}
 type StudioHandler struct {
 	udb login.UserDB
@@ -69,10 +79,11 @@ func init() {
 
 // implement http.Handler
 func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	user, _ := login.GetHttpUser(w, r, sh.udb)
 	path := r.URL.Path
 	if path == "/election" {
 		if r.Method == "POST" {
-			sh.handleElectionDocPOST(w, r, 0)
+			sh.handleElectionDocPOST(w, r, user, 0)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -80,6 +91,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{"error":"nope"}`))
 		return
 	}
+	// `^/election/(\d+)$`
 	m := docPathRe.FindStringSubmatch(path)
 	if m != nil {
 		electionid, err := strconv.ParseInt(m[1], 10, 64)
@@ -87,9 +99,9 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if r.Method == "GET" {
-			sh.handleElectionDocGET(w, r, electionid)
+			sh.handleElectionDocGET(w, r, user, electionid)
 		} else if r.Method == "POST" {
-			sh.handleElectionDocPOST(w, r, electionid)
+			sh.handleElectionDocPOST(w, r, user, electionid)
 		} else {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(400)
@@ -97,6 +109,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	// `^/election/(\d+)\.pdf$`
 	m = pdfPathRe.FindStringSubmatch(path)
 	if m != nil {
 		bothob, err := sh.getPdf(m[1])
@@ -110,6 +123,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write(bothob.Pdf)
 		return
 	}
+	// `^/election/(\d+)_bubbles\.json$`
 	m = bubblesPathRe.FindStringSubmatch(path)
 	if m != nil {
 		bothob, err := sh.getPdf(m[1])
@@ -123,6 +137,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write(bothob.BubblesJson)
 		return
 	}
+	// `^/election/(\d+)\.png$`
 	m = pngPathRe.FindStringSubmatch(path)
 	if m != nil {
 		pngbytes, err := sh.getPng(m[1])
@@ -136,8 +151,15 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write(pngbytes)
 		return
 	}
+	// `^/election/(\d+)/scan$`
 	m = scanPathRe.FindStringSubmatch(path)
 	if m != nil {
+		if r.Method == "POST" {
+			sh.handleElectionScanPOST(w, r, user, m[1])
+			return
+		}
+		// GET: serve a page with image upload
+		// POST: receive image
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(400)
 		w.Write([]byte(`{"error":"TODO implement scan"}`))
@@ -148,7 +170,11 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`nope`))
 }
 
-func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Request, itemid int64) {
+func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Request, user *login.User, itemid int64) {
+	if user == nil {
+		texterr(w, http.StatusUnauthorized, "nope")
+		return
+	}
 	mbr := http.MaxBytesReader(w, r.Body, 1000000)
 	body, err := ioutil.ReadAll(mbr)
 	if err == io.EOF {
@@ -164,7 +190,7 @@ func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Re
 	}
 	er := electionRecord{
 		Id:    itemid,
-		Owner: 0, // TODO, login user
+		Owner: user.Guid,
 		Data:  string(body),
 	}
 	newid, err := sh.edb.PutElection(er)
@@ -183,12 +209,19 @@ func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Re
 	w.Write(out)
 }
 
-func (sh *StudioHandler) handleElectionDocGET(w http.ResponseWriter, r *http.Request, itemid int64) {
+func (sh *StudioHandler) handleElectionDocGET(w http.ResponseWriter, r *http.Request, user *login.User, itemid int64) {
+	if user == nil {
+		texterr(w, http.StatusUnauthorized, "nope")
+		return
+	}
 	er, err := sh.edb.GetElection(itemid)
 	if maybeerr(w, err, 400, "no item") {
 		return
 	}
-	// TODO: ownership, permissions
+	if user.Guid != er.Owner {
+		texterr(w, http.StatusForbidden, "nope")
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 	w.Write([]byte(er.Data))
@@ -247,7 +280,8 @@ func (he httpError) Error() string {
 }
 
 type editHandler struct {
-	t *template.Template
+	udb login.UserDB
+	t   *template.Template
 }
 
 type EditContext struct {
@@ -333,7 +367,6 @@ func main() {
 		log.Print("no template index.html")
 		os.Exit(1)
 	}
-	edith := editHandler{indextemplate}
 
 	var udb login.UserDB
 	var db *sql.DB
@@ -365,7 +398,9 @@ func main() {
 		edb = &sqliteedb{db}
 	}
 	err = edb.Setup()
-	maybefail(err, "db setup, %v", err)
+	maybefail(err, "edb setup, %v", err)
+	err = udb.Setup()
+	maybefail(err, "udb setup, %v", err)
 
 	getdb := func() (login.UserDB, error) { return udb, nil }
 	sh := StudioHandler{
@@ -373,6 +408,8 @@ func main() {
 		edb:         edb,
 		drawBackend: drawBackend,
 	}
+	edith := editHandler{udb, indextemplate}
+
 	mux := http.NewServeMux()
 	mux.Handle("/election", &sh)
 	mux.Handle("/election/", &sh)
