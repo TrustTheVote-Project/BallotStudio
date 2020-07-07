@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"image"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -13,15 +14,8 @@ import (
 )
 
 func (sh *StudioHandler) handleElectionScanPOST(w http.ResponseWriter, r *http.Request, user *login.User, itemname string) {
-	// TODO: multipart file upload in addition to plain body POST
-	contenttype := r.Header.Get("Content-Type")
-	if !strings.HasPrefix(contenttype, "image") {
-		texterr(w, http.StatusBadRequest, "bad content type")
-		return
-	}
-	brc := http.MaxBytesReader(w, r.Body, 10000000)
-	imbytes, err := ioutil.ReadAll(brc)
-	if maybeerr(w, err, 400, "bad image, %v", err) {
+	imbytes := getImage(w, r)
+	if imbytes == nil {
 		return
 	}
 	im, format, err := image.Decode(bytes.NewReader(imbytes))
@@ -50,6 +44,10 @@ func (sh *StudioHandler) handleElectionScanPOST(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	if sh.archiver != nil {
+		go sh.archiver.ArchiveImage(imbytes, r)
+	}
+
 	var s scan.Scanner
 	s.Bj = bubbles
 	s.SetOrigImage(orig)
@@ -61,4 +59,47 @@ func (sh *StudioHandler) handleElectionScanPOST(w http.ResponseWriter, r *http.R
 	w.WriteHeader(200)
 	mjson, _ := json.Marshal(marked)
 	w.Write(mjson)
+}
+
+// get image whether it is main POST body or in a multipart section
+func getImage(w http.ResponseWriter, r *http.Request) (imbytes []byte) {
+	var err error
+	contenttype := r.Header.Get("Content-Type")
+	if isImage(contenttype) {
+		brc := http.MaxBytesReader(w, r.Body, 10000000)
+		imbytes, err = ioutil.ReadAll(brc)
+		if maybeerr(w, err, 400, "bad image, %v", err) {
+			return
+		}
+		return
+	}
+
+	mpreader, err := r.MultipartReader()
+	if maybeerr(w, err, 400, "bad image, %v", err) {
+		return
+	}
+	for true {
+		part, err := mpreader.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if maybeerr(w, err, 400, "bad multipart, %v", err) {
+			return
+		}
+
+		//log.Printf("got part cd=%v fn=%v form=%v", part.Header.Get("Content-Disposition"), part.FileName(), part.FormName())
+		if isImage(part.Header.Get("Content-Type")) {
+			imbytes, err = ioutil.ReadAll(part)
+			if maybeerr(w, err, 400, "bad multipart, %v", err) {
+				return
+			}
+			return
+		}
+	}
+	// got nothing; return nil,nil
+	return
+}
+
+func isImage(contentType string) bool {
+	return strings.HasPrefix(contentType, "image/")
 }

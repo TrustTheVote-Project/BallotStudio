@@ -61,6 +61,8 @@ type StudioHandler struct {
 	drawBackend string
 
 	cache Cache
+
+	archiver ImageArchiver
 }
 
 var pdfPathRe *regexp.Regexp
