@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"flag"
@@ -14,6 +15,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	_ "github.com/lib/pq"           // driver="postgres"
 	_ "github.com/mattn/go-sqlite3" // driver="sqlite3"
@@ -63,6 +65,7 @@ type StudioHandler struct {
 	cache Cache
 
 	scantemplate *template.Template
+	home         *template.Template
 	archiver     ImageArchiver
 }
 
@@ -173,9 +176,9 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		sh.scantemplate.Execute(w, ec)
 		return
 	}
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(400)
-	w.Write([]byte(`nope`))
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(200)
+	sh.home.Execute(w, sh)
 }
 
 func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Request, user *login.User, itemid int64) {
@@ -366,6 +369,18 @@ func (edit *editHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func addrGetPort(listenAddr string) int {
+	x := strings.LastIndex(listenAddr, ":")
+	if x < 0 {
+		return 80
+	}
+	v, err := strconv.ParseInt(listenAddr[x+1:], 10, 32)
+	if err != nil {
+		return 80
+	}
+	return int(v)
+}
+
 func main() {
 	var listenAddr string
 	flag.StringVar(&listenAddr, "http", ":8180", "interface:port to listen on, default \":8180\"")
@@ -422,6 +437,12 @@ func main() {
 	maybefail(err, "edb setup, %v", err)
 	err = udb.Setup()
 	maybefail(err, "udb setup, %v", err)
+	inviteToken := randomInviteToken(2)
+	edb.MakeInviteToken(inviteToken, time.Now().Add(30*time.Minute))
+	log.Printf("http://localhost:%d/signup/%s", addrGetPort(listenAddr), inviteToken)
+	ctx, cf := context.WithCancel(context.Background())
+	defer cf()
+	go gcThread(ctx, edb, 57*time.Minute)
 
 	getdb := func() (login.UserDB, error) { return udb, nil }
 	archiver, err := NewFileImageArchiver(imageArchiveDir)
@@ -431,9 +452,15 @@ func main() {
 		edb:          edb,
 		drawBackend:  drawBackend,
 		scantemplate: templates.Lookup("scanform.html"),
+		home:         templates.Lookup("home.html"),
 		archiver:     archiver,
 	}
 	edith := editHandler{udb, indextemplate}
+	ih := inviteHandler{
+		edb:        edb,
+		udb:        udb,
+		signupPage: templates.Lookup("signup.html"),
+	}
 
 	mux := http.NewServeMux()
 	mux.Handle("/election", &sh)
@@ -447,9 +474,14 @@ func main() {
 		maybefail(err, "%s: could not open, %v", oauthConfigPath, err)
 		oc, err := login.ParseConfigJSON(fin)
 		maybefail(err, "%s: bad parse, %v", oauthConfigPath, err)
-		authmods, err = login.BuildOauthMods(oc, mux, getdb, "/", "/")
+		authmods, err = login.BuildOauthMods(oc, getdb, "/", "/")
 		maybefail(err, "%s: oauth problems, %v", oauthConfigPath, err)
+		for _, am := range authmods {
+			mux.Handle(am.HandlerUrl(), ih.requireInviteCookie(am))
+		}
 	}
+	ih.authmods = authmods
+	mux.Handle("/signup/", &ih)
 	log.Printf("initialized %d oauth mods", len(authmods))
 	mux.HandleFunc("/logout", login.LogoutHandler)
 	mux.Handle("/", &sh)
