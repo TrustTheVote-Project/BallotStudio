@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"bolson.org/~/src/login/login"
+	"github.com/brianolson/login/login"
 )
 
 // q=1..5, for q*5 bytes of randomness, as base32 becoming q*8 chars of text

@@ -21,7 +21,7 @@ import (
 	_ "github.com/lib/pq"           // driver="postgres"
 	_ "github.com/mattn/go-sqlite3" // driver="sqlite3"
 
-	"bolson.org/~/src/login/login"
+	"github.com/brianolson/login/login"
 )
 
 func maybefail(err error, format string, args ...interface{}) {
@@ -121,7 +121,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if m != nil {
 		bothob, err := sh.getPdf(m[1])
 		if err != nil {
-			he := err.(httpError)
+			he := err.(*httpError)
 			maybeerr(w, he.err, he.code, he.msg)
 			return
 		}
@@ -135,7 +135,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if m != nil {
 		bothob, err := sh.getPdf(m[1])
 		if err != nil {
-			he := err.(httpError)
+			he := err.(*httpError)
 			maybeerr(w, he.err, he.code, he.msg)
 			return
 		}
@@ -149,7 +149,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if m != nil {
 		pngbytes, err := sh.getPng(m[1])
 		if err != nil {
-			he := err.(httpError)
+			he := err.(*httpError)
 			maybeerr(w, he.err, he.code, he.msg)
 			return
 		}
@@ -465,8 +465,11 @@ func main() {
 	go gcThread(ctx, edb, 57*time.Minute)
 
 	getdb := func() (login.UserDB, error) { return udb, nil }
-	archiver, err := NewFileImageArchiver(imageArchiveDir)
-	maybefail(err, "image archive dir, %v", err)
+	var archiver ImageArchiver
+	if imageArchiveDir != "" {
+		archiver, err = NewFileImageArchiver(imageArchiveDir)
+		maybefail(err, "image archive dir, %v", err)
+	}
 	sh := StudioHandler{
 		udb:          udb,
 		edb:          edb,

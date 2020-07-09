@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"strings"
 
-	"bolson.org/~/src/ballotscan/scan"
-	"bolson.org/~/src/login/login"
+	"github.com/brianolson/ballotscan/scan"
+	"github.com/brianolson/login/login"
 )
 
 func (sh *StudioHandler) handleElectionScanPOST(w http.ResponseWriter, r *http.Request, user *login.User, itemname string) {
@@ -24,7 +24,7 @@ func (sh *StudioHandler) handleElectionScanPOST(w http.ResponseWriter, r *http.R
 	}
 	bothob, err := sh.getPdf(itemname)
 	if err != nil {
-		he := err.(httpError)
+		he := err.(*httpError)
 		maybeerr(w, he.err, he.code, he.msg)
 		return
 	}
@@ -35,7 +35,7 @@ func (sh *StudioHandler) handleElectionScanPOST(w http.ResponseWriter, r *http.R
 	}
 	pngbytes, err := sh.getPng(itemname)
 	if err != nil {
-		he := err.(httpError)
+		he := err.(*httpError)
 		maybeerr(w, he.err, he.code, he.msg)
 		return
 	}
