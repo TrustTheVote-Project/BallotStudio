@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+  <title>Ballot Studio</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body>
+  <h1>Ballot Studio</h1>
+  {{ if .User }}
+  <p>haev user</p>
+  <p>{{ .User.Username }}</p>
+  <ul>
+    <li><a href="/edit">Edit a new election</a></li>
+    <li><a href="/makeinvite">Make invite token</a></li>
+  </ul>
+  {{ else }}
+  <form>
+    <form method="POST">
+      <div>
+	<label for="username">Username:</label>
+	<input type="text" id="username" name="username" required>
+      </div>
+      <div>
+	<label for="pass">Password:</label>
+	<input type="password" id="pass" name="password" required>
+      </div>
+      <button>Login</button>
+    </form>
+  </form>
+  {{ end }}
+</body>
+</html>

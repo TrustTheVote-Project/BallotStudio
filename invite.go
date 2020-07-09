@@ -132,3 +132,29 @@ func (ih *inviteHandler) AuthMods() []*login.OauthCallbackHandler {
 func (ih *inviteHandler) requireInviteCookie(handler http.Handler) http.Handler {
 	return handler
 }
+
+type makeInviteTokenHandler struct {
+	edb       electionAppDB
+	udb       login.UserDB
+	tokenpage *template.Template
+}
+
+type tokenPageContext struct {
+	Token string
+}
+
+func (ih *makeInviteTokenHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	user, _ := login.GetHttpUser(w, r, ih.udb)
+	if user == nil {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
+	inviteToken := randomInviteToken(2)
+	err := ih.edb.MakeInviteToken(inviteToken, time.Now().Add(7*24*time.Hour))
+	if maybeerr(w, err, 500, "db err creating token, %v", err) {
+		return
+	}
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(200)
+	ih.tokenpage.Execute(w, tokenPageContext{inviteToken})
+}

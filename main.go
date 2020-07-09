@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -178,7 +179,11 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(200)
-	sh.home.Execute(w, sh)
+	sh.home.Execute(w, HomeContext{user})
+}
+
+type HomeContext struct {
+	User *login.User
 }
 
 func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Request, user *login.User, itemid int64) {
@@ -351,6 +356,7 @@ func (ec EditContext) JsonAttr() template.HTMLAttr {
 // http.HandlerFunc
 // just fills out index.html template
 func (edit *editHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	//user, _ := login.GetHttpUser(w, r, sh.udb)
 	electionid := int64(0)
 	if strings.HasPrefix(r.URL.Path, "/edit/") {
 		xe, err := strconv.ParseInt(r.URL.Path[6:], 10, 64)
@@ -394,6 +400,8 @@ func main() {
 	flag.StringVar(&drawBackend, "draw-backend", "", "url to drawing backend")
 	var imageArchiveDir string
 	flag.StringVar(&imageArchiveDir, "im-archive-dir", "", "directory to archive uploaded scanned images to; will mkdir -p")
+	var cookieKeyb64 string
+	flag.StringVar(&cookieKeyb64, "cookie-key", "", "base64 of 16 bytes for encrypting cookies")
 	flag.Parse()
 
 	templates, err := template.ParseGlob("gotemplates/*.html")
@@ -402,6 +410,16 @@ func main() {
 	if indextemplate == nil {
 		log.Print("no template index.html")
 		os.Exit(1)
+	}
+
+	if cookieKeyb64 == "" {
+		ck := login.GenerateCookieKey()
+		log.Printf("-cookie-key %s", base64.StdEncoding.EncodeToString(ck))
+	} else {
+		ck, err := base64.StdEncoding.DecodeString(cookieKeyb64)
+		maybefail(err, "-cookie-key, %v", err)
+		err = login.SetCookieKey(ck)
+		maybefail(err, "-cookie-key, %v", err)
 	}
 
 	var udb login.UserDB
@@ -462,6 +480,10 @@ func main() {
 		signupPage: templates.Lookup("signup.html"),
 	}
 
+	mith := makeInviteTokenHandler{
+		edb, udb, templates.Lookup("invitetoken.html"),
+	}
+
 	mux := http.NewServeMux()
 	mux.Handle("/election", &sh)
 	mux.Handle("/election/", &sh)
@@ -484,6 +506,7 @@ func main() {
 	mux.Handle("/signup/", &ih)
 	log.Printf("initialized %d oauth mods", len(authmods))
 	mux.HandleFunc("/logout", login.LogoutHandler)
+	mux.Handle("/makeinvite", &mith)
 	mux.Handle("/", &sh)
 	server := http.Server{
 		Addr:    listenAddr,

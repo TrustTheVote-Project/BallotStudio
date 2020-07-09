@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+  <title>Ballot Studio | Signup</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body>
+  <h1>Ballot Studio | Signup</h1>
+  {{ if .Message }}<p style="font-size:120%;">{{ .Message }}</p>{{ end }}
+  <p>create a username+password:<p>
+    <form method="POST">
+      <div>
+	<label for="username">Username:</label>
+	<input type="text" id="username" name="username" required>
+      </div>
+      <div>
+	<label for="pass">Password:</label>
+	<input type="password" id="pass" name="password" required>
+      </div>
+      <button>Create User</button>
+    </form>
+  {{ if .AuthMods }}
+  <p>Sign in with another service:</p>
+  {{ range .AuthMods }}
+  <p><a href="{{ .StartUrl }}">{{ .Name }}</a></p>
+  {{ end }}
+  {{ end }}
+</body>
+</html>
