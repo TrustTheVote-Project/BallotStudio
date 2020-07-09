@@ -67,7 +67,7 @@ func (ih *inviteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		MaxAge: int(until.Seconds()),
 	}
 	http.SetCookie(w, &icookie)
-	ih.renderSignup(w, r, SignupContext{})
+	ih.renderSignup(w, r, ih.scm(""))
 }
 
 func (ih *inviteHandler) handlePOST(w http.ResponseWriter, r *http.Request) {
@@ -80,18 +80,18 @@ func (ih *inviteHandler) handlePOST(w http.ResponseWriter, r *http.Request) {
 	ok, expires, err := ih.edb.PeekInviteToken(cx.Value)
 	if !ok {
 		log.Printf("invite token %v %v %v", ok, expires, err)
-		ih.renderSignup(w, r, SignupContext{"invalid invite token"})
+		ih.renderSignup(w, r, ih.scm("invalid invite token"))
 		return
 	}
 	r.ParseForm()
 	username := r.PostForm.Get("username")
 	if username == "" {
-		ih.renderSignup(w, r, SignupContext{"username cannot be blank"})
+		ih.renderSignup(w, r, ih.scm("username cannot be blank"))
 		return
 	}
 	password := r.PostForm.Get("password")
 	if password == "" {
-		ih.renderSignup(w, r, SignupContext{"password cannot be blank"})
+		ih.renderSignup(w, r, ih.scm("password cannot be blank"))
 		return
 	}
 	newuser := login.User{}
@@ -115,7 +115,12 @@ func (ih *inviteHandler) handlePOST(w http.ResponseWriter, r *http.Request) {
 }
 
 type SignupContext struct {
-	Message string
+	Message  string
+	AuthMods []*login.OauthCallbackHandler
+}
+
+func (ih *inviteHandler) scm(message string) SignupContext {
+	return SignupContext{message, ih.authmods}
 }
 
 func (ih *inviteHandler) renderSignup(w http.ResponseWriter, r *http.Request, ctx SignupContext) {
@@ -124,14 +129,34 @@ func (ih *inviteHandler) renderSignup(w http.ResponseWriter, r *http.Request, ct
 	ih.signupPage.Execute(w, ctx)
 }
 
-func (ih *inviteHandler) AuthMods() []*login.OauthCallbackHandler {
-	return ih.authmods
-}
-
+/*
 // wrap a handler, only get through if there's an invite cookie
 func (ih *inviteHandler) requireInviteCookie(handler http.Handler) http.Handler {
-	return handler
+	return &requireInviteWrapper{ih.edb, handler}
 }
+
+type requireInviteWrapper struct {
+	edb electionAppDB
+	sub http.Handler
+}
+
+func (riw *requireInviteWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// TODO: set a message cookie that will show on the home page
+	cx, err := r.Cookie("i")
+	if err != nil || cx == nil {
+		log.Print("no invite cookie")
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
+	ok, expires, err := riw.edb.PeekInviteToken(cx.Value)
+	if !ok {
+		log.Printf("invite token %v %v %v", ok, expires, err)
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
+	riw.sub.ServeHTTP(w, r)
+}
+*/
 
 type makeInviteTokenHandler struct {
 	edb       electionAppDB

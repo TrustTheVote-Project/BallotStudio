@@ -319,6 +319,7 @@ type EditContext struct {
 	PostURL       string `json:"post,omitempty"`
 	EditURL       string `json:"edit,omitempty"`
 	GETURL        string `json:"url,omitempty"`
+	StaticRoot    string `json:"staticroot,omitempty"`
 }
 
 func (ec *EditContext) set(eid int64) {
@@ -333,6 +334,7 @@ func (ec *EditContext) set(eid int64) {
 		ec.EditURL = fmt.Sprintf("/edit/%d", eid)
 		ec.GETURL = fmt.Sprintf("/election/%d", eid)
 	}
+	ec.StaticRoot = "/static"
 }
 
 func (ec EditContext) Json() template.JS {
@@ -499,7 +501,7 @@ func main() {
 		authmods, err = login.BuildOauthMods(oc, getdb, "/", "/")
 		maybefail(err, "%s: oauth problems, %v", oauthConfigPath, err)
 		for _, am := range authmods {
-			mux.Handle(am.HandlerUrl(), ih.requireInviteCookie(am))
+			mux.Handle(am.HandlerUrl(), am)
 		}
 	}
 	ih.authmods = authmods
