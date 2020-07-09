@@ -93,6 +93,10 @@ func (c *Cache) Put(key string, v interface{}, size int) {
 	}
 }
 
+func (c *Cache) Invalidate(key string) {
+	delete(c.byKey, key)
+}
+
 func (c *Cache) Get(key string) interface{} {
 	ent := c.byKey[key]
 	if ent == nil {

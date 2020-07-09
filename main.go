@@ -90,7 +90,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 	if path == "/election" {
 		if r.Method == "POST" {
-			sh.handleElectionDocPOST(w, r, user, 0)
+			sh.handleElectionDocPOST(w, r, user, "", 0)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -108,7 +108,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			sh.handleElectionDocGET(w, r, user, electionid)
 		} else if r.Method == "POST" {
-			sh.handleElectionDocPOST(w, r, user, electionid)
+			sh.handleElectionDocPOST(w, r, user, m[1], electionid)
 		} else {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(400)
@@ -186,7 +186,7 @@ type HomeContext struct {
 	User *login.User
 }
 
-func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Request, user *login.User, itemid int64) {
+func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Request, user *login.User, itemname string, itemid int64) {
 	if user == nil {
 		texterr(w, http.StatusUnauthorized, "nope")
 		return
@@ -222,6 +222,8 @@ func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Re
 	if maybeerr(w, err, 500, "db put fail") {
 		return
 	}
+	sh.cache.Invalidate(itemname)
+	sh.cache.Invalidate(itemname + ".png")
 	er.Id = newid
 	ec := EditContext{}
 	ec.set(newid)
@@ -366,7 +368,6 @@ func (edit *editHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			electionid = xe
 		}
 	}
-	log.Printf("GET %s", r.URL.Path)
 	w.Header().Set("Content-Type", "text/html")
 	ec := EditContext{}
 	ec.set(electionid)
