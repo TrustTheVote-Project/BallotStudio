@@ -55,11 +55,13 @@ class Bfont:
 resources = os.path.join(os.path.dirname(__file__),'resources')
 fonts = {}
 
-for fpath in glob.glob('/usr/share/fonts/truetype/liberation/*.ttf') + glob.glob(os.path.join(resources,'*.ttf')):
-    xf = Bfont(fpath)
-    fonts[xf.name] = xf
+def _ensure_fonts():
+    if not fonts:
+        for fpath in glob.glob('/usr/share/fonts/truetype/liberation/*.ttf') + glob.glob(os.path.join(resources,'*.ttf')):
+            xf = Bfont(fpath)
+            fonts[xf.name] = xf
 
-print('fonts: ' + ', '.join([repr(n) for n in fonts.keys()]))
+        logger.info('fonts: ' + ', '.join([repr(n) for n in fonts.keys()]))
 
 fontsans = 'Liberation Sans'
 fontsansbold = 'Liberation Sans Bold'
@@ -708,6 +710,7 @@ class ElectionPrinter:
 
     def draw(self, outdir=None, outname_prefix='', outfile=None):
         # TODO: one specific ballot style or all of them to separate PDFs
+        _ensure_fonts()
         for i, bs in enumerate(self.ballot_styles):
             names = ','.join([gpunitName(x) for x in bs.gpunits])
             if outfile is not None:
