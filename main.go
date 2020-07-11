@@ -85,6 +85,8 @@ type StudioHandler struct {
 	scantemplate *template.Template
 	home         *template.Template
 	archiver     ImageArchiver
+
+	authmods []*login.OauthCallbackHandler
 }
 
 var pdfPathRe *regexp.Regexp
@@ -201,11 +203,12 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(200)
-	sh.home.Execute(w, HomeContext{user})
+	sh.home.Execute(w, HomeContext{user, sh.authmods})
 }
 
 type HomeContext struct {
-	User *login.User
+	User     *login.User
+	AuthMods []*login.OauthCallbackHandler
 }
 
 func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Request, edb electionAppDB, user *login.User, itemname string, itemid int64) {
@@ -552,6 +555,7 @@ func main() {
 		}
 	}
 	ih.authmods = authmods
+	sh.authmods = authmods
 	mux.Handle("/signup/", &ih)
 	log.Printf("initialized %d oauth mods", len(authmods))
 	mux.HandleFunc("/logout", login.LogoutHandler)
