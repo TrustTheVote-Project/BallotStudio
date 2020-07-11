@@ -56,10 +56,27 @@ func texterr(w http.ResponseWriter, code int, format string, args ...interface{}
 	w.Write([]byte(msg))
 }
 
+type dbSource struct {
+	dbfactory  func() (*sql.DB, error)
+	edbfactory func(*sql.DB) electionAppDB
+}
+
+func (ds dbSource) getDbs(w http.ResponseWriter, r *http.Request) (edb electionAppDB, udb login.UserDB, cf func() error, fail bool) {
+	db, err := ds.dbfactory()
+	if maybeerr(w, err, 500, "could not open db, %v", err) {
+		fail = true
+		return
+	}
+	udb = login.NewSqlUserDB(db)
+	edb = ds.edbfactory(db)
+	cf = db.Close
+	fail = false
+	return
+}
+
 // handler of /election and /election/*{,.pdf,.png,_bubbles.json,/scan}
 type StudioHandler struct {
-	udb login.UserDB
-	edb electionAppDB
+	dbs *dbSource
 
 	drawBackend string
 
@@ -86,11 +103,16 @@ func init() {
 
 // implement http.Handler
 func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	user, _ := login.GetHttpUser(w, r, sh.udb)
+	edb, udb, dbcf, fail := sh.dbs.getDbs(w, r)
+	if fail {
+		return
+	}
+	defer dbcf()
+	user, _ := login.GetHttpUser(w, r, udb)
 	path := r.URL.Path
 	if path == "/election" {
 		if r.Method == "POST" {
-			sh.handleElectionDocPOST(w, r, user, "", 0)
+			sh.handleElectionDocPOST(w, r, edb, user, "", 0)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -106,9 +128,9 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if r.Method == "GET" {
-			sh.handleElectionDocGET(w, r, user, electionid)
+			sh.handleElectionDocGET(w, r, edb, user, electionid)
 		} else if r.Method == "POST" {
-			sh.handleElectionDocPOST(w, r, user, m[1], electionid)
+			sh.handleElectionDocPOST(w, r, edb, user, m[1], electionid)
 		} else {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(400)
@@ -119,7 +141,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// `^/election/(\d+)\.pdf$`
 	m = pdfPathRe.FindStringSubmatch(path)
 	if m != nil {
-		bothob, err := sh.getPdf(m[1])
+		bothob, err := sh.getPdf(edb, m[1])
 		if err != nil {
 			he := err.(*httpError)
 			maybeerr(w, he.err, he.code, he.msg)
@@ -133,7 +155,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// `^/election/(\d+)_bubbles\.json$`
 	m = bubblesPathRe.FindStringSubmatch(path)
 	if m != nil {
-		bothob, err := sh.getPdf(m[1])
+		bothob, err := sh.getPdf(edb, m[1])
 		if err != nil {
 			he := err.(*httpError)
 			maybeerr(w, he.err, he.code, he.msg)
@@ -147,7 +169,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// `^/election/(\d+)\.png$`
 	m = pngPathRe.FindStringSubmatch(path)
 	if m != nil {
-		pngbytes, err := sh.getPng(m[1])
+		pngbytes, err := sh.getPng(edb, m[1])
 		if err != nil {
 			he := err.(*httpError)
 			maybeerr(w, he.err, he.code, he.msg)
@@ -164,7 +186,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// POST: receive image
 		// GET: serve a page with image upload
 		if r.Method == "POST" {
-			sh.handleElectionScanPOST(w, r, user, m[1])
+			sh.handleElectionScanPOST(w, r, edb, user, m[1])
 			return
 		}
 		electionid, err := strconv.ParseInt(m[1], 10, 64)
@@ -186,7 +208,7 @@ type HomeContext struct {
 	User *login.User
 }
 
-func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Request, user *login.User, itemname string, itemid int64) {
+func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Request, edb electionAppDB, user *login.User, itemname string, itemid int64) {
 	if user == nil {
 		texterr(w, http.StatusUnauthorized, "nope")
 		return
@@ -205,7 +227,7 @@ func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Re
 		return
 	}
 	if itemid != 0 {
-		older, _ := sh.edb.GetElection(itemid)
+		older, _ := edb.GetElection(itemid)
 		if older != nil {
 			if older.Owner != user.Guid {
 				texterr(w, http.StatusUnauthorized, "nope")
@@ -218,7 +240,7 @@ func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Re
 		Owner: user.Guid,
 		Data:  string(body),
 	}
-	newid, err := sh.edb.PutElection(er)
+	newid, err := edb.PutElection(er)
 	if maybeerr(w, err, 500, "db put fail") {
 		return
 	}
@@ -236,13 +258,13 @@ func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Re
 	w.Write(out)
 }
 
-func (sh *StudioHandler) handleElectionDocGET(w http.ResponseWriter, r *http.Request, user *login.User, itemid int64) {
+func (sh *StudioHandler) handleElectionDocGET(w http.ResponseWriter, r *http.Request, edb electionAppDB, user *login.User, itemid int64) {
 	// Allow everything to be readable? TODO: flexible ACL?
 	// if user == nil {
 	// 	texterr(w, http.StatusUnauthorized, "nope")
 	// 	return
 	// }
-	er, err := sh.edb.GetElection(itemid)
+	er, err := edb.GetElection(itemid)
 	if maybeerr(w, err, 400, "no item") {
 		return
 	}
@@ -256,7 +278,7 @@ func (sh *StudioHandler) handleElectionDocGET(w http.ResponseWriter, r *http.Req
 	w.Write([]byte(er.Data))
 }
 
-func (sh *StudioHandler) getPdf(el string) (bothob *DrawBothOb, err error) {
+func (sh *StudioHandler) getPdf(edb electionAppDB, el string) (bothob *DrawBothOb, err error) {
 	cr := sh.cache.Get(el)
 	if cr != nil {
 		bothob = cr.(*DrawBothOb)
@@ -265,7 +287,7 @@ func (sh *StudioHandler) getPdf(el string) (bothob *DrawBothOb, err error) {
 		if err != nil {
 			return nil, &httpError{400, "bad item", err}
 		}
-		er, err := sh.edb.GetElection(electionid)
+		er, err := edb.GetElection(electionid)
 		if err != nil {
 			return nil, &httpError{400, "no item", err}
 		}
@@ -278,7 +300,7 @@ func (sh *StudioHandler) getPdf(el string) (bothob *DrawBothOb, err error) {
 	return
 }
 
-func (sh *StudioHandler) getPng(el string) (pngbytes []byte, err error) {
+func (sh *StudioHandler) getPng(edb electionAppDB, el string) (pngbytes []byte, err error) {
 	pngkey := el + ".png"
 	cr := sh.cache.Get(pngkey)
 	if cr != nil {
@@ -286,7 +308,7 @@ func (sh *StudioHandler) getPng(el string) (pngbytes []byte, err error) {
 		return
 	}
 	var bothob *DrawBothOb
-	bothob, err = sh.getPdf(el)
+	bothob, err = sh.getPdf(edb, el)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +331,7 @@ func (he httpError) Error() string {
 }
 
 type editHandler struct {
-	udb login.UserDB
+	dbs *dbSource
 	t   *template.Template
 }
 
@@ -357,10 +379,9 @@ func (ec EditContext) JsonAttr() template.HTMLAttr {
 	return template.HTMLAttr(template.URLQueryEscaper(string(x)))
 }
 
-// http.HandlerFunc
+// http.Handler
 // just fills out index.html template
 func (edit *editHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	//user, _ := login.GetHttpUser(w, r, sh.udb)
 	electionid := int64(0)
 	if strings.HasPrefix(r.URL.Path, "/edit/") {
 		xe, err := strconv.ParseInt(r.URL.Path[6:], 10, 64)
@@ -430,6 +451,9 @@ func main() {
 	var udb login.UserDB
 	var db *sql.DB
 	var edb electionAppDB
+	var dbfactory func() (*sql.DB, error)
+	var udbfactory func() (login.UserDB, error)
+	var edbfactory func(db *sql.DB) electionAppDB
 
 	if len(sqlitePath) > 0 {
 		if len(postgresConnectString) > 0 {
@@ -441,21 +465,39 @@ func main() {
 		db, err = sql.Open("sqlite3", sqlitePath)
 		maybefail(err, "error opening sqlite3 db %#v, %v", sqlitePath, err)
 		udb = login.NewSqlUserDB(db)
-		edb = &sqliteedb{db}
+		edbfactory = NewSqliteEDB
+		dbfactory = func() (*sql.DB, error) {
+			return sql.Open("sqlite3", sqlitePath)
+		}
 	} else if len(postgresConnectString) > 0 {
 		var err error
 		db, err = sql.Open("postgres", postgresConnectString)
 		maybefail(err, "error opening postgres db %#v, %v", postgresConnectString, err)
 		udb = login.NewSqlUserDB(db)
-		edb = &postgresedb{db}
+		edbfactory = NewPostgresEDB
+		dbfactory = func() (*sql.DB, error) {
+			return sql.Open("postgres", postgresConnectString)
+		}
 	} else {
 		log.Print("warning, running with in-memory database that will disappear when shut down")
 		var err error
 		db, err = sql.Open("sqlite3", ":memory:")
 		maybefail(err, "error opening sqlite3 memory db, %v", err)
 		udb = login.NewSqlUserDB(db)
-		edb = &sqliteedb{db}
+		edbfactory = NewSqliteEDB
+		dbfactory = func() (*sql.DB, error) {
+			return sql.Open("sqlite3", ":memory:")
+		}
 	}
+	udbfactory = func() (login.UserDB, error) {
+		xdb, err := dbfactory()
+		if err != nil {
+			return nil, err
+		}
+		return login.NewSqlUserDB(xdb), nil
+	}
+	defer db.Close()
+	edb = edbfactory(db)
 	err = edb.Setup()
 	maybefail(err, "edb setup, %v", err)
 	err = udb.Setup()
@@ -467,24 +509,23 @@ func main() {
 	defer cf()
 	go gcThread(ctx, edb, 57*time.Minute)
 
-	getdb := func() (login.UserDB, error) { return udb, nil }
+	source := dbSource{dbfactory, edbfactory}
+
 	var archiver ImageArchiver
 	if imageArchiveDir != "" {
 		archiver, err = NewFileImageArchiver(imageArchiveDir)
 		maybefail(err, "image archive dir, %v", err)
 	}
 	sh := StudioHandler{
-		udb:          udb,
-		edb:          edb,
+		dbs:          &source,
 		drawBackend:  drawBackend,
 		scantemplate: templates.Lookup("scanform.html"),
 		home:         templates.Lookup("home.html"),
 		archiver:     archiver,
 	}
-	edith := editHandler{udb, indextemplate}
+	edith := editHandler{&source, indextemplate}
 	ih := inviteHandler{
-		edb:        edb,
-		udb:        udb,
+		dbs:        &source,
 		signupPage: templates.Lookup("signup.html"),
 	}
 
@@ -504,7 +545,7 @@ func main() {
 		maybefail(err, "%s: could not open, %v", oauthConfigPath, err)
 		oc, err := login.ParseConfigJSON(fin)
 		maybefail(err, "%s: bad parse, %v", oauthConfigPath, err)
-		authmods, err = login.BuildOauthMods(oc, getdb, "/", "/")
+		authmods, err = login.BuildOauthMods(oc, udbfactory, "/", "/")
 		maybefail(err, "%s: oauth problems, %v", oauthConfigPath, err)
 		for _, am := range authmods {
 			mux.Handle(am.HandlerUrl(), am)

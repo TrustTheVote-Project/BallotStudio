@@ -27,6 +27,10 @@ type electionAppDB interface {
 	GCInviteTokens() (err error)
 }
 
+func NewSqliteEDB(db *sql.DB) electionAppDB {
+	return &sqliteedb{db}
+}
+
 type sqliteedb struct {
 	db *sql.DB
 }
@@ -126,6 +130,10 @@ func (sdb *sqliteedb) UseInviteToken(token string) (ok bool, err error) {
 func (sdb *sqliteedb) GCInviteTokens() (err error) {
 	_, err = sdb.db.Exec(`DELETE FROM expires WHERE expires < $1`, time.Now().UTC().Unix())
 	return nil
+}
+
+func NewPostgresEDB(db *sql.DB) electionAppDB {
+	return &postgresedb{db}
 }
 
 type postgresedb struct {
