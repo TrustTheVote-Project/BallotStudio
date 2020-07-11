@@ -52,9 +52,10 @@ class Bfont:
                     break
 
 
+resources = os.path.join(os.path.dirname(__file__),'resources')
 fonts = {}
 
-for fpath in glob.glob('/usr/share/fonts/truetype/liberation/*.ttf') + glob.glob('resources/*.ttf'):
+for fpath in glob.glob('/usr/share/fonts/truetype/liberation/*.ttf') + glob.glob(os.path.join(resources,'*.ttf')):
     xf = Bfont(fpath)
     fonts[xf.name] = xf
 
