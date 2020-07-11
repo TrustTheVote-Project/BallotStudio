@@ -4,11 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"image"
-	"image/png"
-	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os/exec"
@@ -86,59 +82,29 @@ func draw(backendUrl string, electionjson string) (both *DrawBothOb, err error) 
 	return &DrawBothOb{Pdf: dbr.PdfB64, BubblesJson: bj}, nil
 }
 
-func asyncReadAll(fin io.ReadCloser, result chan []byte) {
-	data, err := ioutil.ReadAll(fin)
-	if err != nil {
-		log.Printf("pdftoppm read err, %v", err)
-		close(result)
-		return
-	}
-	//log.Printf("got %d bytes from pdftoppm", len(data))
-	result <- data
-	close(result)
-}
-
 // uses subprocess `pdftoppm`
 func pdftopng(pdf []byte) (pngbytes []byte, err error) {
-	cmd := exec.Command("pdftoppm")
+	if len(pdf) == 0 {
+		return nil, fmt.Errorf("pdftopng but empty pdf")
+	}
+	// TODO: handle multi page!
+	cmd := exec.Command("pdftoppm", "-png", "-singlefile")
 	if err != nil {
 		return nil, fmt.Errorf("could not cmd pdftoppm, %v", err)
 	}
-	stdinput, err := cmd.StdinPipe()
+	cmd.Stdin = bytes.NewReader(pdf)
+	stdout := bytes.Buffer{}
+	cmd.Stdout = &stdout
+	stderr := bytes.Buffer{}
+	cmd.Stderr = &stderr
+	err = cmd.Run()
 	if err != nil {
-		return nil, fmt.Errorf("could not start pdftoppm stdin, %v", err)
+		se := string(stderr.Bytes())
+		if len(se) > 50 {
+			se = se[:50]
+		}
+		return nil, fmt.Errorf("pdftoppm err, %v, %v", err, se)
 	}
-	stdoutget, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, fmt.Errorf("could not start pdftoppm stdout, %v", err)
-	}
-	//log.Print("starting pdftoppm")
-	err = cmd.Start()
-	if err != nil {
-		return nil, fmt.Errorf("could not start pdftoppm, %v", err)
-	}
-	result := make(chan []byte, 1)
-	go asyncReadAll(stdoutget, result)
-	_, err = stdinput.Write(pdf)
-	if err != nil {
-		return nil, fmt.Errorf("could not write pdftoppm, %v", err)
-	}
-	//log.Printf("sent %d/%d bytes of pdf to pdftoppm", n, len(pdf))
-	stdinput.Close()
-	err = cmd.Wait()
-	if err != nil {
-		return nil, fmt.Errorf("pdftoppm wait, %v", err)
-	}
-	ppm := <-result
-	im, format, err := image.Decode(bytes.NewReader(ppm))
-	if err != nil {
-		return nil, fmt.Errorf("ppm decode as %s, %v", format, err)
-	}
-	pngw := bytes.Buffer{}
-	err = png.Encode(&pngw, im)
-	if err != nil {
-		return nil, fmt.Errorf("png encode, %v", err)
-	}
-	pngbytes = pngw.Bytes()
+	pngbytes = stdout.Bytes()
 	return
 }
