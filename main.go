@@ -405,6 +405,8 @@ func main() {
 	flag.StringVar(&imageArchiveDir, "im-archive-dir", "", "directory to archive uploaded scanned images to; will mkdir -p")
 	var cookieKeyb64 string
 	flag.StringVar(&cookieKeyb64, "cookie-key", "", "base64 of 16 bytes for encrypting cookies")
+	var pidpath string
+	flag.StringVar(&pidpath, "pid", "", "path to write process id to")
 	flag.Parse()
 
 	templates, err := template.ParseGlob("gotemplates/*.html")
@@ -517,6 +519,16 @@ func main() {
 	server := http.Server{
 		Addr:    listenAddr,
 		Handler: mux,
+	}
+	if pidpath != "" {
+		pidf, err := os.Create(pidpath)
+		if err != nil {
+			log.Printf("could not create pidfile, %v", err)
+			// meh, keep going
+		} else {
+			fmt.Fprintf(pidf, "%d", os.Getpid())
+			pidf.Close()
+		}
 	}
 	log.Print("serving ", listenAddr)
 	log.Fatal(server.ListenAndServe())
