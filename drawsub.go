@@ -8,7 +8,6 @@ import (
 	"image/png"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os/exec"
@@ -86,51 +85,63 @@ func draw(backendUrl string, electionjson string) (both *DrawBothOb, err error) 
 	return &DrawBothOb{Pdf: dbr.PdfB64, BubblesJson: bj}, nil
 }
 
-func asyncReadAll(fin io.ReadCloser, result chan []byte) {
-	data, err := ioutil.ReadAll(fin)
-	if err != nil {
-		log.Printf("pdftoppm read err, %v", err)
-		close(result)
-		return
+type asyncReadResult struct {
+	data []byte
+	err error
+}
+
+func (arr asyncReadResult) String() string {
+	xd := string(arr.data)
+	if len(xd) > 50 {
+		xd = xd[:50]
 	}
-	//log.Printf("got %d bytes from pdftoppm", len(data))
-	result <- data
+	return fmt.Sprintf("err=%v msg=%v", arr.err, xd)
+}
+
+func asyncReadAll(fin io.ReadCloser, result chan asyncReadResult) {
+	data, err := ioutil.ReadAll(fin)
+	result <- asyncReadResult{data,err}
 	close(result)
 }
 
 // uses subprocess `pdftoppm`
 func pdftopng(pdf []byte) (pngbytes []byte, err error) {
-	cmd := exec.Command("pdftoppm")
+	if len(pdf) == 0 {
+		return nil, fmt.Errorf("pdftopng but empty pdf")
+	}
+	// TODO: handle multi page!
+	cmd := exec.Command("pdftoppm", "-png", "-singlefile")
 	if err != nil {
 		return nil, fmt.Errorf("could not cmd pdftoppm, %v", err)
 	}
-	stdinput, err := cmd.StdinPipe()
-	if err != nil {
-		return nil, fmt.Errorf("could not start pdftoppm stdin, %v", err)
-	}
+	cmd.Stdin = bytes.NewReader(pdf)
 	stdoutget, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, fmt.Errorf("could not start pdftoppm stdout, %v", err)
+	}
+	stderrget, err := cmd.StderrPipe()
+	if err != nil {
+		return nil, fmt.Errorf("could not start pdftoppm stderr, %v", err)
 	}
 	//log.Print("starting pdftoppm")
 	err = cmd.Start()
 	if err != nil {
 		return nil, fmt.Errorf("could not start pdftoppm, %v", err)
 	}
-	result := make(chan []byte, 1)
+	result := make(chan asyncReadResult, 1)
 	go asyncReadAll(stdoutget, result)
-	_, err = stdinput.Write(pdf)
-	if err != nil {
-		return nil, fmt.Errorf("could not write pdftoppm, %v", err)
-	}
-	//log.Printf("sent %d/%d bytes of pdf to pdftoppm", n, len(pdf))
-	stdinput.Close()
+	stderr := make(chan asyncReadResult, 1)
+	go asyncReadAll(stderrget, stderr)
 	err = cmd.Wait()
 	if err != nil {
 		return nil, fmt.Errorf("pdftoppm wait, %v", err)
 	}
-	ppm := <-result
-	im, format, err := image.Decode(bytes.NewReader(ppm))
+	stderrx := <-stderr
+	ppm, ok := <-result
+	if (!ok) || (ppm.err != nil) {
+		return nil, fmt.Errorf("got no ppm, wrote %d bytes, %v, stderr(%s)", len(pdf), cmd.ProcessState, stderrx)
+	}
+	im, format, err := image.Decode(bytes.NewReader(ppm.data))
 	if err != nil {
 		return nil, fmt.Errorf("ppm decode as %s, %v", format, err)
 	}
