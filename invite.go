@@ -32,7 +32,8 @@ func randomInviteToken(q int) string {
 }
 
 type inviteHandler struct {
-	dbs *dbSource
+	edb electionAppDB
+	udb login.UserDB
 
 	authmods []*login.OauthCallbackHandler
 
@@ -41,11 +42,6 @@ type inviteHandler struct {
 
 // GET /signup/
 func (ih *inviteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	edb, udb, dbcf, fail := ih.dbs.getDbs(w, r)
-	if fail {
-		return
-	}
-	defer dbcf()
 	path := r.URL.Path
 	if !strings.HasPrefix(path, "/signup/") {
 		log.Printf("not signup path=%#v", path)
@@ -53,10 +49,10 @@ func (ih *inviteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == "POST" {
-		ih.handlePOST(w, r, edb, udb)
+		ih.handlePOST(w, r)
 	}
 	token := path[8:]
-	ok, expires, err := edb.PeekInviteToken(token)
+	ok, expires, err := ih.edb.PeekInviteToken(token)
 	if !ok {
 		log.Printf("token %#v %v %v %v", token, ok, expires, err)
 		http.Redirect(w, r, "/", http.StatusFound)
@@ -74,14 +70,14 @@ func (ih *inviteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ih.renderSignup(w, r, ih.scm(""))
 }
 
-func (ih *inviteHandler) handlePOST(w http.ResponseWriter, r *http.Request, edb electionAppDB, udb login.UserDB) {
+func (ih *inviteHandler) handlePOST(w http.ResponseWriter, r *http.Request) {
 	cx, err := r.Cookie("i")
 	if err != nil || cx == nil {
 		log.Print("no invite cookie")
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
-	ok, expires, err := edb.PeekInviteToken(cx.Value)
+	ok, expires, err := ih.edb.PeekInviteToken(cx.Value)
 	if !ok {
 		log.Printf("invite token %v %v %v", ok, expires, err)
 		ih.renderSignup(w, r, ih.scm("invalid invite token"))
@@ -101,12 +97,12 @@ func (ih *inviteHandler) handlePOST(w http.ResponseWriter, r *http.Request, edb 
 	newuser := login.User{}
 	newuser.Username = username
 	newuser.SetPassword(password)
-	_, err = udb.PutNewUser(&newuser)
+	_, err = ih.udb.PutNewUser(&newuser)
 	if err != nil {
 		texterr(w, 500, "error creating user, %v", err)
 		return
 	}
-	edb.UseInviteToken(cx.Value)
+	ih.edb.UseInviteToken(cx.Value)
 	// clear invite token
 	icookie := http.Cookie{
 		Name:   "i",
@@ -114,7 +110,7 @@ func (ih *inviteHandler) handlePOST(w http.ResponseWriter, r *http.Request, edb 
 	}
 	http.SetCookie(w, &icookie)
 	// this should set a login cookie using the same form values
-	login.GetHttpUser(w, r, udb)
+	login.GetHttpUser(w, r, ih.udb)
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 

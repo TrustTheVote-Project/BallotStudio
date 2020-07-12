@@ -159,11 +159,11 @@ func (sdb *postgresedb) PutElection(er electionRecord) (newid int64, err error) 
 }
 
 func (sdb *postgresedb) MakeInviteToken(token string, expires time.Time) error {
-	_, err := sdb.db.Exec(`INSERT INTO invites (token, exprires) VALUES ($1, $2)`, token, expires.UTC())
+	_, err := sdb.db.Exec(`INSERT INTO invites (token, expires) VALUES ($1, $2)`, token, expires.UTC())
 	if err != nil {
 		err = fmt.Errorf("invite put, %v", err)
 	}
-	return nil
+	return err
 }
 func (sdb *postgresedb) PeekInviteToken(token string) (ok bool, expires time.Time, err error) {
 	row := sdb.db.QueryRow(`SELECT expires from INVITES Where token = $1`, token)
@@ -211,9 +211,14 @@ func (sdb *postgresedb) UseInviteToken(token string) (ok bool, err error) {
 	return true, err
 }
 func (sdb *postgresedb) GCInviteTokens() (err error) {
-	_, err = sdb.db.Exec(`DELETE FROM invites WHERE expires < CURRENT_TIMESTAMP AT TIME ZONE 'UTC'`)
+	var result sql.Result
+	result, err = sdb.db.Exec(`DELETE FROM invites WHERE expires < CURRENT_TIMESTAMP AT TIME ZONE 'UTC'`)
 	if err != nil {
 		err = fmt.Errorf("invite del, %v", err)
+	}
+	rows, xe := result.RowsAffected()
+	if rows > 0 || xe != nil {
+		log.Printf("invite gc deleted %d, %v", rows, xe)
 	}
 	return
 }

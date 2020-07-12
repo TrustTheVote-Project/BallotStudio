@@ -13,7 +13,7 @@ import (
 	"github.com/brianolson/login/login"
 )
 
-func (sh *StudioHandler) handleElectionScanPOST(w http.ResponseWriter, r *http.Request, edb electionAppDB, user *login.User, itemname string) {
+func (sh *StudioHandler) handleElectionScanPOST(w http.ResponseWriter, r *http.Request, user *login.User, itemname string) {
 	imbytes := getImage(w, r)
 	if imbytes == nil {
 		return
@@ -22,7 +22,7 @@ func (sh *StudioHandler) handleElectionScanPOST(w http.ResponseWriter, r *http.R
 	if maybeerr(w, err, 400, "bad image, %v", err) {
 		return
 	}
-	bothob, err := sh.getPdf(edb, itemname)
+	bothob, err := sh.getPdf(itemname)
 	if err != nil {
 		he := err.(*httpError)
 		maybeerr(w, he.err, he.code, he.msg)
@@ -33,7 +33,7 @@ func (sh *StudioHandler) handleElectionScanPOST(w http.ResponseWriter, r *http.R
 	if maybeerr(w, err, 500, "bubble json decode, %v", err) {
 		return
 	}
-	pngbytes, err := sh.getPng(edb, itemname)
+	pngbytes, err := sh.getPng(itemname)
 	if err != nil {
 		he := err.(*httpError)
 		maybeerr(w, he.err, he.code, he.msg)
