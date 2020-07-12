@@ -8,8 +8,7 @@
 <body>
   <h1>Ballot Studio</h1>
   {{ if .User }}
-  <p>haev user</p>
-  <p>{{ .User.Username }}</p>
+  <p>hello {{ .User.Username }}</p>
   <ul>
     <li><a href="/edit">Edit a new election</a></li>
     <li><a href="/makeinvite">Make invite token</a></li>

@@ -68,7 +68,6 @@ func (sdb *sqliteedb) PutElection(er electionRecord) (newid int64, err error) {
 			err = fmt.Errorf("sqlite put election wat, %v, %v", err, result)
 			return
 		}
-		log.Printf("put new election as %d", newid)
 		return
 	}
 	newid = er.Id
@@ -102,7 +101,7 @@ func (sdb *sqliteedb) UseInviteToken(token string) (ok bool, err error) {
 	}
 	defer tx.Rollback()
 	row := tx.QueryRow(`SELECT expires FROM invites WHERE token = $1`, token)
-	var expires time.Time
+	var expires int64
 	err = row.Scan(&expires)
 	if err == sql.ErrNoRows {
 		return false, nil
@@ -111,10 +110,10 @@ func (sdb *sqliteedb) UseInviteToken(token string) (ok bool, err error) {
 		err = fmt.Errorf("invite get, %v", err)
 		return
 	}
-	if time.Now().After(expires) {
+	if time.Now().UTC().Unix() > expires {
 		return false, nil
 	}
-	_, err = tx.Exec(`DELETE FROM expires WHERE token = $1`, token)
+	_, err = tx.Exec(`DELETE FROM invites WHERE token = $1`, token)
 	if err != nil {
 		err = fmt.Errorf("invite del, %v", err)
 		return
@@ -204,7 +203,7 @@ func (sdb *postgresedb) UseInviteToken(token string) (ok bool, err error) {
 	}
 	defer tx.Rollback()
 	row := tx.QueryRow(`SELECT expires FROM invites WHERE token = $1`, token)
-	var expires int64
+	var expires time.Time
 	err = row.Scan(&expires)
 	if err == sql.ErrNoRows {
 		return false, nil
@@ -213,10 +212,10 @@ func (sdb *postgresedb) UseInviteToken(token string) (ok bool, err error) {
 		err = fmt.Errorf("invite get, %v", err)
 		return
 	}
-	if time.Now().UTC().Unix() > expires {
+	if time.Now().After(expires) {
 		return false, nil
 	}
-	_, err = tx.Exec(`DELETE FROM expires WHERE token = $1`, token)
+	_, err = tx.Exec(`DELETE FROM invites WHERE token = $1`, token)
 	if err != nil {
 		err = fmt.Errorf("invite del, %v", err)
 		return
