@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -152,10 +151,29 @@ func (sdb *postgresedb) Setup() error {
 }
 
 func (sdb *postgresedb) GetElection(id int64) (er *electionRecord, err error) {
-	return nil, errors.New("GetElection not implemented")
+	row := sdb.db.QueryRow(`SELECT data, owner, meta FROM elections WHERE id = $1`, id)
+	er = &electionRecord{Id: id}
+	err = row.Scan(&er.Data, &er.Owner, &er.Meta)
+	if err != nil {
+		er = nil
+	}
+	return
 }
 func (sdb *postgresedb) PutElection(er electionRecord) (newid int64, err error) {
-	return 0, errors.New("PutElection not implemented")
+	if er.Id == 0 {
+		row := sdb.db.QueryRow(`INSERT INTO elections (data, owner, meta) VALUES ($1, $2, $3) RETURNING id`, er.Data, er.Owner, er.Meta)
+		err = row.Scan(&newid)
+		if err != nil {
+			err = fmt.Errorf("pg put election insert, %v", err)
+		}
+	} else {
+		_, err = sdb.db.Exec(`UPDATE elections SET data = $1, owner = $2, meta = $3 WHERE id = $4`, er.Data, er.Owner, er.Meta, er.Id)
+		if err != nil {
+			err = fmt.Errorf("pg put election update, %v", err)
+		}
+		newid = er.Id
+	}
+	return
 }
 
 func (sdb *postgresedb) MakeInviteToken(token string, expires time.Time) error {
