@@ -247,11 +247,11 @@
 	<tr><td colspan="2" class="optional">optional:</td></tr>
 	<tr><td colspan="2"><h2>Candidates</h2>
 	    <div class="arraygroup" data-name="Candidate"></div>
-	    <div><button class="newrec" data-btmpl="ecandtmpl">New Candidate</button></div>
+	    <div><button class="newrec" data-btmpl="ecandtmpl" data-seq="ecand">New Candidate</button></div>
 	</td></tr>
 	<tr><td colspan="2"><h2>Contests</h2>
 	    <div class="arraygroup" data-name="Contest"></div>
-	    <div><button class="newrec" data-btmpl="candcontesttmpl">New Candidate Contest</button></div>
+	    <div><button class="newrec" data-btmpl="candcontesttmpl" data-seq="eccont">New Candidate Contest</button></div>
 	</td></tr>
 	<tr><td colspan="2"><h2>Ballot Styles</h2>
 	    <div class="arraygroup" data-name="BallotStyle"></div>
@@ -359,7 +359,7 @@
     </table>
   </template>
 
-  <template id="ecandtmpl" data-attype="ElectionResults.Candidate">
+  <template id="ecandtmpl" data-attype="ElectionResults.Candidate" data-seq="ecand">
     <div class="candidate"><table border="0">
       <input type="hidden" data-key="attype" value="ElectionResults.Candidate" />
       <tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
