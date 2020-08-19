@@ -21,6 +21,7 @@ import (
 	_ "github.com/lib/pq"           // driver="postgres"
 	_ "github.com/mattn/go-sqlite3" // driver="sqlite3"
 
+	"github.com/brianolson/ballotstudio/data"
 	"github.com/brianolson/login/login"
 )
 
@@ -207,6 +208,12 @@ func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Re
 	if maybeerr(w, err, 400, "bad json") {
 		return
 	}
+	ob = data.Fixup(ob)
+	nbody, err := json.Marshal(ob)
+	if maybeerr(w, err, 400, "re-json body") {
+		return
+	}
+	body = nbody
 	if itemid != 0 {
 		older, _ := sh.edb.GetElection(itemid)
 		if older != nil {
@@ -254,9 +261,20 @@ func (sh *StudioHandler) handleElectionDocGET(w http.ResponseWriter, r *http.Req
 	// 	texterr(w, http.StatusForbidden, "nope")
 	// 	return
 	// }
+	// TODO? remove fixup on GET after all old records have been fixed on POST?
+	var ob map[string]interface{}
+	err = json.Unmarshal([]byte(er.Data), &ob)
+	if maybeerr(w, err, 400, "bad json") {
+		return
+	}
+	ob = data.Fixup(ob)
+	nbody, err := json.Marshal(ob)
+	if maybeerr(w, err, 400, "re-json body") {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-	w.Write([]byte(er.Data))
+	w.Write(nbody)
 }
 
 func (sh *StudioHandler) getPdf(el string) (bothob *DrawBothOb, err error) {

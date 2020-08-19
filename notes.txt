@@ -335,7 +335,7 @@ pip install gunicorn
 
 
 
-TODO: storage for election editing
+#done: storage for election editing
 
 2020-05-07 13:31:01 EDT (Thursday, May 07 01:31:01 PM)
 
