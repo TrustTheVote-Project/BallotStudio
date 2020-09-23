@@ -302,6 +302,21 @@ contests = [
         "NumberElected": 1,
         "OfficeIds": [officeIdByName(offices, 'Head Dwarf')],
     },
+    {
+        # required
+        "@id": _contest_id(),
+        "@type": "ElectionResults.BallotMeasureContest",
+        "Name": "Winning",
+        "ElectionDistrictId": gpunitIdByName(gpunits, 'Springfield'),
+        #"VoteVariation": "plurality",
+        "VotesAllowed": 1,
+        # other
+        "BallotTitle": "Should We Win",
+        "BallotSubTitle": "Vote Yes or No",
+        #"ContestSelection": candidateSelectionsFromNames(candidates, "Zaphod Beeblebrox", "Zod", "Zardoz"), # TODO: BallotMeasureSelection.
+        "NumberElected": 1,
+        "OfficeIds": [officeIdByName(offices, 'Head Dwarf')],
+    },
 ]
 
 contestIdByName = officeIdByName

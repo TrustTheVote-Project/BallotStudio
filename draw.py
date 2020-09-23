@@ -272,7 +272,7 @@ def gpunitName(gpunit):
             return name
         raise Exception('gpunit with no Name {!r}'.format(gpunit))
     elif gpunit['@type'] == 'ElectionResults.ReportingDevice':
-        raise Exception('TODO: build reporting device name from sub units')
+        raise TodoException('TODO: build reporting device name from sub units')
     else:
         raise Exception("unknown gpunit type {}".format(gpunit['@type']))
 
@@ -367,6 +367,46 @@ def rehydrateContestSelection(election, contestselection_json_object):
     # TODO ElectionResults.PartySelection
     raise Exception('unkown ContestSelection type {!r}'.format(cstype))
 
+class BallotMeasureContest:
+    "NIST 1500-100 v2 ElectionResults.BallotMeasureContest"
+    _optional_fields = (
+        ('Abbreviation', None), #str
+        ('BallotSubTitle', None), #str
+        ('BallotTitle', None), #str
+        ('ConStatement', None), #str
+        ('ContestSelection', []), #[(PartySelection|BallotMeasureSelection|CandidateSelection), ...]
+        ('CountStatus', []), #ElectionResults.CountStatus
+        ('EffectOfAbstain', None), #str
+        ('ExternalIdentifier', []),
+        ('FullText', None), #str
+        ('HasRotation', False), #bool
+        ('InfoUri', []), # []str
+        ('OtherCounts', []), #[ElectionResults.OtherCounts, ...]
+        ('OtherType', None), #str .Type=other
+        ('OtherVoteVariation', []), #str
+        ('PassageThreshold', None), #str
+        ('ProStatement', None), #str
+        ('SequenceOrder', None), #int
+        ('SubUnitsReported', None), #int
+        ('SummaryText', None), #str
+        ('TotalSubUnits', None), #int
+        ('Type', None), # ElectionResults.BallotMeasureType {ballot-measure,initiative,recall,referendum,other}
+        ('VoteVariation', None), #ElectionResults.VoteVariation
+        ('VotesAllowed', None), #int, probably 1
+    )
+    def __init__(self, erctx, contest_json_object):
+        co = contest_json_object
+        self.co = co
+        self.Name = co['Name']
+        self.ElectionDistrictId = co['ElectionDistrictId'] # reference to a ReportingUnit gpunit
+        setOptionalFields(self, self.co)
+        if self.OfficeIds:
+            self.offices = [erctx.getRawOb(x) for x in self.OfficeIds]
+        else:
+            self.offices = []
+    def draw(self, c, x, y, width):
+        raise Exception("wat?")
+
 class CandidateContest:
     "NIST 1500-100 v2 ElectionResults.CandidateContest"
     _optional_fields = (
@@ -401,7 +441,7 @@ class CandidateContest:
         else:
             self.offices = []
     def draw(self, c, x, y, width):
-        raise Exception("TODO: WRITEME")
+        raise Exception("wat?")
 
 def rehydrateContest(election, contest_json_object):
     co = contest_json_object
