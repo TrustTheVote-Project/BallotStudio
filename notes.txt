@@ -370,3 +370,10 @@ FLASK_ENV=development FLASK_APP=app.py /home/bolson/src/ve36/bin/flask run
 go build && ./ballotstudio -draw-backend http://127.0.0.1:5000/
 go build && ./ballotstudio -draw-backend http://127.0.0.1:5000/ -sqlite bss
 go build && ./ballotstudio -draw-backend http://127.0.0.1:5000/ -sqlite bss -im-archive-dir /tmp/scan-archive
+
+2020-07-12 15:16:08 EDT (Sunday, July 12 03:16:08 PM)
+
+
+https://gitlab.freedesktop.org/poppler/poppler
+git clone https://gitlab.freedesktop.org/poppler/poppler.git
+TODO: extend pdftoppm to return an archive of PNG on stdout without writing to disk
