@@ -317,6 +317,8 @@ contests = [
         "NumberElected": 1,
         "OfficeIds": [officeIdByName(offices, 'Head Dwarf')],
     },
+    # TODO: ElectionResults.RetentionContest
+    # TODO: ElectionResults.PartyContest
 ]
 
 contestIdByName = officeIdByName
