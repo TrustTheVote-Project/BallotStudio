@@ -282,6 +282,48 @@ _votevariation_instruction_en = {
     "n-of-m": "Vote for up to {VotesAllowed}",
 }
 
+class BallotMeasureSelection:
+    "NIST 1500-100 v2 ElectionResults.BallotMeasureSelection"
+    _optional_fields = (
+        ('ExternalIdentifier', []),
+        ('SequenceOrder', None), #int
+        ('VoteCounts', []), #VoteCounts results objects
+    )
+    def __init__(self, erctx, cs_json_object):
+        self.cs = cs_json_object
+        self.atid = self.cs['@id']
+        self.selection = self.cs['Selection']
+        setOptionalFields(self, self.cs)
+        self._bubbleCoords = None
+    def height(self, width):
+        out = gs.candidateLeading
+        out += 0.1 * inch
+        return out
+    def draw(self, c, x, y, width):
+        capHeight = fonts[gs.candidateFontName].capHeightPerPt * gs.candidateFontSize
+        bubbleHeight = min(3*mm, capHeight)
+        bubbleYShim = (capHeight - bubbleHeight) / 2.0
+        bubbleBottom = y - gs.candidateFontSize + bubbleYShim
+        c.setStrokeColorRGB(0,0,0)
+        c.setLineWidth(1)
+        c.setFillColorRGB(1,1,1)
+        self._bubbleCoords = (x + gs.bubbleLeftPad, bubbleBottom, gs.bubbleWidth, bubbleHeight)
+        c.roundRect(*self._bubbleCoords, radius=bubbleHeight/2)
+        textx = x + gs.bubbleLeftPad + gs.bubbleWidth + gs.bubbleRightPad
+        # TODO: assumes one line
+        c.setFillColorRGB(0,0,0)
+        txto = c.beginText(textx, y - gs.candidateFontSize)
+        txto.setFont(gs.candidateFontName, gs.candidateFontSize, gs.candidateLeading)
+        txto.textLines(self.selection)
+        c.drawText(txto)
+        ypos = y - gs.candidateLeading
+        # separator line
+        c.setStrokeColorRGB(0,0,0)
+        c.setLineWidth(0.25)
+        sepy = ypos - (0.1 * inch)
+        c.line(textx, sepy, x+width, sepy)
+        return
+
 class CandidateSelection:
     "NIST 1500-100 v2 ElectionResults.CandidateSelection"
     _optional_fields = (
@@ -363,6 +405,8 @@ def rehydrateContestSelection(election, contestselection_json_object):
     cstype = cs['@type']
     if cstype == 'ElectionResults.CandidateSelection':
         return CandidateSelection(election, contestselection_json_object)
+    elif cstype == 'ElectionResults.BallotMeasureSelection':
+        return BallotMeasureSelection(election, contestselection_json_object)
     # TODO ElectionResults.BallotMeasureSelection
     # TODO ElectionResults.PartySelection
     raise Exception('unkown ContestSelection type {!r}'.format(cstype))
