@@ -407,7 +407,6 @@ def rehydrateContestSelection(election, contestselection_json_object):
         return CandidateSelection(election, contestselection_json_object)
     elif cstype == 'ElectionResults.BallotMeasureSelection':
         return BallotMeasureSelection(election, contestselection_json_object)
-    # TODO ElectionResults.BallotMeasureSelection
     # TODO ElectionResults.PartySelection
     raise Exception('unkown ContestSelection type {!r}'.format(cstype))
 
@@ -444,12 +443,64 @@ class BallotMeasureContest:
         self.Name = co['Name']
         self.ElectionDistrictId = co['ElectionDistrictId'] # reference to a ReportingUnit gpunit
         setOptionalFields(self, self.co)
-        if self.OfficeIds:
-            self.offices = [erctx.getRawOb(x) for x in self.OfficeIds]
-        else:
-            self.offices = []
-    def draw(self, c, x, y, width):
-        raise Exception("wat?")
+    def draw(self, c, x, y, width, draw_selections=None):
+        if draw_selections is not None:
+            self.draw_selections = draw_selections
+        pos = y - 3 # leave room for 3pt top border
+        # title
+        c.setStrokeColorRGB(*gs.titleBGColor)
+        c.setFillColorRGB(*gs.titleBGColor)
+        c.rect(x, pos - gs.titleLeading, width, gs.titleLeading, fill=1, stroke=0)
+        c.setFillColorRGB(0,0,0)
+        c.setStrokeColorRGB(0,0,0)
+        txto = c.beginText(x + 1 + (0.1 * inch), pos - gs.titleFontSize)
+        txto.setFont(gs.titleFontName, gs.titleFontSize)
+        txto.textLines(self.BallotTitle)
+        c.drawText(txto)
+        pos -= gs.titleLeading
+        # subtitle
+        c.setStrokeColorCMYK(.1,0,0,0)
+        c.setFillColorCMYK(.1,0,0,0)
+        c.rect(x, pos - gs.subtitleLeading, width, gs.subtitleLeading, fill=1, stroke=0)
+        c.setFillColorRGB(0,0,0)
+        c.setStrokeColorRGB(0,0,0)
+        txto = c.beginText(x + 1 + (0.1 * inch), pos - gs.subtitleFontSize)
+        txto.setFont(gs.subtitleFontName, gs.subtitleFontSize)
+        txto.textLines(self.BallotSubTitle)
+        c.drawText(txto)
+        pos -= gs.subtitleLeading
+        pos -= 0.1 * inch # header-choice gap
+        c.setFillColorRGB(0,0,0)
+        c.setStrokeColorRGB(0,0,0)
+        maxheight = self._maxheight(width-1)
+        for ds in self.draw_selections:
+            dy = ds.height(width)
+            ds.draw(c, x+1, pos, width-1)
+            pos -= maxheight
+        pos -= 0.1 * inch # bottom padding
+
+        # top border
+        c.setStrokeColorRGB(0,0,0)
+        c.setLineWidth(3)
+        c.line(x, y-1.5, x + width, y-1.5) # -0.5 caps left border 1.0pt line
+        # left border and bottom border
+        c.setLineWidth(1)
+        path = c.beginPath()
+        path.moveTo(x+0.5, y-1.5)
+        path.lineTo(x+0.5, pos-0.5)
+        path.lineTo(x+width, pos-0.5)
+        c.drawPath(path, stroke=1)
+        return
+    def _maxheight(self, width):
+        heights = [ds.height(width) for ds in self.draw_selections]
+        return max(heights)
+    def height(self, width):
+        out = self._maxheight(width-1) * len(self.draw_selections)
+        out += 4 # top and bottom border
+        out += gs.titleLeading + gs.subtitleLeading
+        out += 0.1 * inch # header-choice gap
+        out += 0.1 * inch # bottom padding
+        return out
 
 class CandidateContest:
     "NIST 1500-100 v2 ElectionResults.CandidateContest"
@@ -484,8 +535,65 @@ class CandidateContest:
             self.offices = [erctx.getRawOb(x) for x in self.OfficeIds]
         else:
             self.offices = []
-    def draw(self, c, x, y, width):
-        raise Exception("wat?")
+        self.draw_selections = self.ContestSelection
+    def draw(self, c, x, y, width, draw_selections=None):
+        if draw_selections is not None:
+            self.draw_selections = draw_selections
+        pos = y - 3 # leave room for 3pt top border
+        # title
+        c.setStrokeColorRGB(*gs.titleBGColor)
+        c.setFillColorRGB(*gs.titleBGColor)
+        c.rect(x, pos - gs.titleLeading, width, gs.titleLeading, fill=1, stroke=0)
+        c.setFillColorRGB(0,0,0)
+        c.setStrokeColorRGB(0,0,0)
+        txto = c.beginText(x + 1 + (0.1 * inch), pos - gs.titleFontSize)
+        txto.setFont(gs.titleFontName, gs.titleFontSize)
+        txto.textLines(self.BallotTitle)
+        c.drawText(txto)
+        pos -= gs.titleLeading
+        # subtitle
+        c.setStrokeColorCMYK(.1,0,0,0)
+        c.setFillColorCMYK(.1,0,0,0)
+        c.rect(x, pos - gs.subtitleLeading, width, gs.subtitleLeading, fill=1, stroke=0)
+        c.setFillColorRGB(0,0,0)
+        c.setStrokeColorRGB(0,0,0)
+        txto = c.beginText(x + 1 + (0.1 * inch), pos - gs.subtitleFontSize)
+        txto.setFont(gs.subtitleFontName, gs.subtitleFontSize)
+        txto.textLines(self.BallotSubTitle)
+        c.drawText(txto)
+        pos -= gs.subtitleLeading
+        pos -= 0.1 * inch # header-choice gap
+        c.setFillColorRGB(0,0,0)
+        c.setStrokeColorRGB(0,0,0)
+        maxheight = self._maxheight(width-1)
+        for ds in self.draw_selections:
+            dy = ds.height(width)
+            ds.draw(c, x+1, pos, width-1)
+            pos -= maxheight
+        pos -= 0.1 * inch # bottom padding
+
+        # top border
+        c.setStrokeColorRGB(0,0,0)
+        c.setLineWidth(3)
+        c.line(x, y-1.5, x + width, y-1.5) # -0.5 caps left border 1.0pt line
+        # left border and bottom border
+        c.setLineWidth(1)
+        path = c.beginPath()
+        path.moveTo(x+0.5, y-1.5)
+        path.lineTo(x+0.5, pos-0.5)
+        path.lineTo(x+width, pos-0.5)
+        c.drawPath(path, stroke=1)
+        return
+    def _maxheight(self, width):
+        heights = [ds.height(width) for ds in self.draw_selections]
+        return max(heights)
+    def height(self, width):
+        out = self._maxheight(width-1) * len(self.draw_selections)
+        out += 4 # top and bottom border
+        out += gs.titleLeading + gs.subtitleLeading
+        out += 0.1 * inch # header-choice gap
+        out += 0.1 * inch # bottom padding
+        return out
 
 def rehydrateContest(election, contest_json_object):
     co = contest_json_object
@@ -528,51 +636,7 @@ class OrderedContest:
         out += 0.1 * inch # bottom padding
         return out
     def draw(self, c, x, y, width):
-        # TODO: delegate some/all of this to self.contest aka CandidateContest?
-        pos = y - 3 # leave room for 3pt top border
-        # title
-        c.setStrokeColorRGB(*gs.titleBGColor)
-        c.setFillColorRGB(*gs.titleBGColor)
-        c.rect(x, pos - gs.titleLeading, width, gs.titleLeading, fill=1, stroke=0)
-        c.setFillColorRGB(0,0,0)
-        c.setStrokeColorRGB(0,0,0)
-        txto = c.beginText(x + 1 + (0.1 * inch), pos - gs.titleFontSize)
-        txto.setFont(gs.titleFontName, gs.titleFontSize)
-        txto.textLines(self.contest.BallotTitle)
-        c.drawText(txto)
-        pos -= gs.titleLeading
-        # subtitle
-        c.setStrokeColorCMYK(.1,0,0,0)
-        c.setFillColorCMYK(.1,0,0,0)
-        c.rect(x, pos - gs.subtitleLeading, width, gs.subtitleLeading, fill=1, stroke=0)
-        c.setFillColorRGB(0,0,0)
-        c.setStrokeColorRGB(0,0,0)
-        txto = c.beginText(x + 1 + (0.1 * inch), pos - gs.subtitleFontSize)
-        txto.setFont(gs.subtitleFontName, gs.subtitleFontSize)
-        txto.textLines(self.contest.BallotSubTitle)
-        c.drawText(txto)
-        pos -= gs.subtitleLeading
-        pos -= 0.1 * inch # header-choice gap
-        c.setFillColorRGB(0,0,0)
-        c.setStrokeColorRGB(0,0,0)
-        maxheight = self._maxheight(width-1)
-        for ds in self.draw_selections:
-            dy = ds.height(width)
-            ds.draw(c, x+1, pos, width-1)
-            pos -= maxheight
-        pos -= 0.1 * inch # bottom padding
-
-        # top border
-        c.setStrokeColorRGB(0,0,0)
-        c.setLineWidth(3)
-        c.line(x, y-1.5, x + width, y-1.5) # -0.5 caps left border 1.0pt line
-        # left border and bottom border
-        c.setLineWidth(1)
-        path = c.beginPath()
-        path.moveTo(x+0.5, y-1.5)
-        path.lineTo(x+0.5, pos-0.5)
-        path.lineTo(x+width, pos-0.5)
-        c.drawPath(path, stroke=1)
+        self.contest.draw(c, x, y, width, draw_selections=self.draw_selections)
         return
     def getBubbles(self):
         return {ch.atid:ch._bubbleCoords for ch in self.draw_selections}
@@ -714,8 +778,10 @@ class ElectionResultsContext:
     "Manage lookup of objects by id, whether raw json/dict or class"
     # map 'Er.Type': func(ctx, json ob)
     _constructors_for_typestrings = {
-        'ElectionResults.CandidateSelection': CandidateSelection,
+        'ElectionResults.BallotMeasureContest': BallotMeasureContest,
+        'ElectionResults.BallotMeasureSelection': BallotMeasureSelection,
         'ElectionResults.CandidateContest': CandidateContest,
+        'ElectionResults.CandidateSelection': CandidateSelection,
         'ElectionResults.OrderedContest': OrderedContest,
         #'ElectionResults.Office': Office,
     }
@@ -850,8 +916,11 @@ def main():
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.INFO)
-    with open(args.election_json) as fin:
-        er = json.load(fin)
+    if args.election_json == '-':
+        er = json.load(sys.stdin)
+    else:
+        with open(args.election_json) as fin:
+            er = json.load(fin)
     for el in er.get('Election', []):
         ep = ElectionPrinter(er, el)
         fname_written = ep.draw(args.outdir, args.prefix)

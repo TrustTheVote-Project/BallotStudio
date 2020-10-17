@@ -158,6 +158,8 @@ lots of examples of international ballot papers.
 
 NIST publications on voting
 https://www.nist.gov/itl/voting/publications
+https://www.nist.gov/topics/voting-systems
+https://www.nist.gov/itl/voting/interoperability
 
 TODO: lots at NIST to read
 
@@ -377,3 +379,9 @@ go build && ./ballotstudio -draw-backend http://127.0.0.1:5000/ -sqlite bss -im-
 https://gitlab.freedesktop.org/poppler/poppler
 git clone https://gitlab.freedesktop.org/poppler/poppler.git
 TODO: extend pdftoppm to return an archive of PNG on stdout without writing to disk
+
+
+TODO: count votes and export as NIST 1500-102 Cast Vote Records, https://pages.nist.gov/CastVoteRecords/ https://github.com/usnistgov/CastVoteRecords
+
+
+python3 demorace.py |python3 draw.py --outdir /tmp -

@@ -179,6 +179,7 @@ def personIdByFullName(they, name):
 
 _candidate_id = IdSource('candidate')
 _csel_id = IdSource('csel')
+_bmsel_id = IdSource('bmsel')
 
 def makeCandidate(fullname, persons):
     return {
@@ -256,6 +257,22 @@ def candidateSelectionsFromNames(candidates, *names):
         })
     return out
 
+def yesOrNoBallotMeasureSelections():
+    return [
+        {
+            "@id": _bmsel_id(),
+            "@type": "ElectionResults.BallotMeasureSelection",
+            "Selection": "Yes",
+            "SequenceOrder": 1,
+        },
+        {
+            "@id": _bmsel_id(),
+            "@type": "ElectionResults.BallotMeasureSelection",
+            "Selection": "No",
+            "SequenceOrder": 2,
+        },
+    ]
+
 contests = [
     {
         # required
@@ -290,6 +307,21 @@ contests = [
     {
         # required
         "@id": _contest_id(),
+        "@type": "ElectionResults.BallotMeasureContest",
+        "Name": "Winning",
+        "ElectionDistrictId": gpunitIdByName(gpunits, 'Springfield'),
+        #"VoteVariation": "plurality",
+        "VotesAllowed": 1,
+        # other
+        "BallotTitle": "Should We Win",
+        "BallotSubTitle": "Vote Yes or No",
+        "ContestSelection": yesOrNoBallotMeasureSelections(),
+        "NumberElected": 1,
+        "OfficeIds": [officeIdByName(offices, 'Head Dwarf')],
+    },
+    {
+        # required
+        "@id": _contest_id(),
         "@type": "ElectionResults.CandidateContest",
         "Name": "Bottom",
         "ElectionDistrictId": gpunitIdByName(gpunits, 'Springfield'),
@@ -299,21 +331,6 @@ contests = [
         "BallotTitle": "The Race To The Bottom",
         "BallotSubTitle": "Vote for one",
         "ContestSelection": candidateSelectionsFromNames(candidates, "Zaphod Beeblebrox", "Zod", "Zardoz"), # TODO: write-in
-        "NumberElected": 1,
-        "OfficeIds": [officeIdByName(offices, 'Head Dwarf')],
-    },
-    {
-        # required
-        "@id": _contest_id(),
-        "@type": "ElectionResults.BallotMeasureContest",
-        "Name": "Winning",
-        "ElectionDistrictId": gpunitIdByName(gpunits, 'Springfield'),
-        #"VoteVariation": "plurality",
-        "VotesAllowed": 1,
-        # other
-        "BallotTitle": "Should We Win",
-        "BallotSubTitle": "Vote Yes or No",
-        #"ContestSelection": candidateSelectionsFromNames(candidates, "Zaphod Beeblebrox", "Zod", "Zardoz"), # TODO: BallotMeasureSelection.
         "NumberElected": 1,
         "OfficeIds": [officeIdByName(offices, 'Head Dwarf')],
     },
@@ -375,6 +392,10 @@ ElectionReport = {
                         {
                             "@type": "ElectionResults.OrderedContest",
                             "ContestId": contestIdByName(contests, 'Head Dwarf'),
+                        },
+                        {
+                            "@type": "ElectionResults.OrderedContest",
+                            "ContestId": contestIdByName(contests, 'Winning'),
                         },
                         {
                             "@type": "ElectionResults.OrderedContest",
