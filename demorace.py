@@ -315,9 +315,13 @@ contests = [
         # other
         "BallotTitle": "Should We Win",
         "BallotSubTitle": "Vote Yes or No",
+        "ConStatement": "Winning is hard work, let's take a nap",
         "ContestSelection": yesOrNoBallotMeasureSelections(),
-        "NumberElected": 1,
-        "OfficeIds": [officeIdByName(offices, 'Head Dwarf')],
+        #"EffectOfAbstain": "Not voting is dumb",
+        "FullText": "blah blah blah [insert full text of plan here] fnord fnord fnord",
+        "InfoUri": "https://betterpolls.com/",
+        "SummaryText": "[insert short text here]",
+        "Type": "referendum",
     },
     {
         # required

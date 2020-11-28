@@ -454,7 +454,10 @@
 		    if (je === undefined) {
 			var attype = jv["@type"];
 			if (attype) {
-			    je = newForAtType(attype);
+			  je = newForAtType(attype);
+			  if (je == null) {
+				console.log("nothing for @type ", attype);
+			  } else {
 			    te.appendChild(je);
 			    je = te.children[j];
 			    expandSubTmpl(je);
@@ -463,8 +466,9 @@
 				var ti = tmplForAttype[attype];
 				claimSeq(ti.seq, atid);
 			    }
+			  }
 			} else {
-			    console.log("don't know how to add value ", jv)
+			  console.log("don't know how to add value ", jv);
 			    continue;
 			}
 		    }

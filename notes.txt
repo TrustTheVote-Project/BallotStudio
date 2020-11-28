@@ -385,3 +385,6 @@ TODO: count votes and export as NIST 1500-102 Cast Vote Records, https://pages.n
 
 
 python3 demorace.py |python3 draw.py --outdir /tmp -
+
+
+bsvenv/bin/python3 draw.py static/demoelection.json --outdir static --prefix demo

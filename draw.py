@@ -469,9 +469,10 @@ class BallotMeasureContest:
         txto.textLines(self.BallotSubTitle)
         c.drawText(txto)
         pos -= gs.subtitleLeading
-        pos -= 0.1 * inch # header-choice gap
         c.setFillColorRGB(0,0,0)
         c.setStrokeColorRGB(0,0,0)
+        # TODO SummaryText
+        pos -= 0.1 * inch # header-choice gap
         maxheight = self._maxheight(width-1)
         for ds in self.draw_selections:
             dy = ds.height(width)
@@ -861,15 +862,19 @@ class ElectionPrinter:
     def draw(self, outdir=None, outname_prefix='', outfile=None):
         # TODO: one specific ballot style or all of them to separate PDFs
         _ensure_fonts()
+        any = False
         for i, bs in enumerate(self.ballot_styles):
+            any = True
             names = ','.join([gpunitName(x) for x in bs.gpunits])
             if outfile is not None:
                 outarg = outfile
                 bs_fname = "data"
             elif len(self.ballot_styles) > 1:
                 bs_fname = '{}{}_{}.pdf'.format(outname_prefix, i, names)
+                outarg = bs_fname
             else:
                 bs_fname = '{}{}.pdf'.format(outname_prefix, names)
+                outarg = bs_fname
             if outdir and not outfile:
                 bs_fname = os.path.join(outdir, bs_fname)
                 outarg = bs_fname
@@ -878,6 +883,8 @@ class ElectionPrinter:
             c.save()
             #sys.stdout.write(bs_fname + '\n')
             return bs_fname
+        if not any:
+            raise Exception('no BallotStyle to draw')
     def getBubbles(self):
         """{
 "pagesize": (width pt, height pt),

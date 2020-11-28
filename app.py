@@ -28,6 +28,8 @@ if (os.getenv('SERVER_SOFTWARE') or '').startswith('gunicorn') and (__name__ != 
     app.logger.handlers = gunicorn_logger.handlers
     app.logger.setLevel(gunicorn_logger.level)
 
+draw.logger = app.logger
+
 _cache = None
 
 def mc():
@@ -164,8 +166,11 @@ def drawHandler():
     ep = ElectionPrinter(er, el)
     pdfbytes = io.BytesIO()
     ep.draw(outfile=pdfbytes)
+    pdfbytes = pdfbytes.getvalue()
+    if len(pdfbytes) == 0:
+        app.logger.warning('zero byte pdf /draw')
     bothob = {
-        'pdfb64': base64.b64encode(pdfbytes.getvalue()).decode(),
+        'pdfb64': base64.b64encode(pdfbytes).decode(),
         'bubbles': ep.getBubbles(),
     }
     if request.args.get('both'):
@@ -177,7 +182,7 @@ def drawHandler():
         mc().set(itemid, bothob, time=3600)
         return {'bubbles':ep.getBubbles(),'item':itemid}, 200
     # otherwise just pdf
-    return pdfbytes.getvalue(), 200, {"Content-Type":"application/pdf"}
+    return pdfbytes, 200, {"Content-Type":"application/pdf"}
 
 @app.route('/item')
 def itemHandler():
