@@ -299,6 +299,48 @@
     </table>
   </template>
 
+  <template id="candcontesttmpl" data-attype="ElectionResults.BallotMeasureContest">
+	<!-- TODO: finish fixing this up from copy-paste-o from CandidateContest -->
+    <div class="contest">
+    <table border="0">
+      <input type="hidden" data-key="attype" value="ElectionResults.BallotMeasureContest" />
+      <tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
+      <tr class="acgroup">
+	<td>Election District</td>
+	<td class="idreflist" data-key="ElectionDistrictId" data-one="true"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingUnit" data-action="set"> <small>(Type a region's name to set it as the district of this contest. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
+      </tr>
+      <tr><td>Votes Allowed</td><td><input type="number" min="1" step="1" data-key="VotesAllowed" /></td></tr>
+      <tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
+      <tr><td colspan="2" class="optional">optional:</td></tr>
+      <tr><td>Abbreviation</td><td><input type="text" data-key="Abbreviation" /></td></tr>
+      <tr><td>Ballot Title</td><td><input type="text" data-key="BallotTitle" /></td></tr>
+      <tr><td>Ballot Subtitle</td><td><input type="text" data-key="BallotSubTitle" /></td></tr>
+      <tr><td colspan="2"><h2>Selections</h2>
+	  <div class="arraygroup" data-name="ContestSelection"></div>
+	  <div><button class="newrec" data-btmpl="candseltmpl">New Selection</button></div>
+      </td></tr>
+      <tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
+      <tr><td>Enable Rotation</td><td><input type="checkbox" data-key="HasRotation"></td></tr>
+      <tr><td>Number Elected</td><td><input type="number" min="1" step="1" data-key="NumberElected" /></td></tr>
+      <tr><td>Number Runoff</td><td><input type="number" min="1" step="1" data-key="NumberRunoff" /></td></tr>
+      <tr class="acgroup">
+	<td>Offices</td>
+	<td class="idreflist" data-key="OfficeIds"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Office" data-action="append"> <small>(Type an office name to add it to this contest. The office must already have an entry in this Election's "Offices" section)</small></div></td>
+      </tr>
+      <tr><td>Vote Variation</td><td><input type="text" data-key="VoteVariation" /></td><td>"approval", "borda", "cumulative", "majority", "n-of-m", "other", "plurality", "proportional", "range", "rcv", "super-majority" (TODO: popup menu)</td></tr>
+      <tr><td>Vote Variation Other</td><td><input type="text" data-key="OtherVoteVariation" /></td><td>when "Vote Variation" is "other"</td></tr>
+      <tr><td>Sequence Order</td><td><input type="number" min="1" step="1" data-key="SequenceOrder" /></td></tr>
+      <tr class="acgroup">
+	<td>Party Primaries</td>
+	<td class="idreflist" data-key="PrimaryPartyIds"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Party,ElectionResults.Coalition" data-action="append"> <small>(Type a party or coalition's name to this contest. The Party or Coalition must already have an entry in the <a href="#Parties">Parties section</a>.)</small></div></td>
+      </tr>
+    </table>
+    </div>
+  </template>
+
   <template id="candcontesttmpl" data-attype="ElectionResults.CandidateContest">
     <div class="contest">
     <table border="0">
