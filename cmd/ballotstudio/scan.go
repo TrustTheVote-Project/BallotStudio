@@ -39,7 +39,8 @@ func (sh *StudioHandler) handleElectionScanPOST(w http.ResponseWriter, r *http.R
 		maybeerr(w, he.err, he.code, he.msg)
 		return
 	}
-	orig, format, err := image.Decode(bytes.NewReader(pngbytes))
+	// TODO: detect which page was scanned (by barcode, header, match quality?)
+	orig, format, err := image.Decode(bytes.NewReader(pngbytes[0]))
 	if maybeerr(w, err, 500, "orig png decode (%s), %v", format, err) {
 		return
 	}

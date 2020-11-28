@@ -2,8 +2,10 @@ package main
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -82,21 +84,63 @@ func draw(backendUrl string, electionjson string) (both *DrawBothOb, err error) 
 	return &DrawBothOb{Pdf: dbr.PdfB64, BubblesJson: bj}, nil
 }
 
+type errorOrPngbytes struct {
+	err      error
+	pngpages [][]byte
+}
+
+func pngPageReader(reader io.Reader, out chan errorOrPngbytes) {
+	var sizebytes [8]byte
+	r := errorOrPngbytes{
+		err:      nil,
+		pngpages: make([][]byte, 0, 10),
+	}
+	for {
+		_, err := io.ReadFull(reader, sizebytes[:])
+		if err == io.EOF || err == io.ErrUnexpectedEOF {
+			out <- r
+			close(out)
+			return
+		}
+		if err != nil {
+			r.err = err
+			out <- r
+			return
+		}
+		pnglen := binary.BigEndian.Uint64(sizebytes[:])
+		b := binary.LittleEndian.Uint64(sizebytes[:])
+		if b < pnglen {
+			pnglen = b
+		}
+		nextpng := make([]byte, pnglen)
+		_, err = io.ReadFull(reader, nextpng)
+		if err != nil {
+			r.err = err
+			out <- r
+			return
+		}
+		r.pngpages = append(r.pngpages, nextpng)
+	}
+}
+
 // uses subprocess `pdftoppm`
-func pdftopng(pdf []byte) (pngbytes []byte, err error) {
+func pdftopng(pdf []byte) (pngbytes [][]byte, err error) {
 	if len(pdf) == 0 {
 		return nil, fmt.Errorf("pdftopng but empty pdf")
 	}
-	// TODO: handle multi page!
-	cmd := exec.Command("pdftoppm", "-png", "-singlefile")
+	// requires poppler fork from https://github.com/brianolson/poppler
+	cmd := exec.Command("pdftoppm", "-png", "-pngMultiBlock") // , "-singlefile"
 	if err != nil {
 		return nil, fmt.Errorf("could not cmd pdftoppm, %v", err)
 	}
+	reader, writer := io.Pipe()
 	cmd.Stdin = bytes.NewReader(pdf)
-	stdout := bytes.Buffer{}
-	cmd.Stdout = &stdout
+	//stdout := writer
+	cmd.Stdout = writer
 	stderr := bytes.Buffer{}
 	cmd.Stderr = &stderr
+	pchan := make(chan errorOrPngbytes, 1)
+	go pngPageReader(reader, pchan)
 	err = cmd.Run()
 	if err != nil {
 		se := string(stderr.Bytes())
@@ -105,6 +149,6 @@ func pdftopng(pdf []byte) (pngbytes []byte, err error) {
 		}
 		return nil, fmt.Errorf("pdftoppm err, %v, %v", err, se)
 	}
-	pngbytes = stdout.Bytes()
-	return
+	r := <-pchan
+	return r.pngpages, r.err
 }

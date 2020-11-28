@@ -76,6 +76,7 @@ type StudioHandler struct {
 var pdfPathRe *regexp.Regexp
 var bubblesPathRe *regexp.Regexp
 var pngPathRe *regexp.Regexp
+var pngPagePathRe *regexp.Regexp
 var scanPathRe *regexp.Regexp
 var docPathRe *regexp.Regexp
 
@@ -83,6 +84,7 @@ func init() {
 	pdfPathRe = regexp.MustCompile(`^/election/(\d+)\.pdf$`)
 	bubblesPathRe = regexp.MustCompile(`^/election/(\d+)_bubbles\.json$`)
 	pngPathRe = regexp.MustCompile(`^/election/(\d+)\.png$`)
+	pngPagePathRe = regexp.MustCompile(`^/election/(\d+)\.(\d+)\.png$`)
 	scanPathRe = regexp.MustCompile(`^/election/(\d+)/scan$`)
 	docPathRe = regexp.MustCompile(`^/election/(\d+)$`)
 }
@@ -147,6 +149,27 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write(bothob.BubblesJson)
 		return
 	}
+	// `^/election/(\d+)\.(\d+)\.png$`
+	m = pngPagePathRe.FindStringSubmatch(path)
+	if m != nil {
+		pagenum, err := strconv.Atoi(string(m[2]))
+		if maybeerr(w, err, 400, "bad page") {
+			return
+		}
+		pngbytes, err := sh.getPng(m[1])
+		if err != nil {
+			he := err.(*httpError)
+			maybeerr(w, he.err, he.code, he.msg)
+			return
+		}
+		if pagenum > len(pngbytes) {
+			texterr(w, 400, "bad page")
+		}
+		w.Header().Set("Content-Type", "image/png")
+		w.WriteHeader(200)
+		w.Write(pngbytes[pagenum])
+		return
+	}
 	// `^/election/(\d+)\.png$`
 	m = pngPathRe.FindStringSubmatch(path)
 	if m != nil {
@@ -156,9 +179,12 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			maybeerr(w, he.err, he.code, he.msg)
 			return
 		}
+		if len(pngbytes) > 1 {
+			texterr(w, 400, "document has more than one page")
+		}
 		w.Header().Set("Content-Type", "image/png")
 		w.WriteHeader(200)
-		w.Write(pngbytes)
+		w.Write(pngbytes[0])
 		return
 	}
 	// `^/election/(\d+)/scan$`
@@ -299,11 +325,11 @@ func (sh *StudioHandler) getPdf(el string) (bothob *DrawBothOb, err error) {
 	return
 }
 
-func (sh *StudioHandler) getPng(el string) (pngbytes []byte, err error) {
+func (sh *StudioHandler) getPng(el string) (pngbytes [][]byte, err error) {
 	pngkey := el + ".png"
 	cr := sh.cache.Get(pngkey)
 	if cr != nil {
-		pngbytes = cr.([]byte)
+		pngbytes = cr.([][]byte)
 		return
 	}
 	var bothob *DrawBothOb
@@ -315,7 +341,11 @@ func (sh *StudioHandler) getPng(el string) (pngbytes []byte, err error) {
 	if err != nil {
 		return nil, &httpError{500, "png fail", err}
 	}
-	sh.cache.Put(pngkey, pngbytes, len(pngbytes))
+	tlen := 0
+	for _, page := range pngbytes {
+		tlen += len(page)
+	}
+	sh.cache.Put(pngkey, pngbytes, tlen)
 	return
 }
 
