@@ -51,8 +51,10 @@ class Bfont:
                     self.name = xn.toUnicode()
                     break
 
-
-resources = os.path.join(os.path.dirname(__file__),'resources')
+resources = None
+for mayber in (os.path.join(os.path.dirname(__file__),'resources'), os.path.join(os.getcwd(), 'resources')):
+    if os.path.isdir(mayber):
+        resources = mayber
 fonts = {}
 
 def _ensure_fonts():

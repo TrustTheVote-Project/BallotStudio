@@ -12,7 +12,8 @@ Ballot Studio is in two parts, a Python back end that draws PDF ballots, and a g
 * `bsvenv/bin/pip install fonttools Flask mercurial`
 * `bsvenv/bin/hg clone https://hg.reportlab.com/hg-public/reportlab`
 * `(cd reportlab && ../bsvenv/bin/pip install -e .)`
-* `FLASK_ENV=development FLASK_APP=app.py bsvenv/bin/flask run`
+* `FLASK_ENV=development FLASK_APP=draw/app.py bsvenv/bin/flask run`
+* If not present under `/usr/share/fonts/truetype/liberation/*.ttf` Download Liberation Fonts into resources/ https://github.com/liberationfonts/liberation-fonts/releases
 
 ### Go Setup
 
