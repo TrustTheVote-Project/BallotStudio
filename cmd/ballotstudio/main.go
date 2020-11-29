@@ -22,6 +22,7 @@ import (
 	_ "github.com/mattn/go-sqlite3" // driver="sqlite3"
 
 	"github.com/brianolson/ballotstudio/data"
+	"github.com/brianolson/ballotstudio/draw"
 	"github.com/brianolson/login/login"
 )
 
@@ -303,10 +304,10 @@ func (sh *StudioHandler) handleElectionDocGET(w http.ResponseWriter, r *http.Req
 	w.Write(nbody)
 }
 
-func (sh *StudioHandler) getPdf(el string) (bothob *DrawBothOb, err error) {
+func (sh *StudioHandler) getPdf(el string) (bothob *draw.DrawBothOb, err error) {
 	cr := sh.cache.Get(el)
 	if cr != nil {
-		bothob = cr.(*DrawBothOb)
+		bothob = cr.(*draw.DrawBothOb)
 	} else {
 		electionid, err := strconv.ParseInt(el, 10, 64)
 		if err != nil {
@@ -316,7 +317,7 @@ func (sh *StudioHandler) getPdf(el string) (bothob *DrawBothOb, err error) {
 		if err != nil {
 			return nil, &httpError{400, "no item", err}
 		}
-		bothob, err = DrawElection(sh.drawBackend, er.Data)
+		bothob, err = draw.DrawElection(sh.drawBackend, er.Data)
 		if err != nil {
 			return nil, &httpError{500, "draw fail", err}
 		}
@@ -332,12 +333,12 @@ func (sh *StudioHandler) getPng(el string) (pngbytes [][]byte, err error) {
 		pngbytes = cr.([][]byte)
 		return
 	}
-	var bothob *DrawBothOb
+	var bothob *draw.DrawBothOb
 	bothob, err = sh.getPdf(el)
 	if err != nil {
 		return nil, err
 	}
-	pngbytes, err = PdfToPng(bothob.Pdf)
+	pngbytes, err = draw.PdfToPng(bothob.Pdf)
 	if err != nil {
 		return nil, &httpError{500, "png fail", err}
 	}
