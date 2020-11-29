@@ -316,7 +316,7 @@ func (sh *StudioHandler) getPdf(el string) (bothob *DrawBothOb, err error) {
 		if err != nil {
 			return nil, &httpError{400, "no item", err}
 		}
-		bothob, err = draw(sh.drawBackend, er.Data)
+		bothob, err = DrawElection(sh.drawBackend, er.Data)
 		if err != nil {
 			return nil, &httpError{500, "draw fail", err}
 		}
@@ -337,7 +337,7 @@ func (sh *StudioHandler) getPng(el string) (pngbytes [][]byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	pngbytes, err = pdftopng(bothob.Pdf)
+	pngbytes, err = PdfToPng(bothob.Pdf)
 	if err != nil {
 		return nil, &httpError{500, "png fail", err}
 	}

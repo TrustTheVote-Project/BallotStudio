@@ -12,11 +12,8 @@ import (
 	"os/exec"
 	"path"
 	"strings"
-
-	_ "github.com/spakin/netpbm"
+	//_ "github.com/spakin/netpbm"
 )
-
-// go get github.com/spakin/netpbm
 
 type DrawBothOb struct {
 	Pdf         []byte
@@ -28,7 +25,10 @@ type DrawBothResponse struct {
 	Bubbles map[string]interface{} `json:"bubbles"`
 }
 
-func draw(backendUrl string, electionjson string) (both *DrawBothOb, err error) {
+// TODO: launch dev draw server:
+// FLASK_ENV=development FLASK_APP=draw/app.py "${HOME}/bsvenv/bin/flask" run -p 8081
+
+func DrawElection(backendUrl string, electionjson string) (both *DrawBothOb, err error) {
 	baseurl, err := url.Parse(backendUrl)
 	if err != nil {
 		return nil, fmt.Errorf("bad url, %v", err)
@@ -124,7 +124,7 @@ func pngPageReader(reader io.Reader, out chan errorOrPngbytes) {
 }
 
 // uses subprocess `pdftoppm`
-func pdftopng(pdf []byte) (pngbytes [][]byte, err error) {
+func PdfToPng(pdf []byte) (pngbytes [][]byte, err error) {
 	if len(pdf) == 0 {
 		return nil, fmt.Errorf("pdftopng but empty pdf")
 	}
@@ -135,7 +135,6 @@ func pdftopng(pdf []byte) (pngbytes [][]byte, err error) {
 	}
 	reader, writer := io.Pipe()
 	cmd.Stdin = bytes.NewReader(pdf)
-	//stdout := writer
 	cmd.Stdout = writer
 	stderr := bytes.Buffer{}
 	cmd.Stderr = &stderr
