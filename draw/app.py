@@ -147,6 +147,21 @@ def pdfToPng(pdfbytes):
 def home():
     return render_template('index.html', electionid="", urls=_election_urls(), prefix=request.environ.get('SCRIPT_NAME','').rstrip('/'))
 
+@app.route('/demo.js')
+def demoraceget():
+    return demorace.ElectionReport
+
+@app.route('/demo.pdf')
+def demoracepdf():
+    er = demorace.ElectionReport
+    elections = er.get('Election', [])
+    el = elections[0]
+    ep = ElectionPrinter(er, el)
+    pdfbytes = io.BytesIO()
+    ep.draw(outfile=pdfbytes)
+    pdfbytes = pdfbytes.getvalue()
+    return pdfbytes, 200, {"Content-Type":"application/pdf"}
+
 @app.route('/edit/<int:electionid>')
 def edit(electionid):
     ctx = {
