@@ -311,7 +311,7 @@ contests = [
         "Name": "Winning",
         "ElectionDistrictId": gpunitIdByName(gpunits, 'Springfield'),
         #"VoteVariation": "plurality",
-        "VotesAllowed": 1,
+        #"VotesAllowed": 1,
         # other
         "BallotTitle": "Should We Win",
         "BallotSubTitle": "Vote Yes or No",

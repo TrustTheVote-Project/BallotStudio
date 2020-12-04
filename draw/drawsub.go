@@ -9,10 +9,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"strings"
-	//_ "github.com/spakin/netpbm"
 )
 
 type DrawBothOb struct {
@@ -26,7 +27,50 @@ type DrawBothResponse struct {
 }
 
 // TODO: launch dev draw server:
+
+// DrawServer runs a development
 // FLASK_ENV=development FLASK_APP=draw/app.py "${HOME}/bsvenv/bin/flask" run -p 8081
+type DrawServer struct {
+	Port      int
+	FlaskPath string
+
+	cmd *exec.Cmd
+}
+
+func (ds DrawServer) BackendUrl() string {
+	return fmt.Sprintf("http://localhost:%d", ds.Port)
+}
+
+func (ds *DrawServer) Start() error {
+	if len(ds.FlaskPath) == 0 {
+		// leave it up to PATH
+		ds.FlaskPath = "flask"
+	}
+	if ds.Port == 0 {
+		ds.Port = 8081
+	}
+	port := strconv.Itoa(ds.Port)
+	ds.cmd = exec.Command(ds.FlaskPath, "run", "-p", port)
+	ds.cmd.Env = os.Environ()
+	ds.cmd.Env = append(ds.cmd.Env, "FLASK_ENV=development")
+	ds.cmd.Env = append(ds.cmd.Env, "FLASK_APP=draw/app.py")
+	ds.cmd.Stdout = os.Stdout
+	ds.cmd.Stderr = os.Stderr
+	err := ds.cmd.Start()
+	if err != nil {
+		ds.cmd = nil
+	}
+	return err
+}
+
+func (ds *DrawServer) Stop() error {
+	if ds.cmd != nil {
+		err := ds.cmd.Process.Kill()
+		ds.cmd = nil
+		return err
+	}
+	return nil
+}
 
 func DrawElection(backendUrl string, electionjson string) (both *DrawBothOb, err error) {
 	baseurl, err := url.Parse(backendUrl)

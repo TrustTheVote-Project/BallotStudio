@@ -109,6 +109,8 @@
 		    ob.seq = seqname;
 		}
 		tmplForAttype[attype] = ob;
+	    } else {
+	      console.log("template without data-attype ", te);
 	    }
 	}
     })();
@@ -173,34 +175,35 @@
     }
     var textareaSplitter = /[, \t\r\n]+/g;
     var whitespace = " \t\r\n";
-    var extractQuoted = function(t,startpos,out) {
-		// extract quoted substring
-		i++;
-		if (i==t.length){return out;} // garbage, quit. TODO: raise exception
-		var qstart = i;
-		while (i < t.length) {
-		    c = t[i];
-		    if (c == '"') {
-			if((i+1 < t.length) && (t[i+1] == '"')) {
-			    // skip "" escaped "
-			    i = i+1;
-			} else {
-			    // end quoted region, unescaped contained quotes, save
-			    out.push(t.substring(qstart,i).replace("\"\"", "\""));
-			    // consume extra whitespace
-			    i++;
-			    while (i < t.length) {
-				if (!whitespace.includes(t[i])) {
-				    break;
-				}
-				i++;
-			    }
-			    return i;
-			}
-			i++;
-		    }
-		}
-    };
+  var extractQuoted = function(t,startpos,out) {
+    // extract quoted substring
+    var i = startpos;
+    i++;
+    if (i==t.length){return out;} // garbage, quit. TODO: raise exception
+    var qstart = i;
+    while (i < t.length) {
+      c = t[i];
+      if (c == '"') {
+	if((i+1 < t.length) && (t[i+1] == '"')) {
+	  // skip "" escaped "
+	  i = i+1;
+	} else {
+	  // end quoted region, unescaped contained quotes, save
+	  out.push(t.substring(qstart,i).replace("\"\"", "\""));
+	  // consume extra whitespace
+	  i++;
+	  while (i < t.length) {
+	    if (!whitespace.includes(t[i])) {
+	      break;
+	    }
+	    i++;
+	  }
+	  return i;
+	}
+      }
+      i++;
+    }
+  };
     // split like CSV
     var textToArray = function(t) {
 	if (!t) {return null;}

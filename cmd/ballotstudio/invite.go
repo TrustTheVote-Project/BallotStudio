@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/rand"
 	"encoding/base32"
-	"html/template"
 	"log"
 	mrand "math/rand"
 	"net/http"
@@ -37,7 +36,8 @@ type inviteHandler struct {
 
 	authmods []*login.OauthCallbackHandler
 
-	signupPage *template.Template
+	//signupPage *template.Template
+	templates *TemplateSet
 }
 
 // GET /signup/
@@ -126,7 +126,11 @@ func (ih *inviteHandler) scm(message string) SignupContext {
 func (ih *inviteHandler) renderSignup(w http.ResponseWriter, r *http.Request, ctx SignupContext) {
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(200)
-	ih.signupPage.Execute(w, ctx)
+	signupPage, err := ih.templates.Lookup("signup.html")
+	if maybeerr(w, err, 500, "signup.html: %v", err) {
+		return
+	}
+	signupPage.Execute(w, ctx)
 }
 
 /*
@@ -159,9 +163,10 @@ func (riw *requireInviteWrapper) ServeHTTP(w http.ResponseWriter, r *http.Reques
 */
 
 type makeInviteTokenHandler struct {
-	edb       electionAppDB
-	udb       login.UserDB
-	tokenpage *template.Template
+	edb electionAppDB
+	udb login.UserDB
+	//tokenpage *template.Template
+	templates *TemplateSet
 }
 
 type tokenPageContext struct {
@@ -181,5 +186,9 @@ func (ih *makeInviteTokenHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	}
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(200)
-	ih.tokenpage.Execute(w, tokenPageContext{inviteToken})
+	tokenpage, err := ih.templates.Lookup("invitetoken.html")
+	if maybeerr(w, err, 500, "invitetoken.html:%v", err) {
+		return
+	}
+	tokenpage.Execute(w, tokenPageContext{inviteToken})
 }

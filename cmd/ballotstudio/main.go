@@ -11,11 +11,14 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"regexp"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	_ "github.com/lib/pq"           // driver="postgres"
@@ -67,9 +70,10 @@ type StudioHandler struct {
 
 	cache Cache
 
-	scantemplate *template.Template
-	home         *template.Template
-	archiver     ImageArchiver
+	//scantemplate *template.Template
+	//home         *template.Template
+	templates *TemplateSet
+	archiver  ImageArchiver
 
 	authmods []*login.OauthCallbackHandler
 }
@@ -204,12 +208,20 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		ec := EditContext{}
 		ec.set(electionid)
-		sh.scantemplate.Execute(w, ec)
+		scantemplate, err := sh.templates.Lookup("scanform.html")
+		if maybeerr(w, err, 500, "scanform.html: %v", err) {
+			return
+		}
+		scantemplate.Execute(w, ec)
 		return
 	}
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(200)
-	sh.home.Execute(w, HomeContext{user, sh.authmods})
+	home, err := sh.templates.Lookup("home.html")
+	if maybeerr(w, err, 500, "home.html: %v", err) {
+		return
+	}
+	home.Execute(w, HomeContext{user, sh.authmods})
 }
 
 type HomeContext struct {
@@ -363,7 +375,8 @@ func (he httpError) Error() string {
 type editHandler struct {
 	edb electionAppDB
 	udb login.UserDB
-	t   *template.Template
+	ts  *TemplateSet
+	//t   *template.Template
 }
 
 type EditContext struct {
@@ -423,7 +436,11 @@ func (edit *editHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	ec := EditContext{}
 	ec.set(electionid)
-	err := edit.t.Execute(w, ec)
+	t, err := edit.ts.Lookup("index.html")
+	if maybeerr(w, err, 500, "index.html: %v", err) {
+		return
+	}
+	err = t.Execute(w, ec)
 	if err != nil {
 		log.Printf("editHandler template error, %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -440,6 +457,14 @@ func addrGetPort(listenAddr string) int {
 		return 80
 	}
 	return int(v)
+}
+
+func sigtermHandler(c <-chan os.Signal, server *http.Server, cf func()) {
+	_, ok := <-c
+	if ok {
+		go cf()
+		server.Shutdown(context.Background())
+	}
 }
 
 func main() {
@@ -461,13 +486,12 @@ func main() {
 	flag.StringVar(&pidpath, "pid", "", "path to write process id to")
 	flag.Parse()
 
-	templates, err := template.ParseGlob("gotemplates/*.html")
+	//templates, err := template.ParseGlob("gotemplates/*.html")
+	templates, err := HtmlTemplateGlob("gotemplates/*.html")
+	templates.Reloading = true // TODO: disable for prod
 	maybefail(err, "parse templates, %v", err)
-	indextemplate := templates.Lookup("index.html")
-	if indextemplate == nil {
-		log.Print("no template index.html")
-		os.Exit(1)
-	}
+	_, err = templates.Lookup("index.html")
+	maybefail(err, "no index.html, %v", err)
 
 	if cookieKeyb64 == "" {
 		ck := login.GenerateCookieKey()
@@ -523,28 +547,40 @@ func main() {
 	defer cf()
 	go gcThread(ctx, edb, 57*time.Minute)
 
+	if len(drawBackend) == 0 {
+		var drawserver draw.DrawServer
+		err = drawserver.Start()
+		maybefail(err, "could not start draw server, %v", err)
+		drawBackend = drawserver.BackendUrl()
+		defer drawserver.Stop()
+	}
+
 	var archiver ImageArchiver
 	if imageArchiveDir != "" {
 		archiver, err = NewFileImageArchiver(imageArchiveDir)
 		maybefail(err, "image archive dir, %v", err)
 	}
 	sh := StudioHandler{
-		edb:          edb,
-		udb:          udb,
-		drawBackend:  drawBackend,
-		scantemplate: templates.Lookup("scanform.html"),
-		home:         templates.Lookup("home.html"),
-		archiver:     archiver,
+		edb:         edb,
+		udb:         udb,
+		drawBackend: drawBackend,
+		templates:   &templates,
+		//scantemplate: templates.Lookup("scanform.html"),
+		//home:         templates.Lookup("home.html"),
+		archiver: archiver,
 	}
-	edith := editHandler{edb, udb, indextemplate}
+	edith := editHandler{edb, udb, &templates}
 	ih := inviteHandler{
-		edb:        edb,
-		udb:        udb,
-		signupPage: templates.Lookup("signup.html"),
+		edb: edb,
+		udb: udb,
+		//signupPage: templates.Lookup("signup.html"),
+		templates: &templates,
 	}
 
 	mith := makeInviteTokenHandler{
-		edb, udb, templates.Lookup("invitetoken.html"),
+		edb:       edb,
+		udb:       udb,
+		templates: &templates, //.Lookup("invitetoken.html"),
 	}
 
 	mux := http.NewServeMux()
@@ -573,8 +609,9 @@ func main() {
 	mux.Handle("/makeinvite", &mith)
 	mux.Handle("/", &sh)
 	server := http.Server{
-		Addr:    listenAddr,
-		Handler: mux,
+		Addr:        listenAddr,
+		Handler:     mux,
+		BaseContext: func(l net.Listener) context.Context { return ctx },
 	}
 	if pidpath != "" {
 		pidf, err := os.Create(pidpath)
@@ -586,6 +623,9 @@ func main() {
 			pidf.Close()
 		}
 	}
+	sigterm := make(chan os.Signal, 1)
+	go sigtermHandler(sigterm, &server, cf)
+	signal.Notify(sigterm, syscall.SIGTERM)
 	log.Print("serving ", listenAddr)
 	log.Fatal(server.ListenAndServe())
 }
