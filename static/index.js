@@ -1,4 +1,27 @@
 (function(){
+  // TODO: copy in type_seq from data/type_seq.json
+  var type_seq = {
+  "ElectionResults.BallotMeasureContest": "bmcont",
+  "ElectionResults.BallotMeasureSelection": "bmsel",
+  "ElectionResults.Candidate": "candidate",
+  "ElectionResults.CandidateContest": "ccont",
+  "ElectionResults.CandidateSelection": "csel",
+  "ElectionResults.Header": "header",
+  "ElectionResults.Office": "office",
+  "ElectionResults.Party": "party",
+  "ElectionResults.Person": "person",
+  "ElectionResults.ReportingUnit": "gpunit"
+  };
+  var unki = 0;
+  var seqForAttype = function(attype) {
+    var seq = type_seq[attype];
+    if (seq == undefined) {
+      unki += 1;
+      seq = 'unk' + unki + '_';
+      console.log('no seq for attype=' + attype + ', starting ' + seq);
+    }
+    return seq;
+  };
   var electionid = null;
   var urls = null;
   (function() {
@@ -103,12 +126,10 @@
 	for (var i = 0, te; te = templates[i]; i++) {
 	    var attype = te.getAttribute("data-attype");
 	    if (attype) {
-		var ob = {"tmpl":te}
-		var seqname = te.getAttribute("data-seq");
-		if (seqname) {
-		    ob.seq = seqname;
-		}
-		tmplForAttype[attype] = ob;
+	      tmplForAttype[attype] = {
+		"tmpl":te,
+		"seq":seqForAttype(attype)
+	      };
 	    } else {
 	      console.log("template without data-attype ", te);
 	    }
@@ -143,7 +164,7 @@
     // onclick handler for <button class="newrec">
     var newrecDo = function() {
 	var tmplId = this.getAttribute("data-btmpl");
-	var seqName = this.getAttribute("data-seq");
+      var seqName = this.getAttribute("data-seq");
 	var pn = this.parentNode;
 	while (pn) {
 	    var targetelem = firstChildOfClass(pn, "arraygroup");
@@ -173,7 +194,6 @@
 	}
 	return ob;
     }
-    var textareaSplitter = /[, \t\r\n]+/g;
     var whitespace = " \t\r\n";
   var extractQuoted = function(t,startpos,out) {
     // extract quoted substring
@@ -260,6 +280,8 @@
 	var fv = te.value;
 	if (te.type == "checkbox") {
 	  fv = te.checked;
+	} else if (te.type == "number") {
+	  fv = te.valueAsNumber;
 	}
 	if (fv) {
 	  ob[fieldname] = fv;
@@ -269,7 +291,10 @@
 	var fieldname = te.getAttribute("data-key");
 	var fv = te.value;
 	if (fv) {
-	  ob[fieldname] = textToArray(fv);//fv.split(textareaSplitter);
+	  if (te.getAttribute('data-mode') == 'array') {
+	    fv = textToArray(fv);
+	  }
+	  ob[fieldname] = fv;
 	  any = true;
 	}
       } else if (hasClass(te, "arraygroup")) {
@@ -525,9 +550,12 @@
 	    } else if (te.tagName == "TEXTAREA") {
 		var fieldname = te.getAttribute("data-key");
 		var ov = ob[fieldname];
-		if (ov) {
-		    if (ov.length) {
-			ov = arrayToText(ov);
+	      if (ov) {
+		// if (te.getAttribute('data-mode') == 'array') {
+		    if (ov instanceof Array) {
+		      ov = arrayToText(ov);
+		    } else if (te.getAttribute('data-mode') != 'array') {
+		      // nothing. this is fine.
 		    } else {
 			console.log("TODO: unpack " + fieldname + "=" +JSON.stringify(ov)+ " into TEXTAREA")
 		    }
@@ -638,6 +666,10 @@
       return JSON.stringify(rec);
     },
     "ElectionResults.ReportingUnit": function(rec) {
+      if (rec.Name) {return rec.Name;}
+      return JSON.stringify(rec);
+    },
+    "ElectionResults.BallotMeasureContest": function(rec) {
       if (rec.Name) {return rec.Name;}
       return JSON.stringify(rec);
     },

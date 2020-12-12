@@ -484,7 +484,13 @@ func main() {
 	flag.StringVar(&cookieKeyb64, "cookie-key", "", "base64 of 16 bytes for encrypting cookies")
 	var pidpath string
 	flag.StringVar(&pidpath, "pid", "", "path to write process id to")
+	var debug bool
+	flag.BoolVar(&debug, "debug", false, "more logging")
 	flag.Parse()
+
+	if debug {
+		data.DebugOut = os.Stderr
+	}
 
 	//templates, err := template.ParseGlob("gotemplates/*.html")
 	templates, err := HtmlTemplateGlob("gotemplates/*.html")

@@ -3,19 +3,57 @@
 '''demo NIST 1500-100 v2 race in JSON style'''
 
 import json
+import logging
+import os
 import sys
 import time
 
-class IdSource:
-    def __init__(self, root, start=1):
-        self.root = root
-        self.count = start
-    def __call__(self):
-        out = self.root + str(self.count)
-        self.count += 1
-        return out
+logger = logging.getLogger(__name__)
 
-_party_id = IdSource('party')
+idSourcesByType = {}
+
+class _seqSource:
+    def __init__(self, s, sel):
+        self.s = s
+        self.sel = sel
+    def __call__(self):
+        return self.s.next(self.sel)
+
+class Sequences:
+    def __init__(self):
+        self.sequences = {}
+        self.attype = {}
+        self.unki = 0
+    def next(self, sel):
+        v = self.sequences.get(sel, 0) + 1
+        self.sequences[sel] = v
+        return str(sel) + str(v)
+    def source(self, sel):
+        return _seqSource(self, sel)
+    def setTypeMap(self, ob):
+        self.attype = ob
+    def sourceForType(self, attype):
+        sel = self.attype.get(attype)
+        if sel is None:
+            self.unki += 1
+            sel = 'unk%d_'.format(self.unki)
+            logger.warning('unknown attype %r, setting up seq %s', attype, sel)
+            self.attype[attype] = sel
+        return _seqSource(self, sel)
+
+typeSequences = Sequences()
+
+_thisdir = os.path.dirname(os.path.abspath(__file__))
+_path = (_thisdir, os.path.join(os.path.dirname(_thisdir), 'data'))
+for xd in _path:
+    fp = os.path.join(xd, 'type_seq.json')
+    if os.path.exists(fp):
+        with open(fp) as fin:
+            ob = json.load(fin)
+        typeSequences.setTypeMap(ob)
+        break
+
+_party_id = typeSequences.sourceForType("ElectionResults.Party")
 
 parties = [
     {
@@ -74,7 +112,7 @@ def partyIdByName(they, name):
             return p['@id']
     raise KeyError(name)
 
-_person_id = IdSource('person')
+_person_id = typeSequences.sourceForType("ElectionResults.Person")
 
 persons = [
     {
@@ -177,9 +215,9 @@ def personIdByFullName(they, name):
             return p['@id']
     raise KeyError(name)
 
-_candidate_id = IdSource('candidate')
-_csel_id = IdSource('csel')
-_bmsel_id = IdSource('bmsel')
+_candidate_id = typeSequences.sourceForType("ElectionResults.Candidate")
+_csel_id = typeSequences.sourceForType("ElectionResults.CandidateSelection")
+_bmsel_id = typeSequences.sourceForType("ElectionResults.BallotMeasureSelection")
 
 def makeCandidate(fullname, persons):
     return {
@@ -205,7 +243,7 @@ def candidateIdByName(candidates, name):
 def candidateIdsForNames(candidates, *args):
     return [candidateIdByName(candidates, x) for x in args]
 
-_office_id = IdSource('office')
+_office_id = typeSequences.sourceForType("ElectionResults.Office")
 
 offices = [
     {
@@ -232,7 +270,7 @@ def officeIdByName(they, name):
             return x['@id']
     raise KeyError(name)
 
-_gpunit_id = IdSource('gpunit')
+_gpunit_id = typeSequences.sourceForType("ElectionResults.ReportingUnit")
 
 gpunits = [
     {
@@ -245,7 +283,8 @@ gpunits = [
 
 gpunitIdByName = officeIdByName
 
-_contest_id = IdSource('contest')
+_contest_id = typeSequences.sourceForType("ElectionResults.CandidateContest")
+_bmcont_id = typeSequences.sourceForType("ElectionResults.BallotMeasureContest")
 
 def candidateSelectionsFromNames(candidates, *names):
     out = []
@@ -306,7 +345,7 @@ contests = [
     },
     {
         # required
-        "@id": _contest_id(),
+        "@id": _bmcont_id(),
         "@type": "ElectionResults.BallotMeasureContest",
         "Name": "Winning",
         "ElectionDistrictId": gpunitIdByName(gpunits, 'Springfield'),
@@ -316,6 +355,7 @@ contests = [
         "BallotTitle": "Should We Win",
         "BallotSubTitle": "Vote Yes or No",
         "ConStatement": "Winning is hard work, let's take a nap",
+        "ProStatement": "Winning is awesome, let's do it",
         "ContestSelection": yesOrNoBallotMeasureSelections(),
         #"EffectOfAbstain": "Not voting is dumb",
         "FullText": "blah blah blah [insert full text of plan here] fnord fnord fnord",
@@ -344,7 +384,7 @@ contests = [
 
 contestIdByName = officeIdByName
 
-_header_id = IdSource('header')
+_header_id = typeSequences.sourceForType("ElectionResults.Header")
 
 headers = [
     {
@@ -423,5 +463,5 @@ ElectionReport = {
 }
 
 if __name__ == '__main__':
-    json.dump(ElectionReport, sys.stdout, indent=2)
+    json.dump(ElectionReport, sys.stdout, indent=2, sort_keys=True)
     sys.stdout.write('\n')

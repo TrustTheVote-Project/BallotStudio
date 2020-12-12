@@ -1,6 +1,7 @@
 package data
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"strconv"
@@ -55,6 +56,9 @@ type idFixupContext struct {
 
 	// {prefix:next id}
 	nextid map[string]int
+
+	// unk{i}
+	unki int
 }
 
 func (ifc *idFixupContext) fixup(er map[string]interface{}) map[string]interface{} {
@@ -168,8 +172,10 @@ func (ifc *idFixupContext) checkSetSeen(attype, atid string, path []string) (dup
 func (ifc *idFixupContext) newId(attype string) string {
 	prefix, ok := tsmap[attype]
 	if !ok {
-		debug("no seq prefix for %s", attype)
-		prefix = "unk"
+		ifc.unki++
+		prefix = fmt.Sprintf("unk%d_", ifc.unki)
+		debug("no seq prefix for %s, using %s", attype, prefix)
+		tsmap[attype] = prefix
 	}
 	if ifc.nextid == nil {
 		ifc.nextid = make(map[string]int)
@@ -183,27 +189,13 @@ func (ifc *idFixupContext) newId(attype string) string {
 	return out
 }
 
-type TypeSequence struct {
-	// e.g. {"@type": "ElectionResults.Party"}
-	AtType string
-	// e.g. "party"
-	SequencePrefix string
-}
-
-var typeseqs = []TypeSequence{
-	TypeSequence{"ElectionResults.Party", "party"},
-	TypeSequence{"ElectionResults.Person", "person"},
-	TypeSequence{"ElectionResults.Office", "office"},
-	TypeSequence{"ElectionResults.ReportingUnit", "gpunit"},
-	TypeSequence{"ElectionResults.Candidate", "ecand"},
-	TypeSequence{"ElectionResults.CandidateContest", "econt"},
-}
+//go:generate go run ../misc/texttosource/main.go data type_seq.json
 
 var tsmap map[string]string
 
 func init() {
-	tsmap = make(map[string]string, len(typeseqs))
-	for _, ab := range typeseqs {
-		tsmap[ab.AtType] = ab.SequencePrefix
+	err := json.Unmarshal([]byte(type_seq_json), &tsmap)
+	if err != nil {
+		panic(err)
 	}
 }

@@ -71,7 +71,7 @@
 	<tr><td>Abbreviation</td><td><input type="text" data-key="Abbreviation" /></td></tr>
 	<tr><td>Color</td><td><input type="text" data-key="Color" /></td><td class="fieldnote">HTML color, e.g. #ff0000 for red</td></tr>
 	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
-	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
+	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier" data-mode="array"></textarea></td></tr>
 	<tr><td>Recognized Party</td><td><input type="checkbox" data-key="IsRecognizedParty"></td></tr>
 	<tr class="acgroup">
 	  <td>Leaders</td>
@@ -110,7 +110,7 @@
 	<tr><td>Profession</td><td><input type="text" data-key="Profession" /></td></tr>
 	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
 	<tr><td>Date of Birth</td><td><input type="text" data-key="DateOfBirth" /></td></tr>
-	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
+	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier" data-mode="array"></textarea></td></tr>
 	<tr class="acgroup">
 	  <td>Party</td>
 	  <td class="idreflist" data-key="PartyId" data-one="true"></td>
@@ -140,7 +140,7 @@
 	  <td class="idreflist" data-key="ElectionDistrictId" data-one="true"></td>
 	  <td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingUnit" data-action="set"> <small>(Type a region's name to set it to the scope of this Office. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
 	</tr>
-	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
+	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier" data-mode="array"></textarea></td></tr>
 	<tr><td>Filing Deadline</td><td><input type="text" data-key="FilingDeadline" /></td><td>Format must be: YYYY-MM-DD<br/>TODO: proper date picker.</td></tr>
 	<tr><td>Is Partisan</td><td><input type="checkbox" data-key="IsPartisan"></td></tr>
 	<tr class="acgroup">
@@ -210,7 +210,7 @@
 	<tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
 	<!-- CountStatus 0+ array of CountStatus records, effectively {"absentee":"in-process","early":"completed"} procedural detail not relevant to pre-election ballot design -->
 	<tr><td>ElectionAdministration</td><td>TODO: a sub struct with ContactInformation, Name (e.g. Somewhere County Clerk), and a list of PersonIds, "ElectionAdministration"</td></tr>
-	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
+	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier" data-mode="array"></textarea></td></tr>
 	<tr><td>Is Districted</td><td><input type="checkbox" data-key="IsDistricted"></td></tr>
 	<tr><td>Is Mail-Only</td><td><input type="checkbox" data-key="IsMailOnly"></td></tr>
 	<tr><td>Number</td><td><input type="text" data-key="Number" /></td></tr>
@@ -251,7 +251,8 @@
 	</td></tr>
 	<tr><td colspan="2"><h2>Contests</h2>
 	    <div class="arraygroup" data-name="Contest"></div>
-	    <div><button class="newrec" data-btmpl="candcontesttmpl" data-seq="eccont">New Candidate Contest</button></div>
+	    <div><button class="newrec" data-btmpl="candcontesttmpl" data-seq="ccont">New Candidate Contest</button></div>
+	    <div><button class="newrec" data-btmpl="bmcontesttmpl" data-seq="bmcont">New Ballot Measure Contest</button></div>
 	</td></tr>
 	<tr><td colspan="2"><h2>Ballot Styles</h2>
 	    <div class="arraygroup" data-name="BallotStyle"></div>
@@ -275,7 +276,7 @@
 	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.PartyContest,ElectionResults.BallotMeasureContest,ElectionResults.CandidateContest,ElectionResults.RetentionContest" data-action="set"> <small>(Type a contest's name to set it at this point in the ballot. The Contest must already have an entry in the "Contests" section of this election.)</small></div></td>
       </tr>
       <tr><td colspan="2" class="optional">optional:</td></tr>
-      <tr><td>Ordered Items</td><td><textarea data-key="OrderedContestSelectionIds"></textarea></td><td>reference selections by id within the Contest (TODO: smart picker)</td></tr>
+      <tr><td>Ordered Items</td><td><textarea data-key="OrderedContestSelectionIds" data-mode="array"></textarea></td><td>reference selections by id within the Contest (TODO: smart picker)</td></tr>
     </table>
   </template>
 
@@ -288,7 +289,7 @@
 	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.ReportingDevice,ElectionResults.ReportingUnit" data-action="append"> <small>(Type a region's name to add it to the scope of this ballot style. The region must already have an entry in the <a href="#GPUnits">Geo-Political Units</a>.)</small></div></td>
       </tr>
       <tr><td colspan="2" class="optional">optional:</td></tr>
-      <tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
+      <tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier" data-mode="array"></textarea></td></tr>
       <tr><td>Image URIs</td><td><textarea data-key="ImageUri"></textarea></td></tr>
       <tr class="acgroup">
 	<td>Parties</td>
@@ -299,7 +300,7 @@
     </table>
   </template>
 
-  <template id="bmcontesttmpl" data-attype="ElectionResults.BallotMeasureContest">
+  <template id="bmcontesttmpl" data-attype="ElectionResults.BallotMeasureContest" data-seq="bmcont">
     <div class="contest">
     <table border="0">
       <input type="hidden" data-key="attype" value="ElectionResults.BallotMeasureContest" />
@@ -321,7 +322,7 @@
 	  <div><button class="newrec" data-btmpl="bmseltmpl">New Selection</button></div>
       </td></tr>
       <tr><td>Effect of Abstain</td><td><textarea data-key="EffectOfAbstain"></textarea></td></tr>
-      <tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
+      <tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier" data-mode="array"></textarea></td></tr>
       <tr><td>Summary Text</td><td><textarea data-key="SummaryText"></textarea></td></tr>
       <tr><td>Full Text</td><td><textarea data-key="FullText"></textarea></td></tr>
       <tr><td>Enable Rotation</td><td><input type="checkbox" data-key="HasRotation"></td></tr>
@@ -341,7 +342,7 @@
     </div>
   </template>
 
-  <template id="candcontesttmpl" data-attype="ElectionResults.CandidateContest">
+  <template id="candcontesttmpl" data-attype="ElectionResults.CandidateContest" data-seq="ccont">
     <div class="contest">
     <table border="0">
       <input type="hidden" data-key="attype" value="ElectionResults.CandidateContest" />
@@ -359,9 +360,9 @@
       <tr><td>Ballot Subtitle</td><td><input type="text" data-key="BallotSubTitle" /></td></tr>
       <tr><td colspan="2"><h2>Selections</h2>
 	  <div class="arraygroup" data-name="ContestSelection"></div>
-	  <div><button class="newrec" data-btmpl="candseltmpl">New Selection</button></div>
+	  <div><button class="newrec" data-btmpl="candseltmpl" data-seq="csel">New Candidate Selection</button></div>
       </td></tr>
-      <tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
+      <tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier" data-mode="array"></textarea></td></tr>
       <tr><td>Enable Rotation</td><td><input type="checkbox" data-key="HasRotation"></td></tr>
       <tr><td>Number Elected</td><td><input type="number" min="1" step="1" data-key="NumberElected" /></td></tr>
       <tr><td>Number Runoff</td><td><input type="number" min="1" step="1" data-key="NumberRunoff" /></td></tr>
@@ -382,7 +383,7 @@
     </div>
   </template>
 
-  <template id="candseltmpl" data-attype="ElectionResults.CandidateSelection">
+  <template id="candseltmpl" data-attype="ElectionResults.CandidateSelection" data-seq="csel">
     <table border="0">
       <input type="hidden" data-key="attype" value="ElectionResults.CandidateSelection" />
       <tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
@@ -414,7 +415,7 @@
 	<td class="idreflist" data-key="PersonId" data-one="true"></td>
 	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Person" data-action="set"> <small>(Type a person's name to set them as this candidate. The person must already have an entry in the <a href="#People">People section</a>.)</small></div></td>
       </tr>
-      <tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
+      <tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier" data-mode="array"></textarea></td></tr>
       <tr><td>File Date</td><td><input type="text" data-key="FileDate" /></td><td>YYYY-MM-DD</td></tr>
       <tr><td>Is Incumbent</td><td><input type="checkbox" data-key="IsIncumbent"></td></tr>
       <tr><td>Is Top-Ticket</td><td><input type="checkbox" data-key="IsTopTicket"></td></tr>
@@ -427,7 +428,7 @@
       <input type="hidden" data-key="attype" value="ElectionResults.BallotMeasureSelection" />
       <tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
       <tr><td>Selection</td><td><input type="text" data-key="Selection" /></td></tr>
-      <tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier"></textarea></td></tr>
+      <tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier" data-mode="array"></textarea></td></tr>
       <tr><td>Sequence Order</td><td><input type="number" min="1" step="1" data-key="SequenceOrder" /></td></tr>
     </table>
   </template>
