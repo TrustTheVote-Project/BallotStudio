@@ -467,6 +467,14 @@ func sigtermHandler(c <-chan os.Signal, server *http.Server, cf func()) {
 	}
 }
 
+func exists(path string) (out string, ok bool) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return path, true
+	}
+	return "", false
+}
+
 func main() {
 	var listenAddr string
 	flag.StringVar(&listenAddr, "http", ":8180", "interface:port to listen on, default \":8180\"")
@@ -486,6 +494,8 @@ func main() {
 	flag.StringVar(&pidpath, "pid", "", "path to write process id to")
 	var debug bool
 	flag.BoolVar(&debug, "debug", false, "more logging")
+	var flaskPath string
+	flag.StringVar(&flaskPath, "flask", "", "path to flask for running draw/app.py")
 	flag.Parse()
 
 	if debug {
@@ -555,6 +565,16 @@ func main() {
 
 	if len(drawBackend) == 0 {
 		var drawserver draw.DrawServer
+		if flaskPath == "" {
+			for _, fp := range []string{"./flask", "bsvenv/bin/flask"} {
+				var ok bool
+				flaskPath, ok = exists(fp)
+				if ok {
+					break
+				}
+			}
+		}
+		drawserver.FlaskPath = flaskPath
 		err = drawserver.Start()
 		maybefail(err, "could not start draw server, %v", err)
 		drawBackend = drawserver.BackendUrl()
