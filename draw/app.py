@@ -19,7 +19,7 @@ from . import demorace
 from . import draw
 ElectionPrinter = draw.ElectionPrinter
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../templates')))
 if os.getenv("BFLASK_CONF"):
     app.config.from_envvar("BFLASK_CONF")
 

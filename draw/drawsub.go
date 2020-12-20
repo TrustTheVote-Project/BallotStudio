@@ -2,6 +2,7 @@ package draw
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -25,8 +26,6 @@ type DrawBothResponse struct {
 	PdfB64  []byte                 `json:"pdfb64"`
 	Bubbles map[string]interface{} `json:"bubbles"`
 }
-
-// TODO: launch dev draw server:
 
 // DrawServer runs a development
 // FLASK_ENV=development FLASK_APP=draw/app.py "${HOME}/bsvenv/bin/flask" run -p 8081
@@ -168,7 +167,7 @@ func pngPageReader(reader io.Reader, out chan errorOrPngbytes) {
 }
 
 // uses subprocess `pdftoppm`
-func PdfToPng(pdf []byte) (pngbytes [][]byte, err error) {
+func PdfToPng(ctx context.Context, pdf []byte) (pngbytes [][]byte, err error) {
 	if len(pdf) == 0 {
 		return nil, fmt.Errorf("pdftopng but empty pdf")
 	}
@@ -192,6 +191,10 @@ func PdfToPng(pdf []byte) (pngbytes [][]byte, err error) {
 		}
 		return nil, fmt.Errorf("pdftoppm err, %v, %v", err, se)
 	}
-	r := <-pchan
-	return r.pngpages, r.err
+	select {
+	case r := <-pchan:
+		return r.pngpages, r.err
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
 }

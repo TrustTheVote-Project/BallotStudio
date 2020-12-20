@@ -1,5 +1,5 @@
 ballotstudio:	static/demoelection.json .PHONY data/type_seq_json.go
-	CGO_ENABLED=0 go build ./cmd/ballotstudio
+	go build ./cmd/ballotstudio
 
 data/type_seq_json.go:	data/type_seq.json misc/texttosource/main.go
 	cd data && go generate

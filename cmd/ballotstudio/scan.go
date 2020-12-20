@@ -22,7 +22,7 @@ func (sh *StudioHandler) handleElectionScanPOST(w http.ResponseWriter, r *http.R
 	if maybeerr(w, err, 400, "bad image, %v", err) {
 		return
 	}
-	bothob, err := sh.getPdf(itemname)
+	bothob, err := sh.getPdf(r.Context(), itemname)
 	if err != nil {
 		he := err.(*httpError)
 		maybeerr(w, he.err, he.code, he.msg)
@@ -33,7 +33,7 @@ func (sh *StudioHandler) handleElectionScanPOST(w http.ResponseWriter, r *http.R
 	if maybeerr(w, err, 500, "bubble json decode, %v", err) {
 		return
 	}
-	pngbytes, err := sh.getPng(itemname)
+	pngbytes, err := sh.getPng(r.Context(), itemname)
 	if err != nil {
 		he := err.(*httpError)
 		maybeerr(w, he.err, he.code, he.msg)

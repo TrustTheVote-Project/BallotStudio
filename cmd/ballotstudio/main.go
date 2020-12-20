@@ -129,7 +129,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// `^/election/(\d+)\.pdf$`
 	m = pdfPathRe.FindStringSubmatch(path)
 	if m != nil {
-		bothob, err := sh.getPdf(m[1])
+		bothob, err := sh.getPdf(r.Context(), m[1])
 		if err != nil {
 			he := err.(*httpError)
 			maybeerr(w, he.err, he.code, he.msg)
@@ -143,7 +143,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// `^/election/(\d+)_bubbles\.json$`
 	m = bubblesPathRe.FindStringSubmatch(path)
 	if m != nil {
-		bothob, err := sh.getPdf(m[1])
+		bothob, err := sh.getPdf(r.Context(), m[1])
 		if err != nil {
 			he := err.(*httpError)
 			maybeerr(w, he.err, he.code, he.msg)
@@ -161,7 +161,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if maybeerr(w, err, 400, "bad page") {
 			return
 		}
-		pngbytes, err := sh.getPng(m[1])
+		pngbytes, err := sh.getPng(r.Context(), m[1])
 		if err != nil {
 			he := err.(*httpError)
 			maybeerr(w, he.err, he.code, he.msg)
@@ -178,7 +178,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// `^/election/(\d+)\.png$`
 	m = pngPathRe.FindStringSubmatch(path)
 	if m != nil {
-		pngbytes, err := sh.getPng(m[1])
+		pngbytes, err := sh.getPng(r.Context(), m[1])
 		if err != nil {
 			he := err.(*httpError)
 			maybeerr(w, he.err, he.code, he.msg)
@@ -316,7 +316,7 @@ func (sh *StudioHandler) handleElectionDocGET(w http.ResponseWriter, r *http.Req
 	w.Write(nbody)
 }
 
-func (sh *StudioHandler) getPdf(el string) (bothob *draw.DrawBothOb, err error) {
+func (sh *StudioHandler) getPdf(ctx context.Context, el string) (bothob *draw.DrawBothOb, err error) {
 	cr := sh.cache.Get(el)
 	if cr != nil {
 		bothob = cr.(*draw.DrawBothOb)
@@ -338,7 +338,7 @@ func (sh *StudioHandler) getPdf(el string) (bothob *draw.DrawBothOb, err error) 
 	return
 }
 
-func (sh *StudioHandler) getPng(el string) (pngbytes [][]byte, err error) {
+func (sh *StudioHandler) getPng(ctx context.Context, el string) (pngbytes [][]byte, err error) {
 	pngkey := el + ".png"
 	cr := sh.cache.Get(pngkey)
 	if cr != nil {
@@ -346,11 +346,11 @@ func (sh *StudioHandler) getPng(el string) (pngbytes [][]byte, err error) {
 		return
 	}
 	var bothob *draw.DrawBothOb
-	bothob, err = sh.getPdf(el)
+	bothob, err = sh.getPdf(ctx, el)
 	if err != nil {
 		return nil, err
 	}
-	pngbytes, err = draw.PdfToPng(bothob.Pdf)
+	pngbytes, err = draw.PdfToPng(ctx, bothob.Pdf)
 	if err != nil {
 		return nil, &httpError{500, "png fail", err}
 	}
