@@ -1,0 +1,12 @@
+{
+  "ElectionResults.BallotMeasureContest": "bmcont",
+  "ElectionResults.BallotMeasureSelection": "bmsel",
+  "ElectionResults.Candidate": "candidate",
+  "ElectionResults.CandidateContest": "ccont",
+  "ElectionResults.CandidateSelection": "csel",
+  "ElectionResults.Header": "header",
+  "ElectionResults.Office": "office",
+  "ElectionResults.Party": "party",
+  "ElectionResults.Person": "person",
+  "ElectionResults.ReportingUnit": "gpunit"
+}
