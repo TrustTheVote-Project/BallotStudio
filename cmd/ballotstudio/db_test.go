@@ -83,6 +83,14 @@ func testEdb(t *testing.T, edb electionAppDB) {
 		t.Errorf("update-get neq a=%#v b=%v", *xe, *e2)
 	}
 
+	eids, err := edb.ElectionsForUser(er.Owner)
+	mtfail(t, err, "er ElectionsForUser, %v", err)
+	if len(eids) != 1 {
+		t.Errorf("expected 1 election list but got %d", len(eids))
+	} else if eids[0] != newid {
+		t.Errorf("listed election for owner %d wrong id, wanted %d, got %d", er.Owner, newid, eids[0])
+	}
+
 	// invite token stuff
 	const token = "tok"
 	now := time.Now()

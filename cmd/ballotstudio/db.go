@@ -20,6 +20,7 @@ type electionAppDB interface {
 	Setup() error
 	GetElection(id int64) (*electionRecord, error)
 	PutElection(electionRecord) (newid int64, err error)
+	ElectionsForUser(uid int64) (ids []int64, err error)
 	MakeInviteToken(token string, expires time.Time) error
 	PeekInviteToken(token string) (ok bool, expires time.Time, err error)
 	UseInviteToken(token string) (ok bool, err error)
@@ -72,6 +73,25 @@ func (sdb *sqliteedb) PutElection(er electionRecord) (newid int64, err error) {
 	}
 	newid = er.Id
 	_, err = sdb.db.Exec(`UPDATE elections SET data = $1, owner = $2, meta = $3 WHERE ROWID = $4`, er.Data, er.Owner, er.Meta, er.Id)
+	return
+}
+
+func (sdb *sqliteedb) ElectionsForUser(uid int64) (ids []int64, err error) {
+	var rows *sql.Rows
+	rows, err = sdb.db.Query(`SELECT ROWID FROM elections WHERE owner = $1`, uid)
+	if err != nil {
+		err = fmt.Errorf("sqlite user er doc scan, %v", err)
+		return
+	}
+	for rows.Next() {
+		var eid int64
+		err = rows.Scan(&eid)
+		if err != nil {
+			err = fmt.Errorf("sqlite user er doc row, %v", err)
+			return
+		}
+		ids = append(ids, eid)
+	}
 	return
 }
 
@@ -171,6 +191,25 @@ func (sdb *postgresedb) PutElection(er electionRecord) (newid int64, err error) 
 			err = fmt.Errorf("pg put election update, %v", err)
 		}
 		newid = er.Id
+	}
+	return
+}
+
+func (sdb *postgresedb) ElectionsForUser(uid int64) (ids []int64, err error) {
+	var rows *sql.Rows
+	rows, err = sdb.db.Query(`SELECT id FROM elections WHERE owner = $1`, uid)
+	if err != nil {
+		err = fmt.Errorf("pg user er doc scan, %v", err)
+		return
+	}
+	for rows.Next() {
+		var eid int64
+		err = rows.Scan(&eid)
+		if err != nil {
+			err = fmt.Errorf("pg user er doc row, %v", err)
+			return
+		}
+		ids = append(ids, eid)
 	}
 	return
 }

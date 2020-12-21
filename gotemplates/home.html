@@ -13,6 +13,12 @@
     <li><a href="/edit">Edit a new election</a></li>
     <li><a href="/makeinvite">Make invite token</a></li>
   </ul>
+  {{if .ElectionIds}}
+  <h2>Election Documents</h2>
+  <ul>
+    {{range .ElectionIds}}<li><a href="/edit/{{.}}">{{.}}</a></li>{{end}}
+  </ul>
+  {{end}}
   {{ else }}
   <form method="POST">
     <div>

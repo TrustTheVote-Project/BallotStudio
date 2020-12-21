@@ -221,12 +221,17 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if maybeerr(w, err, 500, "home.html: %v", err) {
 		return
 	}
-	home.Execute(w, HomeContext{user, sh.authmods})
+	var eids []int64
+	if user != nil {
+		eids, _ = sh.edb.ElectionsForUser(user.Guid)
+	}
+	home.Execute(w, HomeContext{user, sh.authmods, eids})
 }
 
 type HomeContext struct {
-	User     *login.User
-	AuthMods []*login.OauthCallbackHandler
+	User        *login.User
+	AuthMods    []*login.OauthCallbackHandler
+	ElectionIds []int64
 }
 
 func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Request, user *login.User, itemname string, itemid int64) {
@@ -424,7 +429,7 @@ func (ec EditContext) JsonAttr() template.HTMLAttr {
 }
 
 // http.Handler
-// just fills out index.html template
+// just fills out edit.html template
 func (edit *editHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	electionid := int64(0)
 	if strings.HasPrefix(r.URL.Path, "/edit/") {
@@ -436,8 +441,8 @@ func (edit *editHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	ec := EditContext{}
 	ec.set(electionid)
-	t, err := edit.ts.Lookup("index.html")
-	if maybeerr(w, err, 500, "index.html: %v", err) {
+	t, err := edit.ts.Lookup("edit.html")
+	if maybeerr(w, err, 500, "edit.html: %v", err) {
 		return
 	}
 	err = t.Execute(w, ec)
@@ -507,8 +512,8 @@ func main() {
 	templates, err := HtmlTemplateGlob("gotemplates/*.html")
 	templates.Reloading = true // TODO: disable for prod
 	maybefail(err, "parse templates, %v", err)
-	_, err = templates.Lookup("index.html")
-	maybefail(err, "no index.html, %v", err)
+	_, err = templates.Lookup("edit.html")
+	maybefail(err, "no edit.html, %v", err)
 
 	if cookieKeyb64 == "" {
 		ck := login.GenerateCookieKey()
@@ -592,9 +597,7 @@ func main() {
 		udb:         udb,
 		drawBackend: drawBackend,
 		templates:   &templates,
-		//scantemplate: templates.Lookup("scanform.html"),
-		//home:         templates.Lookup("home.html"),
-		archiver: archiver,
+		archiver:    archiver,
 	}
 	edith := editHandler{edb, udb, &templates}
 	ih := inviteHandler{
