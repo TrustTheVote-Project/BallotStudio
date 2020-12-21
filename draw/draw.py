@@ -466,9 +466,10 @@ class BallotMeasureContest:
         c.rect(x, pos - gs.subtitleLeading, width, gs.subtitleLeading, fill=1, stroke=0)
         c.setFillColorRGB(0,0,0)
         c.setStrokeColorRGB(0,0,0)
+        # TODO: skip BallotSubTitle if null/empty
         txto = c.beginText(x + 1 + (0.1 * inch), pos - gs.subtitleFontSize)
         txto.setFont(gs.subtitleFontName, gs.subtitleFontSize)
-        txto.textLines(self.BallotSubTitle)
+        txto.textLines(self.BallotSubTitle or '')
         c.drawText(txto)
         pos -= gs.subtitleLeading
         c.setFillColorRGB(0,0,0)
@@ -659,6 +660,13 @@ class BallotStyle:
         self._numPages = None
         self._pageHeader = None
         self._bubbles = None
+    def select(self, selectors):
+        for sel in selectors:
+            if sel in self.ext:
+                return True
+            if sel in self.image_uri:
+                return True
+        return False
     def pageHeader(self):
         """e.g.
         Official Ballot for General Election
@@ -861,32 +869,40 @@ class ElectionPrinter:
             return self.election_type_other
         return _election_types_en[self.election_type]
 
-    def draw(self, outdir=None, outname_prefix='', outfile=None):
+    def drawToDir(self, outdir, outname_prefix=None, selectors=None):
+        outpaths = []
+        _ensure_fonts()
+        if outname_prefix is None:
+            outname_prefix = self.name + '_'
+        for i, bs in enumerate(self.ballot_styles):
+            if (selectors is not None) and not bs.select(selectors):
+                continue
+            names = ','.join([gpunitName(x) for x in bs.gpunits])
+            if len(self.ballot_styles) > 1:
+                bs_fname = '{}{}_{}.pdf'.format(outname_prefix, i, names)
+            else:
+                bs_fname = '{}{}.pdf'.format(outname_prefix, names)
+            bs_fname = os.path.join(outdir, bs_fname)
+            outpaths.append(bs_fname)
+            c = canvas.Canvas(bs_fname, pagesize=gs.pagesize) # pageCompression=1
+            bs.draw(c, letter)
+            c.save()
+        return outpaths
+
+    def drawToFile(self, outfile=None, selectors=None):
         # TODO: one specific ballot style or all of them to separate PDFs
         _ensure_fonts()
         any = False
+        c = canvas.Canvas(outfile, pagesize=gs.pagesize) # pageCompression=1
         for i, bs in enumerate(self.ballot_styles):
+            if (selectors is not None) and not bs.select(selectors):
+                continue
             any = True
-            names = ','.join([gpunitName(x) for x in bs.gpunits])
-            if outfile is not None:
-                outarg = outfile
-                bs_fname = "data"
-            elif len(self.ballot_styles) > 1:
-                bs_fname = '{}{}_{}.pdf'.format(outname_prefix, i, names)
-                outarg = bs_fname
-            else:
-                bs_fname = '{}{}.pdf'.format(outname_prefix, names)
-                outarg = bs_fname
-            if outdir and not outfile:
-                bs_fname = os.path.join(outdir, bs_fname)
-                outarg = bs_fname
-            c = canvas.Canvas(outarg, pagesize=gs.pagesize) # pageCompression=1
             bs.draw(c, letter)
+        if any:
             c.save()
-            #sys.stdout.write(bs_fname + '\n')
-            return bs_fname
-        if not any:
-            raise Exception('no BallotStyle to draw')
+        else:
+            raise Exception('No BallotStyles drawn for selectors {!r}'.format(selectors))
     def getBubbles(self):
         """{
 "pagesize": (width pt, height pt),
@@ -932,7 +948,7 @@ def main():
             er = json.load(fin)
     for el in er.get('Election', []):
         ep = ElectionPrinter(er, el)
-        fname_written = ep.draw(args.outdir, args.prefix)
+        fname_written = ep.drawToDir(args.outdir, args.prefix)
         sys.stdout.write(fname_written + '\n')
         if args.bubbles:
             if args.bubbles == '-':

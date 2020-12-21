@@ -158,7 +158,7 @@ def demoracepdf():
     el = elections[0]
     ep = ElectionPrinter(er, el)
     pdfbytes = io.BytesIO()
-    ep.draw(outfile=pdfbytes)
+    ep.drawToFile(outfile=pdfbytes)
     pdfbytes = pdfbytes.getvalue()
     return pdfbytes, 200, {"Content-Type":"application/pdf"}
 
@@ -180,7 +180,7 @@ def drawHandler():
     el = elections[0]
     ep = ElectionPrinter(er, el)
     pdfbytes = io.BytesIO()
-    ep.draw(outfile=pdfbytes)
+    ep.drawToFile(outfile=pdfbytes)
     pdfbytes = pdfbytes.getvalue()
     if len(pdfbytes) == 0:
         app.logger.warning('zero byte pdf /draw')
@@ -260,7 +260,7 @@ def _er_bothob(er):
     el = elections[0]
     ep = ElectionPrinter(er, el)
     pdfbytes = io.BytesIO()
-    ep.draw(outfile=pdfbytes)
+    ep.drawToFile(outfile=pdfbytes)
     pdfbytes = pdfbytes.getvalue()
     return {'pdf':pdfbytes, 'bubbles':ep.getBubbles()}
 
