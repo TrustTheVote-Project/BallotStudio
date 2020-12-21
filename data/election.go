@@ -52,7 +52,7 @@ type idFixupContext struct {
 
 	messages []string
 
-	needsNewId []map[string]interface{}
+	needsNewId []recNeedsNewId
 
 	// {prefix:next id}
 	nextid map[string]int
@@ -61,13 +61,25 @@ type idFixupContext struct {
 	unki int
 }
 
+type recNeedsNewId struct {
+	path []string
+	er   map[string]interface{}
+}
+
+func recordNeedsNewId(er map[string]interface{}, path []string) (out recNeedsNewId) {
+	out.path = make([]string, len(path))
+	copy(out.path, path)
+	out.er = er
+	return
+}
+
 func (ifc *idFixupContext) fixup(er map[string]interface{}) map[string]interface{} {
 	path := make([]string, 0, 20)
 	er = ifc.idFixupInner(er, path)
 	for _, rec := range ifc.needsNewId {
-		newid := ifc.newId(rec["@type"].(string))
-		debug("needs new id (%s %s) -> %s\n", rec["@type"], rec["@id"], newid)
-		rec["@id"] = newid
+		newid := ifc.newId(rec)
+		debug("needs new id (%s %s) -> %s\n", rec.er["@type"], rec.er["@id"], newid)
+		rec.er["@id"] = newid
 	}
 	return er
 }
@@ -88,7 +100,7 @@ func (ifc *idFixupContext) idFixupInner(er map[string]interface{}, path []string
 		debug("%s (%s %s)\n", pathstr(path, ""), attype, atid)
 		dup := ifc.checkSetSeen(attype.(string), atid.(string), path)
 		if dup {
-			ifc.needsNewId = append(ifc.needsNewId, er)
+			ifc.needsNewId = append(ifc.needsNewId, recordNeedsNewId(er, path))
 		}
 	} else if hasid && !hasat {
 		ifc.msg("@id=%v but not @type at %#v", atid, path)
@@ -169,7 +181,8 @@ func (ifc *idFixupContext) checkSetSeen(attype, atid string, path []string) (dup
 	return
 }
 
-func (ifc *idFixupContext) newId(attype string) string {
+func (ifc *idFixupContext) newId(rec recNeedsNewId) (newatid string) {
+	attype := rec.er["@type"].(string)
 	prefix, ok := tsmap[attype]
 	if !ok {
 		ifc.unki++
@@ -180,13 +193,17 @@ func (ifc *idFixupContext) newId(attype string) string {
 	if ifc.nextid == nil {
 		ifc.nextid = make(map[string]int)
 	}
-	ni, ok := ifc.nextid[prefix]
-	if !ok {
-		ni = 1
+	dup := true
+	for dup {
+		ni, ok := ifc.nextid[prefix]
+		if !ok {
+			ni = 1
+		}
+		newatid = fmt.Sprintf("%s%d", prefix, ni)
+		ifc.nextid[prefix] = ni + 1
+		dup = ifc.checkSetSeen(attype, newatid, rec.path)
 	}
-	out := fmt.Sprintf("%s%d", prefix, ni)
-	ifc.nextid[prefix] = ni + 1
-	return out
+	return newatid
 }
 
 //go:generate go run ../misc/texttosource/main.go data type_seq.json
