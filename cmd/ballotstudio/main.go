@@ -500,6 +500,7 @@ func main() {
 
 	if debug {
 		data.DebugOut = os.Stderr
+		draw.DebugOut = os.Stderr
 	}
 
 	//templates, err := template.ParseGlob("gotemplates/*.html")

@@ -146,7 +146,7 @@ func pngPageReader(reader io.Reader, out chan errorOrPngbytes) {
 			return
 		}
 		if err != nil {
-			r.err = err
+			r.err = fmt.Errorf("reading page size, %s", err)
 			out <- r
 			return
 		}
@@ -155,14 +155,16 @@ func pngPageReader(reader io.Reader, out chan errorOrPngbytes) {
 		if b < pnglen {
 			pnglen = b
 		}
+		debug("got png page len=%d\n", pnglen)
 		nextpng := make([]byte, pnglen)
 		_, err = io.ReadFull(reader, nextpng)
 		if err != nil {
-			r.err = err
+			r.err = fmt.Errorf("reading page, %s", err)
 			out <- r
 			return
 		}
 		r.pngpages = append(r.pngpages, nextpng)
+		debug("got png page[%d]\n", len(r.pngpages)-1)
 	}
 }
 
@@ -172,13 +174,15 @@ func PdfToPng(ctx context.Context, pdf []byte) (pngbytes [][]byte, err error) {
 		return nil, fmt.Errorf("pdftopng but empty pdf")
 	}
 	// requires poppler fork from https://github.com/brianolson/poppler
-	cmd := exec.Command("pdftoppm", "-png", "-pngMultiBlock") // , "-singlefile"
+	cmd := exec.CommandContext(ctx, "pdftoppm", "-png", "-pngMultiBlock") // , "-singlefile"
 	if err != nil {
 		return nil, fmt.Errorf("could not cmd pdftoppm, %v", err)
 	}
-	reader, writer := io.Pipe()
 	cmd.Stdin = bytes.NewReader(pdf)
-	cmd.Stdout = writer
+	reader, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, fmt.Errorf("cm.StdoutPipe(), %v", err)
+	}
 	stderr := bytes.Buffer{}
 	cmd.Stderr = &stderr
 	pchan := make(chan errorOrPngbytes, 1)
@@ -191,10 +195,20 @@ func PdfToPng(ctx context.Context, pdf []byte) (pngbytes [][]byte, err error) {
 		}
 		return nil, fmt.Errorf("pdftoppm err, %v, %v", err, se)
 	}
+	debug("pdftoppm ran, getting result...\n")
 	select {
 	case r := <-pchan:
 		return r.pngpages, r.err
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
+}
+
+var DebugOut io.Writer
+
+func debug(format string, args ...interface{}) {
+	if DebugOut == nil {
+		return
+	}
+	fmt.Fprintf(DebugOut, format, args...)
 }
