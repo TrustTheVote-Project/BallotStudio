@@ -543,7 +543,10 @@
 		    fieldname = "@id";
 		}
 		var ov = ob[fieldname];
-		if (ov) {
+	        if (te.type == "checkbox") {
+		    te.checked = Boolean(ov)
+		    handled.push(fieldname);
+	        } else if (ov) {
 		    te.value = ov;
 		    handled.push(fieldname);
 		}
