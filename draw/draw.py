@@ -384,12 +384,21 @@ class CandidateSelection:
         textx = x + gs.bubbleLeftPad + gs.bubbleWidth + gs.bubbleRightPad
         # TODO: assumes one line
         c.setFillColorRGB(0,0,0)
-        ballotName = self.candidates[0].get('BallotName', 'error: Ballot Name is required')
-        txto = c.beginText(textx, y - gs.candidateFontSize)
-        txto.setFont(gs.candidateFontName, gs.candidateFontSize, gs.candidateLeading)
-        txto.textLines(ballotName) # TODO: fix for multiple candidate ticket
-        c.drawText(txto)
-        ypos = y - gs.candidateLeading
+        ballotName = None
+        if not self.candidates:
+            if not self.IsWriteIn:
+                ballotName = 'error: no candidates in selection'
+        else:
+            ballotName = self.candidates[0].get('BallotName')
+            if ballotName is None:
+                ballotName = 'error: Ballot Name is required in csel for {}'.format(' '.join(self.CandidateIds))
+        ypos = y
+        if ballotName:
+            txto = c.beginText(textx, y - gs.candidateFontSize)
+            txto.setFont(gs.candidateFontName, gs.candidateFontSize, gs.candidateLeading)
+            txto.textLines(ballotName) # TODO: fix for multiple candidate ticket
+            c.drawText(txto)
+            ypos-= gs.candidateLeading
         if self.subtext:
             txto = c.beginText(textx, ypos - gs.candsubFontSize)
             txto.setFont(gs.candsubFontName, gs.candsubFontSize, leading=gs.candsubLeading)
