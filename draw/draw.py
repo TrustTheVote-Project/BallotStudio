@@ -384,9 +384,10 @@ class CandidateSelection:
         textx = x + gs.bubbleLeftPad + gs.bubbleWidth + gs.bubbleRightPad
         # TODO: assumes one line
         c.setFillColorRGB(0,0,0)
+        ballotName = self.candidates[0].get('BallotName', 'error: Ballot Name is required')
         txto = c.beginText(textx, y - gs.candidateFontSize)
         txto.setFont(gs.candidateFontName, gs.candidateFontSize, gs.candidateLeading)
-        txto.textLines(self.candidates[0]['BallotName']) # TODO: fix for multiple candidate ticket
+        txto.textLines(ballotName) # TODO: fix for multiple candidate ticket
         c.drawText(txto)
         ypos = y - gs.candidateLeading
         if self.subtext:
@@ -882,7 +883,8 @@ class ElectionPrinter:
                 bs_fname = '{}{}_{}.pdf'.format(outname_prefix, i, names)
             else:
                 bs_fname = '{}{}.pdf'.format(outname_prefix, names)
-            bs_fname = os.path.join(outdir, bs_fname)
+            if outdir:
+                bs_fname = os.path.join(outdir, bs_fname)
             outpaths.append(bs_fname)
             c = canvas.Canvas(bs_fname, pagesize=gs.pagesize) # pageCompression=1
             bs.draw(c, letter)
@@ -948,8 +950,8 @@ def main():
             er = json.load(fin)
     for el in er.get('Election', []):
         ep = ElectionPrinter(er, el)
-        fname_written = ep.drawToDir(args.outdir, args.prefix)
-        sys.stdout.write(fname_written + '\n')
+        fnames_written = ep.drawToDir(args.outdir, args.prefix)
+        sys.stdout.write(', '.join(fnames_written) + '\n')
         if args.bubbles:
             if args.bubbles == '-':
                 bout = sys.stdout
