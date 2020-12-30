@@ -73,6 +73,9 @@ fontsansbold = 'Liberation Sans Bold'
 
 class Settings:
     def __init__(self):
+        self.headerFontName = fontsansbold
+        self.headerFontSize = 14
+        self.headerLeading = 15.2
         self.titleFontName = fontsansbold
         self.titleFontSize = 12
         self.titleBGColor = (.85, .85, .85)
@@ -268,10 +271,13 @@ headDwarfRace = Contest(
 )
 
 def gpunitName(gpunit):
+    name = gpunit.get('Name')
+    if name is not None:
+        return name
+    eis = gpunit.get('ExternalIdentifier')
+    if eis:
+        return ','.join(eis)
     if gpunit['@type'] == 'ElectionResults.ReportingUnit':
-        name = gpunit.get('Name')
-        if name is not None:
-            return name
         raise Exception('gpunit with no Name {!r}'.format(gpunit))
     elif gpunit['@type'] == 'ElectionResults.ReportingDevice':
         raise TodoException('TODO: build reporting device name from sub units')
@@ -368,6 +374,7 @@ class CandidateSelection:
         if self.subtext:
             out += gs.candsubLeading
         if self.IsWriteIn:
+            out += gs.candsubLeading
             out += gs.writeInHeight
         out += 0.1 * inch
         return out
@@ -398,29 +405,31 @@ class CandidateSelection:
             txto.setFont(gs.candidateFontName, gs.candidateFontSize, gs.candidateLeading)
             txto.textLines(ballotName) # TODO: fix for multiple candidate ticket
             c.drawText(txto)
-            ypos-= gs.candidateLeading
+            ypos -= gs.candidateLeading
         if self.subtext:
             txto = c.beginText(textx, ypos - gs.candsubFontSize)
             txto.setFont(gs.candsubFontName, gs.candsubFontSize, leading=gs.candsubLeading)
             txto.textLines(self.subtext)
             c.drawText(txto)
             ypos -= gs.candsubLeading
+        if self.IsWriteIn:
+            txto = c.beginText(textx, ypos - gs.candsubFontSize)
+            txto.setFont(gs.candsubFontName, gs.candsubFontSize, leading=gs.candsubLeading)
+            txto.textLines('write-in:')
+            c.drawText(txto)
+            ypos -= gs.candsubLeading
+            ypos -= gs.writeInHeight
+            c.setStrokeColorRGB(0,0,0)
+            c.setDash([4,4])
+            c.setLineWidth(0.5)
+            c.line(textx, ypos, x+width, ypos)
+            c.setDash()
         # separator line
         c.setStrokeColorRGB(0,0,0)
         c.setLineWidth(0.25)
         sepy = ypos - (0.1 * inch)
         c.line(textx, sepy, x+width, sepy)
         return
-
-def rehydrateContestSelection(election, contestselection_json_object):
-    cs = contestselection_json_object
-    cstype = cs['@type']
-    if cstype == 'ElectionResults.CandidateSelection':
-        return CandidateSelection(election, contestselection_json_object)
-    elif cstype == 'ElectionResults.BallotMeasureSelection':
-        return BallotMeasureSelection(election, contestselection_json_object)
-    # TODO ElectionResults.PartySelection
-    raise Exception('unkown ContestSelection type {!r}'.format(cstype))
 
 class BallotMeasureContest:
     "NIST 1500-100 v2 ElectionResults.BallotMeasureContest"
@@ -455,9 +464,10 @@ class BallotMeasureContest:
         self.Name = co['Name']
         self.ElectionDistrictId = co['ElectionDistrictId'] # reference to a ReportingUnit gpunit
         setOptionalFields(self, self.co)
+        self.draw_selections = [erctx.makeDrawOb(x) for x in self.ContestSelection]
     def draw(self, c, x, y, width, draw_selections=None):
-        if draw_selections is not None:
-            self.draw_selections = draw_selections
+        if draw_selections is None:
+            draw_selections = self.draw_selections
         pos = y - 3 # leave room for 3pt top border
         # title
         c.setStrokeColorRGB(*gs.titleBGColor)
@@ -487,7 +497,7 @@ class BallotMeasureContest:
         # TODO SummaryText
         pos -= 0.1 * inch # header-choice gap
         maxheight = self._maxheight(width-1)
-        for ds in self.draw_selections:
+        for ds in draw_selections:
             dy = ds.height(width)
             ds.draw(c, x+1, pos, width-1)
             pos -= maxheight
@@ -505,11 +515,19 @@ class BallotMeasureContest:
         path.lineTo(x+width, pos-0.5)
         c.drawPath(path, stroke=1)
         return
-    def _maxheight(self, width):
-        heights = [ds.height(width) for ds in self.draw_selections]
-        return max(heights)
-    def height(self, width):
-        out = self._maxheight(width-1) * len(self.draw_selections)
+    def _maxheight(self, width, draw_selections=None):
+        draw_selections = draw_selections or self.draw_selections
+        mh = None
+        for ds in draw_selections:
+            if getattr(ds, 'IsWriteIn', False):
+                continue
+            h = ds.height(width)
+            if mh is None or h > mh:
+                mh = h
+        return mh
+    def height(self, width, draw_selections=None):
+        draw_selections = draw_selections or self.draw_selections
+        out = self._maxheight(width-1) * len(draw_selections)
         out += 4 # top and bottom border
         out += gs.titleLeading + gs.subtitleLeading
         out += 0.1 * inch # header-choice gap
@@ -549,10 +567,10 @@ class CandidateContest:
             self.offices = [erctx.getRawOb(x) for x in self.OfficeIds]
         else:
             self.offices = []
-        self.draw_selections = self.ContestSelection
+        self.draw_selections = [erctx.makeDrawOb(x) for x in self.ContestSelection]
     def draw(self, c, x, y, width, draw_selections=None):
-        if draw_selections is not None:
-            self.draw_selections = draw_selections
+        if draw_selections is None:
+            draw_selections = self.draw_selections
         pos = y - 3 # leave room for 3pt top border
         # title
         c.setStrokeColorRGB(*gs.titleBGColor)
@@ -579,11 +597,11 @@ class CandidateContest:
         pos -= 0.1 * inch # header-choice gap
         c.setFillColorRGB(0,0,0)
         c.setStrokeColorRGB(0,0,0)
-        maxheight = self._maxheight(width-1)
-        for ds in self.draw_selections:
+        maxheight = self._maxheight(width-1, draw_selections)
+        for ds in draw_selections:
             dy = ds.height(width)
             ds.draw(c, x+1, pos, width-1)
-            pos -= maxheight
+            pos -= max(maxheight,dy)
         pos -= 0.1 * inch # bottom padding
 
         # top border
@@ -598,11 +616,26 @@ class CandidateContest:
         path.lineTo(x+width, pos-0.5)
         c.drawPath(path, stroke=1)
         return
-    def _maxheight(self, width):
-        heights = [ds.height(width) for ds in self.draw_selections]
-        return max(heights)
-    def height(self, width):
-        out = self._maxheight(width-1) * len(self.draw_selections)
+    def _maxheight(self, width, draw_selections=None):
+        "max height of the normal candidates. write-in is different"
+        if draw_selections is None:
+            draw_selections = self.draw_selections
+        mh = None
+        for ds in draw_selections:
+            if getattr(ds, 'IsWriteIn', False):
+                # don't count height of write-in
+                continue
+            h = ds.height(width)
+            if mh is None or h > mh:
+                mh = h
+        return mh
+    def height(self, width, draw_selections=None):
+        if draw_selections is None:
+            draw_selections = self.draw_selections
+        mh = self._maxheight(width-1, draw_selections=draw_selections)
+        out = 0
+        for ds in draw_selections:
+            out += max(mh, ds.height(width))
         out += 4 # top and bottom border
         out += gs.titleLeading + gs.subtitleLeading
         out += 0.1 * inch # header-choice gap
@@ -640,15 +673,9 @@ class OrderedContest:
             self.ordered_selections = raw_selections
         self.draw_selections = [erctx.makeDrawOb(x) for x in self.ordered_selections]
     def _maxheight(self, width):
-        heights = [ds.height(width) for ds in self.draw_selections]
-        return max(heights)
+        return self.contest._maxheight(width, draw_selections=self.draw_selections)
     def height(self, width):
-        out = self._maxheight(width-1) * len(self.draw_selections)
-        out += 4 # top and bottom border
-        out += gs.titleLeading + gs.subtitleLeading
-        out += 0.1 * inch # header-choice gap
-        out += 0.1 * inch # bottom padding
-        return out
+        return self.contest.height(width, draw_selections=self.draw_selections)
     def draw(self, c, x, y, width):
         self.contest.draw(c, x, y, width, draw_selections=self.draw_selections)
         return
@@ -693,6 +720,8 @@ class BallotStyle:
             self.election.electionTypeTitle(), gpunitnames, datepart)
         self._pageHeader = text
         return self._pageHeader
+    def name(self):
+        return ','.join([gpunitName(gpu) for gpu in self.gpunits])
     def draw(self, c, pagesize):
         widthpt, heightpt = pagesize
         contenttop = heightpt - gs.pageMargin
@@ -700,6 +729,7 @@ class BallotStyle:
         contentleft = gs.pageMargin
         contentright = widthpt - gs.pageMargin
         y = contenttop
+        x = contentleft
         page = 1
         if gs.debugPageOutline:
             # draw page outline debug
@@ -718,19 +748,21 @@ class BallotStyle:
             c.drawString(contentright - dtw, contentbottom + (gs.nowstrFontSize * 0.2), nowstr)
             contentbottom += (gs.nowstrFontSize * 1.2)
 
-        # TODO: real instruction box instead of fake
-        height = 2.9 * inch
+        # Header
+        # TODO: configurable, templated
         c.setStrokeColorRGB(0,0,0)
-        c.rect(contentleft, y - height, contentright - contentleft, height, stroke=1, fill=0)
-        c.setFont(fontsans, 12)
-        c.drawString(contentleft + 0.1*inch, y - 0.3*inch, 'instruction text here, etc.')
-        contenttop -= height
+        txto = c.beginText(contentleft + 0.1*inch, y - gs.headerFontSize)
+        txto.setFont(gs.headerFontName, gs.headerFontSize, gs.headerLeading)
+        txto.textLines('''Header Election Name, YYYY-MM-DD
+Precinct 1234, Some Town, Statename, page {page} of TODO'''.format(page=page))
+        c.drawText(txto)
+        contenttop -= gs.headerLeading * 2 + 0.1*inch
+        # TODO: instruction box
         y = contenttop
 
         # (columnwidth * columns) + (gs.columnMargin * (columns - 1)) == width
         columns = 2
         columnwidth = (contentright - contentleft - (gs.columnMargin * (columns - 1))) / columns
-        x = contentleft
         bubbles = {}
         # content, 2 columns
         colnum = 1

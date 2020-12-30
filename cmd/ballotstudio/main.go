@@ -94,10 +94,27 @@ func init() {
 	docPathRe = regexp.MustCompile(`^/election/(\d+)$`)
 }
 
+var truthy []string = []string{"t", "1", "true"}
+
+func qbool(q string) bool {
+	if q == "" {
+		return false
+	}
+	q = strings.ToLower(q)
+	for _, t := range truthy {
+		if q == t {
+			return true
+		}
+	}
+	return false
+}
+
 // implement http.Handler
 func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	user, _ := login.GetHttpUser(w, r, sh.udb)
 	path := r.URL.Path
+	query := r.URL.Query()
+	redraw := qbool(query.Get("redraw"))
 	if path == "/election" {
 		if r.Method == "POST" {
 			sh.handleElectionDocPOST(w, r, user, "", 0)
@@ -129,7 +146,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// `^/election/(\d+)\.pdf$`
 	m = pdfPathRe.FindStringSubmatch(path)
 	if m != nil {
-		bothob, err := sh.getPdf(r.Context(), m[1])
+		bothob, err := sh.getPdf(r.Context(), m[1], redraw)
 		if err != nil {
 			he := err.(*httpError)
 			maybeerr(w, he.err, he.code, he.msg)
@@ -143,7 +160,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// `^/election/(\d+)_bubbles\.json$`
 	m = bubblesPathRe.FindStringSubmatch(path)
 	if m != nil {
-		bothob, err := sh.getPdf(r.Context(), m[1])
+		bothob, err := sh.getPdf(r.Context(), m[1], redraw)
 		if err != nil {
 			he := err.(*httpError)
 			maybeerr(w, he.err, he.code, he.msg)
@@ -321,8 +338,11 @@ func (sh *StudioHandler) handleElectionDocGET(w http.ResponseWriter, r *http.Req
 	w.Write(nbody)
 }
 
-func (sh *StudioHandler) getPdf(ctx context.Context, el string) (bothob *draw.DrawBothOb, err error) {
-	cr := sh.cache.Get(el)
+func (sh *StudioHandler) getPdf(ctx context.Context, el string, redraw bool) (bothob *draw.DrawBothOb, err error) {
+	var cr interface{}
+	if !redraw {
+		cr = sh.cache.Get(el)
+	}
 	if cr != nil {
 		bothob = cr.(*draw.DrawBothOb)
 	} else {
@@ -351,7 +371,7 @@ func (sh *StudioHandler) getPng(ctx context.Context, el string) (pngbytes [][]by
 		return
 	}
 	var bothob *draw.DrawBothOb
-	bothob, err = sh.getPdf(ctx, el)
+	bothob, err = sh.getPdf(ctx, el, false)
 	if err != nil {
 		return nil, err
 	}

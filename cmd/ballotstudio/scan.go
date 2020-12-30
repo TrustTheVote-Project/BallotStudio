@@ -22,7 +22,7 @@ func (sh *StudioHandler) handleElectionScanPOST(w http.ResponseWriter, r *http.R
 	if maybeerr(w, err, 400, "bad image, %v", err) {
 		return
 	}
-	bothob, err := sh.getPdf(r.Context(), itemname)
+	bothob, err := sh.getPdf(r.Context(), itemname, false)
 	if err != nil {
 		he := err.(*httpError)
 		maybeerr(w, he.err, he.code, he.msg)
