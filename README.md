@@ -2,6 +2,8 @@
 
 System for designing, printing, and scanning paper ballots.
 
+Ballot Studio is designed to be a core piece of an open source voting system.
+
 ## Getting Started
 
 Ballot Studio is in two parts, a Python back end that draws PDF ballots, and a go middle layer that runs a web app with login and database and editing ballot data and scanning ballot images.

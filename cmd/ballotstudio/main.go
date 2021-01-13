@@ -178,7 +178,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if maybeerr(w, err, 400, "bad page") {
 			return
 		}
-		pngbytes, err := sh.getPng(r.Context(), m[1])
+		pngbytes, err := sh.getPng(r.Context(), m[1], redraw)
 		if err != nil {
 			he := err.(*httpError)
 			maybeerr(w, he.err, he.code, he.msg)
@@ -195,7 +195,7 @@ func (sh *StudioHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// `^/election/(\d+)\.png$`
 	m = pngPathRe.FindStringSubmatch(path)
 	if m != nil {
-		pngbytes, err := sh.getPng(r.Context(), m[1])
+		pngbytes, err := sh.getPng(r.Context(), m[1], redraw)
 		if err != nil {
 			he := err.(*httpError)
 			maybeerr(w, he.err, he.code, he.msg)
@@ -363,9 +363,12 @@ func (sh *StudioHandler) getPdf(ctx context.Context, el string, redraw bool) (bo
 	return
 }
 
-func (sh *StudioHandler) getPng(ctx context.Context, el string) (pngbytes [][]byte, err error) {
+func (sh *StudioHandler) getPng(ctx context.Context, el string, redraw bool) (pngbytes [][]byte, err error) {
 	pngkey := el + ".png"
-	cr := sh.cache.Get(pngkey)
+	var cr interface{}
+	if !redraw {
+		cr = sh.cache.Get(pngkey)
+	}
 	if cr != nil {
 		pngbytes = cr.([][]byte)
 		return

@@ -55,15 +55,21 @@
       for (const cselid in contestBubbles) {
 	var csel = byid[cselid];
 	if (csel) {
-	  for (var i = 0, cid; cid = csel.CandidateIds[i]; i++) {
-	    var cob = byid[cid];
-	    var cname = null;
-	    if (cob) {
-	      cname = cob.BallotName;
-	    } else {
-	      cname = cid;
+	  if (csel.IsWriteIn) {
+	    out += "<span class=\"candwi\">write-in</span>";
+	  } else if (csel.CandidateIds) {
+	    for (var i = 0, cid; cid = csel.CandidateIds[i]; i++) {
+	      var cob = byid[cid];
+	      var cname = null;
+	      if (cob) {
+		cname = cob.BallotName;
+	      } else {
+		cname = cid;
+	      }
+	      out += "<span class=\"candname\">" + cname + "</span>";
 	    }
-	    out += "<span class=\"candname\">" + cname + "</span>";
+	  } else if (csel.Selection) {
+	    out += "<span class=\"candname\">" + csel.Selection + "</span>";
 	  }
 	}
       }

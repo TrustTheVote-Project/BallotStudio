@@ -751,6 +751,8 @@ class BallotStyle:
         # Header
         # TODO: configurable, templated
         c.setStrokeColorRGB(0,0,0)
+        c.setLineWidth(1.0)
+        c.line(contentleft, contenttop, contentright, contenttop)
         txto = c.beginText(contentleft + 0.1*inch, y - gs.headerFontSize)
         txto.setFont(gs.headerFontName, gs.headerFontSize, gs.headerLeading)
         txto.textLines('''Header Election Name, YYYY-MM-DD
