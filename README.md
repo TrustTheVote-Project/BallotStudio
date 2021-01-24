@@ -14,8 +14,7 @@ Ballot Studio is in two parts, a Python back end that draws PDF ballots, and a g
 * `bsvenv/bin/pip install fonttools Flask mercurial`
 * `bsvenv/bin/hg clone https://hg.reportlab.com/hg-public/reportlab`
 * `(cd reportlab && ../bsvenv/bin/pip install -e .)`
-* `FLASK_ENV=development FLASK_APP=draw/app.py bsvenv/bin/flask run`
-* If not present under `/usr/share/fonts/truetype/liberation/*.ttf` Download Liberation Fonts into resources/ https://github.com/liberationfonts/liberation-fonts/releases
+* If not present under `/usr/share/fonts/truetype/liberation/*.ttf` Download Liberation Fonts ttf into `resources/` https://github.com/liberationfonts/liberation-fonts/releases
 
 ### Go Setup
 
@@ -26,8 +25,8 @@ Ballot Studio is in two parts, a Python back end that draws PDF ballots, and a g
   * `yum install -y poppler-utils`
   * `git clone https://github.com/brianolson/poppler.git`
      * See Development dependencies below
-* `./ballotstudio -draw-backend http://127.0.0.1:5000/ -sqlite bss`
-  * open link shown in initial status log lines
+* `./ballotstudio -flask bsvenv/bin/flask -sqlite bss -debug`
+  * **open the login link shown in initial status log lines**
 
 ## Development
 
@@ -46,3 +45,16 @@ Dependencies:
      * redhatish: `sudo yum install -y cmake3 freetype-devel fontconfig-devel libjpeg-turbo-devel openjpeg2-devel libtiff-devel && (cd poppler/build && cmake3 .. && make pdftoppm)`
      * debianish: `(cd poppler/build && cmake .. && make pdftoppm)`
   * copy `poppler/build/utils/pdftoppm` to somewhere at head of PATH to be found by `cmd/ballotstudio/drawsub.go`
+
+### Developing the Python Draw Server
+
+`ballotstudio` will normally automatically start and stop the draw server.
+It can be run on its own with:
+
+`FLASK_ENV=development FLASK_APP=draw/app.py bsvenv/bin/flask run`
+
+`ballotstudio` can be given the option `-draw-backend http://127.0.0.1:5000/` to point to that at Flask's default port 5000.
+
+## Production Notes
+
+The draw server should can be run by gunicorn for a production environment. `ballotstudio` would be given a `-draw-backend http://localhost:port/` option to point at the gunicorn server.
