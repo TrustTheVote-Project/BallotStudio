@@ -3,6 +3,7 @@
 #
 
 import glob
+import io
 import json
 import logging
 import os
@@ -694,9 +695,13 @@ class BallotStyle:
         # e.g. for a party-specific primary ballot (may associate with multiple parties)
         self.parties = [erctx.getRawOb(x) for x in bs.get('PartyIds', [])]
         # _numPages gets filled in on a first rendering pass and used on second pass
-        self._numPages = None
-        self._pageHeader = None
+        self._numPages = 'X'
+        self._pageHeader = bs.get('PageHeader') # extension field
         self._bubbles = None
+        self.contenttop = None
+        self.contentbottom = None
+        self.contentleft = None
+        self.contentright = None
     def select(self, selectors):
         for sel in selectors:
             if sel in self.ext:
@@ -704,39 +709,55 @@ class BallotStyle:
             if sel in self.image_uri:
                 return True
         return False
-    def pageHeader(self):
-        """e.g.
+    def pageHeaderText(self, page):
+        """Create PageHeader text
+        e.g.
         Official Ballot for General Election
         City of Springfield
-        Tuesday, November 8, 2022
+        Tuesday, November 8, 2022, page 1 of 5
         """
+        pht = self.pageHeaderTemplate()
+        return pht.format(PAGE=page, PAGES=self._numPages)
+    def pageHeaderTemplate(self):
         if self._pageHeader is not None:
             return self._pageHeader
         datepart = self.election.startdate
         if self.election.startdate != self.election.enddate:
             datepart += ' - ' + self.election.enddate
         gpunitnames = ', '.join([gpunitName(x) for x in self.gpunits])
-        text = "Ballot for {}\n{}\n{}".format(
+        text = "Ballot for {}\n{}\n{} - page {PAGE} of {PAGES}".format(
             self.election.electionTypeTitle(), gpunitnames, datepart)
         self._pageHeader = text
         return self._pageHeader
+    def drawPageHeader(self, c, page):
+        c.setStrokeColorRGB(0,0,0)
+        c.setLineWidth(1.0)
+        c.line(self.contentleft, self.contenttop, self.contentright, self.contenttop)
+        txto = c.beginText(self.contentleft + 0.1*inch, self.contenttop - gs.headerFontSize)
+        txto.setFont(gs.headerFontName, gs.headerFontSize, gs.headerLeading)
+        headerText = self.pageHeaderText(page)
+        nlines = len(headerText.splitlines())
+        txto.textLines(headerText)
+        c.drawText(txto)
+        self.contenttop -= gs.headerLeading * nlines + 0.1*inch
+
     def name(self):
         return ','.join([gpunitName(gpu) for gpu in self.gpunits])
     def draw(self, c, pagesize):
         widthpt, heightpt = pagesize
-        contenttop = heightpt - gs.pageMargin
-        contentbottom = gs.pageMargin
-        contentleft = gs.pageMargin
-        contentright = widthpt - gs.pageMargin
-        y = contenttop
-        x = contentleft
+        self.contenttop = heightpt - gs.pageMargin
+        self.contentbottom = gs.pageMargin
+        self.contentleft = gs.pageMargin
+        self.contentright = widthpt - gs.pageMargin
+        y = self.contenttop
+        x = self.contentleft
         page = 1
         if gs.debugPageOutline:
-            # draw page outline debug
+            # draw page outline debug, a red border at content limit
             c.setLineWidth(0.2)
             c.setFillColorRGB(1,1,1)
             c.setStrokeColorRGB(1,.6,.6)
-            c.rect(contentleft, contentbottom, widthpt - (2 * gs.pageMargin), heightpt - (2 * gs.pageMargin), stroke=1, fill=0)
+            c.rect(self.contentleft, self.contentbottom, widthpt - (2 * gs.pageMargin), heightpt - (2 * gs.pageMargin), stroke=1, fill=0)
             c.setLineWidth(1)
         nowstr = 'generated ' + time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())
         c.setTitle('ballot test ' + nowstr)
@@ -745,43 +766,35 @@ class BallotStyle:
             c.setStrokeColorRGB(0,0,0)
             dtw = pdfmetrics.stringWidth(nowstr, gs.nowstrFontName, gs.nowstrFontSize)
             c.setFont(gs.nowstrFontName, gs.nowstrFontSize)
-            c.drawString(contentright - dtw, contentbottom + (gs.nowstrFontSize * 0.2), nowstr)
-            contentbottom += (gs.nowstrFontSize * 1.2)
+            c.drawString(self.contentright - dtw, self.contentbottom + (gs.nowstrFontSize * 0.2), nowstr)
+            self.contentbottom += (gs.nowstrFontSize * 1.2)
 
-        # Header
-        # TODO: configurable, templated
-        c.setStrokeColorRGB(0,0,0)
-        c.setLineWidth(1.0)
-        c.line(contentleft, contenttop, contentright, contenttop)
-        txto = c.beginText(contentleft + 0.1*inch, y - gs.headerFontSize)
-        txto.setFont(gs.headerFontName, gs.headerFontSize, gs.headerLeading)
-        txto.textLines('''Header Election Name, YYYY-MM-DD
-Precinct 1234, Some Town, Statename, page {page} of TODO'''.format(page=page))
-        c.drawText(txto)
-        contenttop -= gs.headerLeading * 2 + 0.1*inch
+        self.drawPageHeader(c, page)
         # TODO: instruction box
-        y = contenttop
+        y = self.contenttop
 
         # (columnwidth * columns) + (gs.columnMargin * (columns - 1)) == width
         columns = 2
-        columnwidth = (contentright - contentleft - (gs.columnMargin * (columns - 1))) / columns
+        columnwidth = (self.contentright - self.contentleft - (gs.columnMargin * (columns - 1))) / columns
         bubbles = {}
         # content, 2 columns
         colnum = 1
         for xc in self.content:
             height = xc.height(columnwidth)
-            if y - height < contentbottom:
-                y = contenttop
+            if y - height < self.contentbottom:
+                y = self.contenttop
                 colnum += 1
                 if colnum > columns:
                     c.showPage()
                     page += 1
-                    # TODO: page headers
                     colnum = 1
-                    contenttop = heightpt - gs.pageMargin
-                    contentbottom = gs.pageMargin
-                    x = contentleft
-                    y = contenttop
+                    # reset contenttop for prior header
+                    self.contenttop = heightpt - gs.pageMargin
+                    # reset contentbottom in case of debug string
+                    self.contentbottom = gs.pageMargin
+                    self.drawPageHeader(c, page)
+                    x = self.contentleft
+                    y = self.contenttop
                 else:
                     x += columnwidth + gs.columnMargin
             # TODO: wrap super long issues
@@ -928,9 +941,16 @@ class ElectionPrinter:
                 bs_fname = '{}{}.pdf'.format(outname_prefix, names)
             if outdir:
                 bs_fname = os.path.join(outdir, bs_fname)
+            # dummy draw for pagination
+            outdummy = io.BytesIO()
+            dc = canvas.Canvas(outdummy, pagesize=gs.pagesize)
+            bs.draw(dc, gs.pagesize)
+            outdummy = None
+            dc = None
+            # real draw
             outpaths.append(bs_fname)
             c = canvas.Canvas(bs_fname, pagesize=gs.pagesize) # pageCompression=1
-            bs.draw(c, letter)
+            bs.draw(c, gs.pagesize)
             c.save()
         return outpaths
 
@@ -943,7 +963,14 @@ class ElectionPrinter:
             if (selectors is not None) and not bs.select(selectors):
                 continue
             any = True
-            bs.draw(c, letter)
+            # dummy draw for pagination
+            outdummy = io.BytesIO()
+            dc = canvas.Canvas(outdummy, pagesize=gs.pagesize)
+            bs.draw(dc, gs.pagesize)
+            outdummy = None
+            dc = None
+            # real draw
+            bs.draw(c, gs.pagesize)
         if any:
             c.save()
         else:

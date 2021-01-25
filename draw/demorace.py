@@ -446,6 +446,8 @@ ElectionReport = {
                             "ContestId": contestIdByName(contests, 'Bottom'),
                         },
                     ],
+                    "PageHeader": '''General Election, 2022-11-08
+Precinct 1234, Srpingfield, OR, page {PAGE} of {PAGES}''',
                 },
             ],
             "Candidate": candidates,

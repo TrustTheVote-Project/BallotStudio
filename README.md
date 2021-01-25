@@ -58,3 +58,23 @@ It can be run on its own with:
 ## Production Notes
 
 The draw server should can be run by gunicorn for a production environment. `ballotstudio` would be given a `-draw-backend http://localhost:port/` option to point at the gunicorn server.
+
+## NIST 1500-100 extensions
+
+NIST 1500-100 (version 2) is a specification on election results *reporting*, but is used here because it has all the structural information about candidates and contests and the election as a whole.
+We extend it with a few additional fields about ballot layout and rendering.
+
+### "ElectionResults.BallotStyle"
+
+Optional field "PageHeader" is a string that would be rendered at the top of each page. For example:
+
+```
+Header Election Name, YYYY-MM-DD
+Precinct 1234, Some Town, Statename, page {PAGE} of {PAGES}
+```
+
+`\n` newlines within the text will be rendered.
+Templated fields within the text are:
+
+* `{PAGE}` the current page number
+* `{PAGES}` the total number of pages
