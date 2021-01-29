@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/brianolson/ballotscan/scan"
+	"github.com/brianolson/ballotstudio/scan"
 	"github.com/brianolson/login/login"
 )
 
