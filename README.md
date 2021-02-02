@@ -32,8 +32,6 @@ Ballot Studio is in two parts, a Python back end that draws PDF ballots, and a g
 
 Dependencies:
 
-* https://github.com/brianolson/ballotscan
-  * Compare scanned image to PNG generated cleanly from source PDF, find bubbles, report which bubbles are marked
 * https://github.com/brianolson/login
   * Local user/pass and oauth2 login
 * https://github.com/brianolson/httpcache
