@@ -687,6 +687,7 @@ class BallotStyle:
     def __init__(self, erctx, ballotstyle_json_object):
         bs = ballotstyle_json_object
         self.bs = bs
+        self.erctx = erctx
         self.gpunits = [erctx.getRawOb(x) for x in bs['GpUnitIds']]
         self.ext = bs.get('ExternalIdentifier', [])
         # image_uri is to image of example ballot?
@@ -721,12 +722,13 @@ class BallotStyle:
     def pageHeaderTemplate(self):
         if self._pageHeader is not None:
             return self._pageHeader
-        datepart = self.election.startdate
-        if self.election.startdate != self.election.enddate:
-            datepart += ' - ' + self.election.enddate
+        election = self.erctx.eprinter
+        datepart = election.startdate
+        if election.startdate != election.enddate:
+            datepart += ' - ' + election.enddate
         gpunitnames = ', '.join([gpunitName(x) for x in self.gpunits])
-        text = "Ballot for {}\n{}\n{} - page {PAGE} of {PAGES}".format(
-            self.election.electionTypeTitle(), gpunitnames, datepart)
+        text = "Ballot for {}\n{}\n{}".format(
+            election.electionTypeTitle(), gpunitnames, datepart) + ' - page {PAGE} of {PAGES}'
         self._pageHeader = text
         return self._pageHeader
     def drawPageHeader(self, c, page):
@@ -774,7 +776,7 @@ class BallotStyle:
         y = self.contenttop
 
         # (columnwidth * columns) + (gs.columnMargin * (columns - 1)) == width
-        columns = 2
+        columns = 3
         columnwidth = (self.contentright - self.contentleft - (gs.columnMargin * (columns - 1))) / columns
         bubbles = {}
         # content, 2 columns
@@ -853,8 +855,9 @@ class ElectionResultsContext:
         'ElectionResults.OrderedContest': OrderedContest,
         #'ElectionResults.Office': Office,
     }
-    def __init__(self, election_results_json_object):
+    def __init__(self, election_results_json_object, eprinter):
         self.er = election_results_json_object
+        self.eprinter = eprinter # ElectionPrinter{}
         # obids = {@id: json ob, ...}
         self.obids = gatherIds(self.er)
         # draw objects by id, same key as obids
@@ -902,7 +905,7 @@ class ElectionPrinter:
         # election ElectionResults.Election from json
         er = election_report
         el = election
-        erctx = ElectionResultsContext(er)
+        erctx = ElectionResultsContext(er, self)
         self.erctx = erctx
         self.er = er
         self.el = el

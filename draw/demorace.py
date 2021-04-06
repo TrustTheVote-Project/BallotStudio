@@ -101,7 +101,7 @@ parties = [
     {
         "@id": _party_id(),
         "@type": "ElectionResults.Party",
-        "Name": "Kryptonian",
+        "Name": "Krypton",
         "Slogan": "Nice yellow sun you got there",
     },
 ]
@@ -126,7 +126,7 @@ persons = [
         "@id": _person_id(),
         "@type": "ElectionResults.Person",
         "FullName": "Zod",
-        "PartyId": partyIdByName(parties, 'Kryptonian'),
+        "PartyId": partyIdByName(parties, 'Krypton'),
         "Title": "General",
         "Profession": "Kneel",
     },
