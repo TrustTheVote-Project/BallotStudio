@@ -11,15 +11,17 @@ import time
 import statistics
 import sys
 
+from PIL import Image
 import fontTools.ttLib
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.units import inch, mm, cm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-#from reportlab.platypus import Paragraph
-#from reportlab.lib.units import ParagraphStyle
-
+from reportlab.platypus import Paragraph
+#from reportlab.platypus import Image
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.utils import ImageReader
 
 logger = logging.getLogger(__name__)
 
@@ -643,6 +645,135 @@ class CandidateContest:
         out += 0.1 * inch # bottom padding
         return out
 
+class InstructionsHeader:
+    header1 = 'Making selections'
+    image1 = 'filled bubble.png'
+    instruction1 = 'Fill in the oval to the left of the name of your choice. You must blacken the oval completely, and do not make any marks outside of the oval. You do not have to vote in every race.'
+    warning1 = 'Do not cross out or erase, or your vote may not count. If you make a mistake or a stray mark, ask for a new ballot from the poll workers.'
+    header2 = 'Optional write-in'
+    image2 = 'writein.png'
+    instruction2 = 'To add a candidate, fill in the oval to the left of “or write-in” and print the name clearly on the dotted line.'
+
+    @classmethod
+    def height(self, width, draw_selections=None):
+        # y = 0
+        # x = 0
+        # pos = y - 3 # leave room for 3pt top border
+
+        # textx = x + 1 + (0.1 * inch)
+        # availableWidth = width - (1 + (0.1 * inch))
+        # bubbleImage = ImageReader(os.path.join('resources', self.image1))
+        # imw, imh = bubbleImage.getSize()
+        # imHeight = imh * (availableWidth / imw)
+        # pos -= imHeight
+
+        # return 3.0 * inch
+        h = self._draw(None,0,0,width,draw_selections, enable=False)
+        logger.debug("instructions height %r", h)
+        return h
+    @classmethod
+    def draw(self, c, x, y, width, draw_selections=None):
+        self._draw(c,x,y,width,draw_selections, enable=True)
+    @classmethod
+    def _draw(self, c, x, y, width, draw_selections=None, enable=False):
+        pos = y - 3 # leave room for 3pt top border
+        # title
+        if enable:
+            c.setStrokeColorRGB(*gs.titleBGColor)
+            c.setFillColorRGB(*gs.titleBGColor)
+            c.rect(x, pos - gs.titleLeading, width, gs.titleLeading, fill=1, stroke=0)
+            c.setFillColorRGB(0,0,0)
+            c.setStrokeColorRGB(0,0,0)
+            txto = c.beginText(x + 1 + (0.1 * inch), pos - gs.titleFontSize)
+            txto.setFont(gs.titleFontName, gs.titleFontSize)
+            txto.textLines('Instructions')
+            c.drawText(txto)
+        pos -= gs.titleLeading
+
+        # TODO: configurable style instead of borrowing candsub style
+        textx = x + 1 + (0.1 * inch)
+        availableWidth = width - (1 + (0.1 * inch))
+
+        bubbleImage = ImageReader(os.path.join('resources', self.image1))
+        imw, imh = bubbleImage.getSize()
+        imHeight = imh * (availableWidth / imw)
+        if enable:
+            c.drawImage(bubbleImage, textx, pos - imHeight, availableWidth, imHeight)
+        pos -= imHeight
+
+        ips = ParagraphStyle('instructionParagraph')
+
+        i1par = Paragraph(self.instruction1, ips)
+        ww, wh = i1par.wrap(availableWidth, 100)
+        if enable:
+            i1par.drawOn(c, textx, pos-wh)
+        pos -= wh
+        # TODO: warning style
+        i1par = Paragraph(self.warning1, ips)
+        ww, wh = i1par.wrap(availableWidth, 100)
+        if enable:
+            i1par.drawOn(c, textx, pos-wh)
+        pos -= wh
+        pos -= gs.candsubLeading
+
+        writeInIm = ImageReader(os.path.join('resources', self.image2))
+        imw, imh = writeInIm.getSize()
+        imHeight = imh * (availableWidth / imw)
+        if enable:
+            c.drawImage(writeInIm, textx, pos - imHeight, availableWidth, imHeight)
+        pos -= imHeight
+
+        i1par = Paragraph(self.instruction2, ips)
+        ww, wh = i1par.wrap(availableWidth, 100)
+        if enable:
+            i1par.drawOn(c, textx, pos-wh)
+        pos -= wh
+
+        pos -= 0.1 * inch # bottom padding
+
+        # top border
+        if enable:
+            c.setStrokeColorRGB(0,0,0)
+            c.setLineWidth(3)
+            c.line(x, y-1.5, x + width, y-1.5) # -0.5 caps left border 1.0pt line
+            # left border and bottom border
+            c.setLineWidth(1)
+            path = c.beginPath()
+            path.moveTo(x+0.5, y-1.5)
+            path.lineTo(x+0.5, pos-0.5)
+            path.lineTo(x+width, pos-0.5)
+            c.drawPath(path, stroke=1)
+        return 0-pos
+
+_COLUMN_BREAK_HEIGHT = 999999997
+_PAGE_BREAK_HEIGHT = 999999999
+
+class Header:
+    "NIST 1500-100 v2 ElectionResults.Header"
+    _optional_fields = (
+        ('ExternalIdentifier', []),
+    )
+    def __init__(self, erctx, header_json_object):
+        co = header_json_object
+        self.co = co
+        self.Name = co['Name']
+        setOptionalFields(self, self.co)
+        self.impl = None
+        if self.Name == 'Instructions':
+            self.impl = InstructionsHeader
+        # TODO: header Name "ColumnBreak" and "PageBreak"
+    def height(self, width, draw_selections=None):
+        if self.impl:
+            return self.impl.height(width, draw_selections)
+        if self.Name == 'ColumnBreak':
+            return _COLUMN_BREAK_HEIGHT
+        if self.Name == 'PageBreak':
+            return _PAGE_BREAK_HEIGHT
+        return 0
+    def draw(self, c, x, y, width, draw_selections=None):
+        if self.impl:
+            return self.impl.draw(c,x,y,width,draw_selections)
+
 def rehydrateContest(election, contest_json_object):
     co = contest_json_object
     cotype = co['@type']
@@ -659,7 +790,6 @@ def rehydrateContest(election, contest_json_object):
 
 class OrderedContest:
     def __init__(self, erctx, contest_json_object):
-        "election is local ElectionPrinter()"
         co = contest_json_object
         self.co = co
         self.contest = erctx.getDrawOb(co['ContestId'])
@@ -682,6 +812,24 @@ class OrderedContest:
         return
     def getBubbles(self):
         return {ch.atid:ch._bubbleCoords for ch in self.draw_selections}
+
+class OrderedHeader:
+    def __init__(self, erctx, contest_json_object):
+        co = contest_json_object
+        self.co = co
+        self.header = erctx.getDrawOb(co['HeaderId'])
+        self.atid = co['HeaderId']
+        # TODO: handle recursive OrderedContest,OrderedHeader entries in subordinate OrderedContent array
+    def _maxheight(self, width):
+        return self.header._maxheight(width)
+    def height(self, width):
+        return self.header.height(width)
+    def draw(self, c, x, y, width):
+        self.header.draw(c, x, y, width)
+        return
+    def getBubbles(self):
+        return None
+
 
 class BallotStyle:
     def __init__(self, erctx, ballotstyle_json_object):
@@ -784,9 +932,11 @@ class BallotStyle:
         for xc in self.content:
             height = xc.height(columnwidth)
             if y - height < self.contentbottom:
+                # start a new column
                 y = self.contenttop
                 colnum += 1
-                if colnum > columns:
+                if (colnum > columns) or (height == _PAGE_BREAK_HEIGHT):
+                    # start a new page
                     c.showPage()
                     page += 1
                     colnum = 1
@@ -799,6 +949,9 @@ class BallotStyle:
                     y = self.contenttop
                 else:
                     x += columnwidth + gs.columnMargin
+            if (height == _COLUMN_BREAK_HEIGHT) or (height == _PAGE_BREAK_HEIGHT):
+                # no actual content
+                continue
             # TODO: wrap super long issues
             xc.draw(c, x, y, columnwidth)
             y -= height
@@ -853,6 +1006,8 @@ class ElectionResultsContext:
         'ElectionResults.CandidateContest': CandidateContest,
         'ElectionResults.CandidateSelection': CandidateSelection,
         'ElectionResults.OrderedContest': OrderedContest,
+        'ElectionResults.OrderedHeader': OrderedHeader,
+        'ElectionResults.Header': Header,
         #'ElectionResults.Office': Office,
     }
     def __init__(self, election_results_json_object, eprinter):

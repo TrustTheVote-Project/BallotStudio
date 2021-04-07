@@ -207,6 +207,21 @@ persons = [
         "@type": "ElectionResults.Person",
         "FullName": "Doc",
     },
+    {
+        "@id": _person_id(),
+        "@type": "ElectionResults.Person",
+        "FullName": "Larry",
+    },
+    {
+        "@id": _person_id(),
+        "@type": "ElectionResults.Person",
+        "FullName": "Moe",
+    },
+    {
+        "@id": _person_id(),
+        "@type": "ElectionResults.Person",
+        "FullName": "Curly",
+    },
 ]
 
 def personIdByFullName(they, name):
@@ -250,6 +265,11 @@ offices = [
         "@id": _office_id(),
         "@type": "ElectionResults.Office",
         "Name": "Head Dwarf",
+    },
+    {
+        "@id": _office_id(),
+        "@type": "ElectionResults.Office",
+        "Name": "Chief Stooge",
     },
     {
         "@id": _office_id(),
@@ -345,6 +365,21 @@ contests = [
     },
     {
         # required
+        "@id": _contest_id(),
+        "@type": "ElectionResults.CandidateContest",
+        "Name": "Chief Stooge",
+        "ElectionDistrictId": gpunitIdByName(gpunits, 'Springfield'),
+        "VoteVariation": "plurality",
+        "VotesAllowed": 1,
+        # other
+        "BallotTitle": "Chief Stooge",
+        "BallotSubTitle": "Vote for one",
+        "ContestSelection": candidateSelectionsFromNames(candidates, "Larry", "Moe", "Curly"),
+        "NumberElected": 1,
+        "OfficeIds": [officeIdByName(offices, 'Chief Stooge')],
+    },
+    {
+        # required
         "@id": _bmcont_id(),
         "@type": "ElectionResults.BallotMeasureContest",
         "Name": "Winning",
@@ -376,7 +411,7 @@ contests = [
         "BallotSubTitle": "Vote for one",
         "ContestSelection": candidateSelectionsFromNames(candidates, "Zaphod Beeblebrox", "Zod", "Zardoz"), # TODO: write-in
         "NumberElected": 1,
-        "OfficeIds": [officeIdByName(offices, 'Head Dwarf')],
+        "OfficeIds": [officeIdByName(offices, 'Bottom')],
     },
     # TODO: ElectionResults.RetentionContest
     # TODO: ElectionResults.PartyContest
@@ -391,6 +426,16 @@ headers = [
         "@id": _header_id(),
         "@type": "ElectionResults.Header",
         "Name": "Instructions",
+    },
+    {
+        "@id": _header_id(),
+        "@type": "ElectionResults.Header",
+        "Name": "ColumnBreak",
+    },
+    {
+        "@id": _header_id(),
+        "@type": "ElectionResults.Header",
+        "Name": "PageBreak",
     },
 ]
 
@@ -425,10 +470,14 @@ ElectionReport = {
                     "@type": "ElectionResults.BallotStyle",
                     "GpUnitIds": [gpunitIdByName(gpunits, 'Springfield')],
                     "OrderedContent": [
-                        # {
-                        #     "@type": "ElectionResults.OrderedHeader",
-                        #     "HeaderId": headerIdByName(headers, 'Instructions'),
-                        # },
+                        {
+                            "@type": "ElectionResults.OrderedHeader",
+                            "HeaderId": headerIdByName(headers, 'Instructions'),
+                        },
+                        {
+                            "@type": "ElectionResults.OrderedHeader",
+                            "HeaderId": headerIdByName(headers, 'ColumnBreak'),
+                        },
                         {
                             "@type": "ElectionResults.OrderedContest",
                             "ContestId": contestIdByName(contests, 'Everything'),
@@ -436,6 +485,10 @@ ElectionReport = {
                         {
                             "@type": "ElectionResults.OrderedContest",
                             "ContestId": contestIdByName(contests, 'Head Dwarf'),
+                        },
+                        {
+                            "@type": "ElectionResults.OrderedContest",
+                            "ContestId": contestIdByName(contests, 'Chief Stooge'),
                         },
                         {
                             "@type": "ElectionResults.OrderedContest",
