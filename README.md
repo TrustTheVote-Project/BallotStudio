@@ -40,8 +40,12 @@ Dependencies:
   * Fork of poppler with pdftoppm that does multiple pages in one operation
   * `git clone https://github.com/brianolson/poppler.git`
   * `(cd poppler && git checkout png-multi-block && mkdir build)``
-     * redhatish: `sudo yum install -y cmake3 freetype-devel fontconfig-devel libjpeg-turbo-devel openjpeg2-devel libtiff-devel && (cd poppler/build && cmake3 .. && make pdftoppm)`
-     * debianish: `(cd poppler/build && cmake .. && make pdftoppm)`
+     * redhatish:
+       * `sudo yum install -y cmake3 freetype-devel fontconfig-devel libjpeg-turbo-devel openjpeg2-devel libtiff-devel`
+       * `(cd poppler/build && cmake3 .. && make pdftoppm)`
+     * debianish:
+       * `sudo apt-get install -y libjpeg-dev libopenjp2-7-dev`
+       * `(cd poppler/build && cmake .. && make pdftoppm)`
   * copy `poppler/build/utils/pdftoppm` to somewhere at head of PATH to be found by `cmd/ballotstudio/drawsub.go`
 
 ### Developing the Python Draw Server
