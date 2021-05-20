@@ -55,9 +55,11 @@ class Bfont:
                     break
 
 resources = None
-for mayber in (os.path.join(os.path.dirname(__file__),'resources'), os.path.join(os.getcwd(), 'resources')):
+# if this is ballotstudio/draw/draw.py, look in ballotstudio/resources/ or ./resources/
+for mayber in (os.path.join(os.getcwd(), 'resources'), os.path.join(os.path.dirname(os.path.dirname(__file__)),'resources')):
     if os.path.isdir(mayber):
         resources = mayber
+        break
 fonts = {}
 
 def _ensure_fonts():
@@ -662,7 +664,7 @@ class InstructionsHeader:
 
         # textx = x + 1 + (0.1 * inch)
         # availableWidth = width - (1 + (0.1 * inch))
-        # bubbleImage = ImageReader(os.path.join('resources', self.image1))
+        # bubbleImage = ImageReader(os.path.join(resources, self.image1))
         # imw, imh = bubbleImage.getSize()
         # imHeight = imh * (availableWidth / imw)
         # pos -= imHeight
@@ -694,7 +696,7 @@ class InstructionsHeader:
         textx = x + 1 + (0.1 * inch)
         availableWidth = width - (1 + (0.1 * inch))
 
-        bubbleImage = ImageReader(os.path.join('resources', self.image1))
+        bubbleImage = ImageReader(os.path.join(resources, self.image1))
         imw, imh = bubbleImage.getSize()
         imHeight = imh * (availableWidth / imw)
         if enable:
@@ -716,7 +718,7 @@ class InstructionsHeader:
         pos -= wh
         pos -= gs.candsubLeading
 
-        writeInIm = ImageReader(os.path.join('resources', self.image2))
+        writeInIm = ImageReader(os.path.join(resources, self.image2))
         imw, imh = writeInIm.getSize()
         imHeight = imh * (availableWidth / imw)
         if enable:
