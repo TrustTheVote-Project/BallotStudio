@@ -222,6 +222,21 @@ persons = [
         "@type": "ElectionResults.Person",
         "FullName": "Curly",
     },
+    {
+        "@id": _person_id(),
+        "@type": "ElectionResults.Person",
+        "FullName": "Kevin",
+    },
+    {
+        "@id": _person_id(),
+        "@type": "ElectionResults.Person",
+        "FullName": "Tamika Flynn",
+    },
+    {
+        "@id": _person_id(),
+        "@type": "ElectionResults.Person",
+        "FullName": "Hiram McDaniels",
+    },
 ]
 
 def personIdByFullName(they, name):
@@ -282,6 +297,12 @@ offices = [
         "Name": "Bottom",
         "Description": "The race for the bottom",
     },
+    {
+        "@id": _office_id(),
+        "@type": "ElectionResults.Office",
+        "Name": "Smile",
+        "Description": "Best Smile",
+    },
 ]
 
 def officeIdByName(they, name):
@@ -299,6 +320,13 @@ gpunits = [
         "Type": "city",
         "Name": "Springfield",
     },
+    {
+        "@id": _gpunit_id(),
+        "@type": "ElectionResults.ReportingUnit",
+        "Type": "city",
+        "Name": "Desert Bluffs",
+    },
+    # TODO: heirarchical example, e.g. state-county-city nesting
 ]
 
 gpunitIdByName = officeIdByName
@@ -413,6 +441,21 @@ contests = [
         "NumberElected": 1,
         "OfficeIds": [officeIdByName(offices, 'Bottom')],
     },
+    {
+        # required
+        "@id": _contest_id(),
+        "@type": "ElectionResults.CandidateContest",
+        "Name": "Best Smile",
+        "ElectionDistrictId": gpunitIdByName(gpunits, 'Desert Bluffs'),
+        "VoteVariation": "plurality",
+        "VotesAllowed": 1,
+        # other
+        "BallotTitle": "Best Smile",
+        "BallotSubTitle": "Vote for one",
+        "ContestSelection": candidateSelectionsFromNames(candidates, "Kevin", "Tamika Flynn", "Hiram McDaniels"), # TODO: write-in
+        "NumberElected": 1,
+        "OfficeIds": [officeIdByName(offices, 'Smile')],
+    },
     # TODO: ElectionResults.RetentionContest
     # TODO: ElectionResults.PartyContest
 ]
@@ -500,7 +543,39 @@ ElectionReport = {
                         },
                     ],
                     "PageHeader": '''General Election, 2022-11-08
-Precinct 1234, Srpingfield, OR, page {PAGE} of {PAGES}''',
+Precinct 1234, Springfield, OR, page {PAGE} of {PAGES}''',
+                },
+                {
+                    "@type": "ElectionResults.BallotStyle",
+                    "GpUnitIds": [gpunitIdByName(gpunits, 'Desert Bluffs')],
+                    "OrderedContent": [
+                        {
+                            "@type": "ElectionResults.OrderedHeader",
+                            "HeaderId": headerIdByName(headers, 'Instructions'),
+                        },
+                        {
+                            "@type": "ElectionResults.OrderedHeader",
+                            "HeaderId": headerIdByName(headers, 'ColumnBreak'),
+                        },
+                        {
+                            "@type": "ElectionResults.OrderedContest",
+                            "ContestId": contestIdByName(contests, 'Everything'),
+                        },
+                        {
+                            "@type": "ElectionResults.OrderedContest",
+                            "ContestId": contestIdByName(contests, 'Best Smile'),
+                        },
+                        {
+                            "@type": "ElectionResults.OrderedContest",
+                            "ContestId": contestIdByName(contests, 'Winning'),
+                        },
+                        {
+                            "@type": "ElectionResults.OrderedContest",
+                            "ContestId": contestIdByName(contests, 'Bottom'),
+                        },
+                    ],
+                    "PageHeader": '''General Election, 2022-11-08
+Precinct 1234, Desert Bluffs, OR, page {PAGE} of {PAGES}''',
                 },
             ],
             "Candidate": candidates,
