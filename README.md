@@ -60,6 +60,11 @@ It can be run on its own with:
 
 `ballotstudio` can be given the option `-draw-backend http://127.0.0.1:5000/` to point to that at Flask's default port 5000.
 
+  - `http://127.0.0.1:5000/demo.pdf` - demo ElectionReport drawn to PDF
+  - `http://127.0.0.1:5000/demo.bubbles.json` - bubble positions
+  - `http://127.0.0.1:5000/demo.js` - ElectionReport built by draw/demorace.py
+
+
 ## Production Notes
 
 The draw server should can be run by gunicorn for a production environment. `ballotstudio` would be given a `-draw-backend http://localhost:port/` option to point at the gunicorn server.
