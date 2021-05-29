@@ -162,6 +162,18 @@ def demoracepdf():
     pdfbytes = pdfbytes.getvalue()
     return pdfbytes, 200, {"Content-Type":"application/pdf"}
 
+@app.route('/demo.bubbles.json')
+def demoracebubbles():
+    er = demorace.ElectionReport
+    elections = er.get('Election', [])
+    el = elections[0]
+    ep = ElectionPrinter(er, el)
+    pdfbytes = io.BytesIO()
+    ep.drawToFile(outfile=pdfbytes)
+    #pdfbytes = pdfbytes.getvalue()
+    bubbles = ep.getBubbles()
+    return bubbles, 200, {"Content-Type":"application/json"}
+
 @app.route('/edit/<int:electionid>')
 def edit(electionid):
     ctx = {

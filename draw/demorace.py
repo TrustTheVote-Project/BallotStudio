@@ -237,6 +237,21 @@ persons = [
         "@type": "ElectionResults.Person",
         "FullName": "Hiram McDaniels",
     },
+    {
+        "@id": _person_id(),
+        "@type": "ElectionResults.Person",
+        "FullName": "Honor Harrington",
+    },
+    {
+        "@id": _person_id(),
+        "@type": "ElectionResults.Person",
+        "FullName": "Cardenia Wu-Patrick",
+    },
+    {
+        "@id": _person_id(),
+        "@type": "ElectionResults.Person",
+        "FullName": "Ellenor Arroway",
+    },
 ]
 
 def personIdByFullName(they, name):
@@ -303,6 +318,12 @@ offices = [
         "Name": "Smile",
         "Description": "Best Smile",
     },
+    {
+        "@id": _office_id(),
+        "@type": "ElectionResults.Office",
+        "Name": "Emperox",
+        "Description": "Emperox",
+    },
 ]
 
 def officeIdByName(they, name):
@@ -326,10 +347,29 @@ gpunits = [
         "Type": "city",
         "Name": "Desert Bluffs",
     },
+    {
+        "@id": _gpunit_id(),
+        "@type": "ElectionResults.ReportingUnit",
+        "Type": "city",
+        "Name": "Erewhon",
+    },
     # TODO: heirarchical example, e.g. state-county-city nesting
 ]
 
+oregon = {
+    "@id": _gpunit_id(),
+    "@type": "ElectionResults.ReportingUnit",
+    "Type": "state",
+    "Name": "Oregon",
+}
+gpunits.append(oregon)
+
 gpunitIdByName = officeIdByName
+oregon["ComposingGpUnitIds"] = [
+    gpunitIdByName(gpunits, 'Springfield'),
+    gpunitIdByName(gpunits, 'Desert Bluffs'),
+    gpunitIdByName(gpunits, 'Erewhon'),
+]
 
 _contest_id = typeSequences.sourceForType("ElectionResults.CandidateContest")
 _bmcont_id = typeSequences.sourceForType("ElectionResults.BallotMeasureContest")
@@ -366,7 +406,7 @@ contests = [
         "@id": _contest_id(),
         "@type": "ElectionResults.CandidateContest",
         "Name": "Everything",
-        "ElectionDistrictId": gpunitIdByName(gpunits, 'Springfield'),
+        "ElectionDistrictId": gpunitIdByName(gpunits, 'Oregon'),
         "VoteVariation": "approval",
         "VotesAllowed": 5, # TODO: for approval, number of choices
         # other
@@ -411,7 +451,7 @@ contests = [
         "@id": _bmcont_id(),
         "@type": "ElectionResults.BallotMeasureContest",
         "Name": "Winning",
-        "ElectionDistrictId": gpunitIdByName(gpunits, 'Springfield'),
+        "ElectionDistrictId": gpunitIdByName(gpunits, 'Oregon'),
         #"VoteVariation": "plurality",
         #"VotesAllowed": 1,
         # other
@@ -431,7 +471,7 @@ contests = [
         "@id": _contest_id(),
         "@type": "ElectionResults.CandidateContest",
         "Name": "Bottom",
-        "ElectionDistrictId": gpunitIdByName(gpunits, 'Springfield'),
+        "ElectionDistrictId": gpunitIdByName(gpunits, 'Oregon'),
         "VoteVariation": "plurality",
         "VotesAllowed": 1,
         # other
@@ -455,6 +495,21 @@ contests = [
         "ContestSelection": candidateSelectionsFromNames(candidates, "Kevin", "Tamika Flynn", "Hiram McDaniels"), # TODO: write-in
         "NumberElected": 1,
         "OfficeIds": [officeIdByName(offices, 'Smile')],
+    },
+    {
+        # required
+        "@id": _contest_id(),
+        "@type": "ElectionResults.CandidateContest",
+        "Name": "Emperox",
+        "ElectionDistrictId": gpunitIdByName(gpunits, 'Erewhon'),
+        "VoteVariation": "plurality",
+        "VotesAllowed": 1,
+        # other
+        "BallotTitle": "Emperox",
+        "BallotSubTitle": "Vote for one",
+        "ContestSelection": candidateSelectionsFromNames(candidates, "Honor Harrington", "Cardenia Wu-Patrick", "Ellenor Arroway"), # TODO: write-in
+        "NumberElected": 1,
+        "OfficeIds": [officeIdByName(offices, 'Emperox')],
     },
     # TODO: ElectionResults.RetentionContest
     # TODO: ElectionResults.PartyContest
@@ -543,7 +598,7 @@ ElectionReport = {
                         },
                     ],
                     "PageHeader": '''General Election, 2022-11-08
-Precinct 1234, Springfield, OR, page {PAGE} of {PAGES}''',
+Precinct 5050, Springfield, OR, page {PAGE} of {PAGES}''',
                 },
                 {
                     "@type": "ElectionResults.BallotStyle",
@@ -577,6 +632,38 @@ Precinct 1234, Springfield, OR, page {PAGE} of {PAGES}''',
                     "PageHeader": '''General Election, 2022-11-08
 Precinct 1234, Desert Bluffs, OR, page {PAGE} of {PAGES}''',
                 },
+                {
+                    "@type": "ElectionResults.BallotStyle",
+                    "GpUnitIds": [gpunitIdByName(gpunits, 'Erewhon')],
+                    "OrderedContent": [
+                        {
+                            "@type": "ElectionResults.OrderedHeader",
+                            "HeaderId": headerIdByName(headers, 'Instructions'),
+                        },
+                        {
+                            "@type": "ElectionResults.OrderedHeader",
+                            "HeaderId": headerIdByName(headers, 'ColumnBreak'),
+                        },
+                        {
+                            "@type": "ElectionResults.OrderedContest",
+                            "ContestId": contestIdByName(contests, 'Everything'),
+                        },
+                        {
+                            "@type": "ElectionResults.OrderedContest",
+                            "ContestId": contestIdByName(contests, 'Winning'),
+                        },
+                        {
+                            "@type": "ElectionResults.OrderedContest",
+                            "ContestId": contestIdByName(contests, 'Emperox'),
+                        },
+                        {
+                            "@type": "ElectionResults.OrderedContest",
+                            "ContestId": contestIdByName(contests, 'Bottom'),
+                        },
+                    ],
+                    "PageHeader": '''General Election, 2022-11-08
+Precinct 0999, Erewhon, OR, page {PAGE} of {PAGES}''',
+                },
             ],
             "Candidate": candidates,
             "Contest": contests,
@@ -591,6 +678,8 @@ Precinct 1234, Desert Bluffs, OR, page {PAGE} of {PAGES}''',
     "IsTest": True,
     "TestType": "pre-election,design",
 }
+
+# TODO: validate that ballot style and gpunit crosscheck; all contests that think they're in a gpunit actually are in the ballot style for that gpunit. no gpunit is not covered by a ballot style.
 
 if __name__ == '__main__':
     json.dump(ElectionReport, sys.stdout, indent=2, sort_keys=True)

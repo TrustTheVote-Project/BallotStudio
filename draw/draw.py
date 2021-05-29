@@ -849,6 +849,7 @@ class BallotStyle:
         self._numPages = 'X'
         self._pageHeader = bs.get('PageHeader') # extension field
         self._bubbles = None
+        self._headerBoxes = {}
         self.contenttop = None
         self.contentbottom = None
         self.contentleft = None
@@ -891,7 +892,13 @@ class BallotStyle:
         nlines = len(headerText.splitlines())
         txto.textLines(headerText)
         c.drawText(txto)
-        self.contenttop -= gs.headerLeading * nlines + 0.1*inch
+        pageHeaderHeight = gs.headerLeading * nlines + 0.1*inch
+        #self._pageHeaderHeight = max(pageHeaderHeight, self._pageHeaderHeight)
+        box = (self.contentleft + 0.1*inch, self.contenttop,
+               self.contentright, self.contenttop - pageHeaderHeight)
+        logger.debug('bs (%r) page %s box %r', self.bs['GpUnitIds'], page, box)
+        self._headerBoxes[page] = box
+        self.contenttop -= pageHeaderHeight
 
     def name(self):
         return ','.join([gpunitName(gpu) for gpu in self.gpunits])
@@ -968,6 +975,8 @@ class BallotStyle:
         self._bubbles = bubbles
     def getBubbles(self):
         return self._bubbles
+    def getHeaderBoxes(self):
+        return self._headerBoxes
 
 
 
@@ -1148,9 +1157,21 @@ class ElectionPrinter:
 ],
 }
 """
+        bsdata = []
+        for bs in self.ballot_styles:
+            ob = {
+                'GpUnitIds': bs.bs['GpUnitIds'],
+                'bubbles': bs.getBubbles(),
+                'headers': bs.getHeaderBoxes(),
+            }
+            bsdata.append(ob)
         return {
             'draw_settings': gs.__dict__,
+            # bsdata is the way
+            'bsdata': bsdata,
+            # TODO: deprecate top level 'bubbles' and 'headers'
             'bubbles': [bs.getBubbles() for bs in self.ballot_styles],
+            'headers': [bs.getHeaderBoxes() for bs in self.ballot_styles],
         }
 
 # for a list of NIST-1500-100 v2 json/dict objects with "@id" keys, return one
