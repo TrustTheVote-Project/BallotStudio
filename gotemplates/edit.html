@@ -60,7 +60,7 @@
 <body>
   <h1>Ballot Studio</h1>
   <div><button class="savebutton">Save</button> - <button class="reloadbutton">Reload</button><span class="debugtext"></span></div>
-  {{ if .ElectionId }}<div><a href="{{ .PDFURL }}">PDF</a> - <a href="{{ .BubbleJSONURL }}">bubbles json</a> - <a href="{{ .ScanFormURL }}">Upload a scan...</a></div>{{ end }}
+  {{ if .ElectionId }}<div><a href="{{ .PDFURL }}">PDF</a> - <a href="{{ .GETURL }}.json">json</a> - <a href="{{ .BubbleJSONURL }}">bubbles json</a> - <a href="{{ .ScanFormURL }}">Upload a scan...</a></div>{{ end }}
   <template id="partytmpl" data-attype="ElectionResults.Party" data-seq="party">
     <div class="recform">
       <table border="0">
