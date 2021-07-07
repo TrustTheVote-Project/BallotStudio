@@ -470,7 +470,8 @@
 	    handled = [];
 	}
 	for (var i = 0, te; te = elem.children[i]; i++) {
-	    if (hasClass(te, "arraygroup")) {
+	  if (hasClass(te, "arraygroup")) {
+	    // TODO: build UI for deleting items from an arraygroup
 		var fieldname = te.getAttribute("data-name");
 		var av = ob[fieldname];
 		if (av === undefined || av == null || (!av.length)) {
@@ -653,6 +654,11 @@
 	}
     }
 
+  var nameSummarizer = function(rec) {
+    if (rec.Name) {return rec.Name;}
+    return JSON.stringify(rec);
+  };
+
   var autocompleteSummarizers = {
     "ElectionResults.Person": function(rec) {
       if (rec.FullName) {return rec.FullName;}
@@ -664,31 +670,17 @@
       if (rec.Suffix) {out += ", " + rec.Suffix;}
       return out;
     },
-    "ElectionResults.Party": function(rec) {
-      if (rec.Name) {return rec.Name;}
-      return JSON.stringify(rec);
-    },
-    "ElectionResults.ReportingUnit": function(rec) {
-      if (rec.Name) {return rec.Name;}
-      return JSON.stringify(rec);
-    },
-    "ElectionResults.BallotMeasureContest": function(rec) {
-      if (rec.Name) {return rec.Name;}
-      return JSON.stringify(rec);
-    },
-    "ElectionResults.CandidateContest": function(rec) {
-      if (rec.Name) {return rec.Name;}
-      return JSON.stringify(rec);
-    },
+    "ElectionResults.Party": nameSummarizer,
+    "ElectionResults.ReportingUnit": nameSummarizer,
+    "ElectionResults.BallotMeasureContest": nameSummarizer,
+    "ElectionResults.CandidateContest": nameSummarizer,
     "ElectionResults.Candidate": function(rec) {
       if (rec.BallotName) {return rec.BallotName;}
       // TODO: could fall through to referred person?
       return JSON.stringify(rec);
     },
-    "ElectionResults.Office": function(rec) {
-      if (rec.Name) {return rec.Name;}
-      return JSON.stringify(rec);
-    }
+    "ElectionResults.Office": nameSummarizer,
+    "ElectionResults.Header": nameSummarizer
   };
   var getAutocompleteSummarizer = function(attype) {
     var f = autocompleteSummarizers[attype];

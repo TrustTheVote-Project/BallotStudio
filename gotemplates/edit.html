@@ -59,6 +59,15 @@
 </head>
 <body>
   <h1>Ballot Studio</h1>
+  <div style="float:right;width=20%;">
+    <!-- TODO: make this an absolute positioned top right floaty, with collapsing for mobile interface -->
+    <div><a href="#Parties">Parties</a></div>
+    <div><a href="#People">People</a></div>
+    <div><a href="#Offices">Offices</a></div>
+    <div><a href="#GPUnits">Geo-Political Units</a></div>
+    <div><a href="#Header">Headers</a></div>
+    <div><a href="#Elections">Elections</a></div>
+  </div>
   <div><button class="savebutton">Save</button> - <button class="reloadbutton">Reload</button><span class="debugtext"></span></div>
   {{ if .ElectionId }}<div><a href="{{ .PDFURL }}">PDF</a> - <a href="{{ .GETURL }}.json">json</a> - <a href="{{ .BubbleJSONURL }}">bubbles json</a> - <a href="{{ .ScanFormURL }}">Upload a scan...</a></div>{{ end }}
   <template id="partytmpl" data-attype="ElectionResults.Party" data-seq="party">
@@ -153,7 +162,7 @@
       <button class="deleterec">Delete Office</button>
     </div>
   </template>
-  <div class="topsec"><h2>Offices</h2><p>Mayor, City Council, Dog Catcher, etc...</p>
+  <div class="topsec"><h2><a name="Offices">Offices</a></h2><p>Mayor, City Council, Dog Catcher, etc...</p>
     <div id="offices" class="arraygroup" data-name="Office">
     </div>
     <div><button class="newrec" data-btmpl="officetmpl" data-seq="office" id="newoffice">New Office</button></div>
@@ -224,6 +233,32 @@
     <div><button class="newrec" data-btmpl="repunittmpl" data-seq="gpunit" id="newrepunit">New Reporting Unit</button></div>
   </div>
 
+  <template id="headtmpl" data-attype="ElectionResults.Header">
+    <div class="header"><table border="0">
+	<input type="hidden" data-key="attype" value="ElectionResults.Header" />
+	<tr><td>@id</td><td><input type="text" data-key="atid" value="watid" disabled="true" /></td></tr>
+	<tr><td>Name</td><td><input type="text" data-key="Name" /></td></tr>
+	<tr><td colspan="2" class="optional">optional:</td></tr>
+	<tr><td>External Identifiers</td><td><textarea data-key="ExternalIdentifier" data-mode="array"></textarea></td></tr>
+    </table></div>
+  </template>
+
+  <template id="oheadtmpl" data-attype="ElectionResults.OrderedHeader">
+    <div class="oheader"><table border="0">
+      <input type="hidden" data-key="attype" value="ElectionResults.OrderedHeader" />
+      <tr class="acgroup">
+	<td>Header</td>
+	<td class="idreflist" data-key="HeaderId" data-one="true"></td>
+	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Header" data-action="set"> <small>(Type a Header's name to use it here. The header must already have an entry in the <a href="#Header">Header section</a>, or be one of the builtins: Instructions, ColumnBreak, PageBreak.)</small></div></td>
+      </tr>
+    </table></div>
+  </template>
+
+  <div class="topsec"><h2><a name="Header">Headers</a></h2>
+    <div id="headers" class="arraygroup" data-name="Header"></div>
+    <div><button class="newrec" data-btmpl="officetmpl" data-seq="office" id="newoffice">New Office</button></div>
+  </div>
+
   <template id="electiontmpl" data-attype="ElectionResults.Election">
     <div class="recform">
       <table border="0">
@@ -262,7 +297,8 @@
       <button class="deleterec">Delete Election</button>
     </div>
   </template>
-  <div class="topsec"><h2>Elections</h2>
+  
+  <div class="topsec"><h2><a name="Elections">Elections</a></h2>
     <div id="elections" class="arraygroup" data-name="Election"></div>
     <div><button class="newrec" data-btmpl="electiontmpl" id="newelection">New Election</button></div>
   </div>
@@ -296,7 +332,7 @@
 	<td class="idreflist" data-key="PartyIds"></td>
 	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Party,ElectionResults.Coalition" data-action="append"> <small>(Type a party or coalition's name to have it use this ballot style. The Party or Coalition must already have an entry in the <a href="#Parties">Parties section</a>.)</small></div></td>
       </tr>
-      <tr><td>Items</td><td><div class="arraygroup" data-name="OrderedContent"></div><div><button class="newrec" data-btmpl="ocontesttmpl">New Contest</button></div></td></tr>
+      <tr><td>Items</td><td><div class="arraygroup" data-name="OrderedContent"></div><div><button class="newrec" data-btmpl="ocontesttmpl">New Contest</button><button class="newrec" data-btmpl="oheadtmpl">New Header</button></div></td></tr>
     </table>
   </template>
 
@@ -411,7 +447,7 @@
       <tr><td>Contact Information</td><td class="erobject" data-name="ContactInformation" data-tmpl="contacttmpl"></td></tr>
       <tr><td>Slogan</td><td><input type="text" data-key="CampaignSlogan" /></td></tr>
       <tr class="acgroup">
-	<td>Persion</td>
+	<td>Person</td>
 	<td class="idreflist" data-key="PersonId" data-one="true"></td>
 	<td><div class="autocomplete"><input type="text" class="acsearch" data-acattype="ElectionResults.Person" data-action="set"> <small>(Type a person's name to set them as this candidate. The person must already have an entry in the <a href="#People">People section</a>.)</small></div></td>
       </tr>
