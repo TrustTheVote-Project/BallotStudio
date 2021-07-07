@@ -91,7 +91,7 @@ func init() {
 	pngPathRe = regexp.MustCompile(`^/election/(\d+)\.png$`)
 	pngPagePathRe = regexp.MustCompile(`^/election/(\d+)\.(\d+)\.png$`)
 	scanPathRe = regexp.MustCompile(`^/election/(\d+)/scan$`)
-	docPathRe = regexp.MustCompile(`^/election/(\d+)$`)
+	docPathRe = regexp.MustCompile(`^/election/(\d+)(.json)?$`)
 }
 
 var truthy []string = []string{"t", "1", "true"}
@@ -334,6 +334,12 @@ func (sh *StudioHandler) handleElectionDocGET(w http.ResponseWriter, r *http.Req
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
+	r.ParseForm()
+	download := qbool(r.Form.Get("dl"))
+	download = download || qbool(r.Form.Get("download"))
+	if download {
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%d.json\"", itemid))
+	}
 	w.WriteHeader(200)
 	w.Write(nbody)
 }
