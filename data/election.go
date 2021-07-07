@@ -17,6 +17,7 @@ func debug(format string, args ...interface{}) {
 	fmt.Fprintf(DebugOut, format, args...)
 }
 
+// Fixup will detect duplicate @id values and give new ids to some entries
 func Fixup(er map[string]interface{}) map[string]interface{} {
 	var ifc idFixupContext
 	return ifc.fixup(er)
@@ -78,8 +79,11 @@ func (ifc *idFixupContext) fixup(er map[string]interface{}) map[string]interface
 	er = ifc.idFixupInner(er, path)
 	for _, rec := range ifc.needsNewId {
 		newid := ifc.newId(rec)
-		debug("needs new id (%s %s) -> %s\n", rec.er["@type"], rec.er["@id"], newid)
+		ifc.msg("needs new id (%s %s) -> %s\n", rec.er["@type"], rec.er["@id"], newid)
 		rec.er["@id"] = newid
+	}
+	for _, msg := range ifc.messages {
+		debug("%s", msg)
 	}
 	return er
 }
@@ -90,6 +94,8 @@ func (ifc *idFixupContext) fixup(er map[string]interface{}) map[string]interface
 // 	return er
 // }
 
+// idFixupInner recurses down map[string]interface{} and []interface{}.
+// idFixupInner notes for later duplicate @id values and which elements need new ids.
 func (ifc *idFixupContext) idFixupInner(er map[string]interface{}, path []string) map[string]interface{} {
 	debug("%s fi\n", pathstr(path, ""))
 	plen := len(path)
@@ -126,17 +132,17 @@ func (ifc *idFixupContext) idFixupInner(er map[string]interface{}, path []string
 				amv, ok := av.(map[string]interface{})
 				if ok {
 					ap = append(ap, strconv.Itoa(i))
-					debug("%s %v\n", pathstr(ap, ""), ap)
+					//debug("%s %v\n", pathstr(ap, ""), ap)
 					nv := ifc.idFixupInner(amv, ap)
 					ap = ap[:aplen]
 					v[i] = nv
 				} else {
-					debug("%s [%d] wat %T %#v\n", pathstr(ap, k), i, av, av)
+					debug("%s [%d] %T %#v\n", pathstr(ap, k), i, av, av)
 				}
 			}
 			path = path[:plen]
 		default:
-			debug("%s %T\n", pathstr(path, k), iv)
+			debug("%s %T %#v\n", pathstr(path, k), iv, iv)
 		}
 	}
 	for nk, nv := range updates.they {
@@ -146,7 +152,7 @@ func (ifc *idFixupContext) idFixupInner(er map[string]interface{}, path []string
 }
 
 func (ifc *idFixupContext) msg(format string, args ...interface{}) {
-	debug(format, args...)
+	//debug(format, args...)
 	m := fmt.Sprintf(format, args...)
 	ifc.messages = append(ifc.messages, m)
 }
