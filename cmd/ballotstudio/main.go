@@ -251,21 +251,58 @@ type HomeContext struct {
 	ElectionIds []int64
 }
 
+const MaxUploadDocumentBytes = 1000000
+
 func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Request, user *login.User, itemname string, itemid int64) {
 	if user == nil {
 		texterr(w, http.StatusUnauthorized, "nope")
 		return
 	}
-	mbr := http.MaxBytesReader(w, r.Body, 1000000)
-	body, err := ioutil.ReadAll(mbr)
-	if err == io.EOF {
-		err = nil
-	}
-	if maybeerr(w, err, 400, "bad body") {
+	contentType := r.Header.Get("Content-Type")
+	if strings.HasPrefix(contentType, "application/json") {
+		mbr := http.MaxBytesReader(w, r.Body, int64(MaxUploadDocumentBytes))
+		body, err := ioutil.ReadAll(mbr)
+		if err == io.EOF {
+			err = nil
+		}
+		if maybeerr(w, err, 400, "bad body") {
+			return
+		}
+		sh.handleElectionDocPOSTJson(w, r, user, itemname, itemid, body, editContextFinish)
 		return
+	} else if strings.HasPrefix(contentType, "multipart/form-data") {
+		mr, err := r.MultipartReader()
+		if maybeerr(w, err, 400, "bad multipart: %v", err) {
+			return
+		}
+		var body []byte
+		for {
+			part, err := mr.NextPart()
+			if err == io.EOF {
+				break
+			}
+			if maybeerr(w, err, 400, "home.html: %v", err) {
+				return
+			}
+			name := part.FormName()
+			if name == "ejsn" {
+				mbr := http.MaxBytesReader(w, part, MaxUploadDocumentBytes)
+				body, err = io.ReadAll(mbr)
+				log.Printf("got %d bytes of json body from %s", len(body), name)
+				sh.handleElectionDocPOSTJson(w, r, user, itemname, itemid, body, editRedirect)
+				return
+			}
+		}
+		texterr(w, 400, "no json file upload")
 	}
+	texterr(w, 400, "unknown content-type: %s", contentType)
+}
+
+type docPostFinishFunc func(w http.ResponseWriter, r *http.Request, newid int64)
+
+func (sh *StudioHandler) handleElectionDocPOSTJson(w http.ResponseWriter, r *http.Request, user *login.User, itemname string, itemid int64, body []byte, finish docPostFinishFunc) {
 	var ob map[string]interface{}
-	err = json.Unmarshal(body, &ob)
+	err := json.Unmarshal(body, &ob)
 	if maybeerr(w, err, 400, "bad json") {
 		return
 	}
@@ -296,6 +333,14 @@ func (sh *StudioHandler) handleElectionDocPOST(w http.ResponseWriter, r *http.Re
 	sh.cache.Invalidate(itemname)
 	sh.cache.Invalidate(itemname + ".png")
 	er.Id = newid
+	finish(w, r, newid)
+}
+
+func editRedirect(w http.ResponseWriter, r *http.Request, newid int64) {
+	http.Redirect(w, r, fmt.Sprintf("/edit/%d", newid), http.StatusFound)
+}
+
+func editContextFinish(w http.ResponseWriter, r *http.Request, newid int64) {
 	ec := EditContext{}
 	ec.set(newid)
 	out, err := json.Marshal(ec)

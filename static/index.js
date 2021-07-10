@@ -87,6 +87,13 @@
     }
     return out;
   };
+  var toggleVisible = function(elem) {
+    if (hasClass(elem, "hidden")) {
+      rmClass(elem, "hidden");
+    } else {
+      addClass(elem, "hidden");
+    }
+  };
     var sequenceCounters = {};
     var usedSeqIds = {};
     var claimSeq = function(seqName, atid) {
@@ -931,4 +938,11 @@
 	GET(urls.url, loadElectionHandler);
       }
     })();
+
+  var htog = function() {
+    var targetId = this.getAttribute("data-tid");
+    var telem = document.getElementById(targetId);
+    toggleVisible(telem);
+  };
+  setOnclickForClass("htog",htog);
 })();

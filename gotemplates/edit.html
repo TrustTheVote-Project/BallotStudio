@@ -17,6 +17,8 @@
   .sectionedshow{border:1px solid #777;}
   .candidate{border:1px solid #777;}
   .contest{border:1px solid #777;}
+  .fl{cursor:pointer;text-decoration:underline;color:blue;}
+  .hidden{display:none;}
 
   span.idref{border:solid 1px #eea;background-color:#fffff8;padding:1px 0.1em 1px 0.7em;}
   .idreflist{background-color:#eee;}
@@ -69,7 +71,12 @@
     <div><a href="#Elections">Elections</a></div>
   </div>
   <div><button class="savebutton">Save</button> - <button class="reloadbutton">Reload</button><span class="debugtext"></span></div>
-  {{ if .ElectionId }}<div><a href="{{ .PDFURL }}">PDF</a> - <a href="{{ .GETURL }}.json">json</a> - <a href="{{ .BubbleJSONURL }}">bubbles json</a> - <a href="{{ .ScanFormURL }}">Upload a scan...</a></div>{{ end }}
+  {{ if .ElectionId }}<div><a href="{{ .PDFURL }}">PDF</a> - <a href="{{ .GETURL }}.json">json</a> - <span data-tid="upform" class="fl htog">upload election json</span> - <a href="{{ .BubbleJSONURL }}">bubbles json</a> - <a href="{{ .ScanFormURL }}">Upload a scan...</a></div>{{ end }}
+  <div id="upform" class="hidden"><form action="{{ .PostURL }}" method="POST" enctype="multipart/form-data">
+      <input type="file" id="ejs" name="ejsn">
+      <input type="submit">
+      <span class="fl htog" data-tid="upform">Hide upload form</span>
+  </form></div>
   <template id="partytmpl" data-attype="ElectionResults.Party" data-seq="party">
     <div class="recform">
       <table border="0">
@@ -297,7 +304,7 @@
       <button class="deleterec">Delete Election</button>
     </div>
   </template>
-  
+
   <div class="topsec"><h2><a name="Elections">Elections</a></h2>
     <div id="elections" class="arraygroup" data-name="Election"></div>
     <div><button class="newrec" data-btmpl="electiontmpl" id="newelection">New Election</button></div>
